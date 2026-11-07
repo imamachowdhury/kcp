@@ -447,6 +447,12 @@ button { font-family: inherit; }
 .chip:hover { transform: translateY(-2px); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--yellow); }
 .chip:focus-visible { outline: 3px dashed var(--red); outline-offset: 2px; }
+.leader .motto {
+  margin: .7rem 0 0; padding: .45rem .7rem; border-radius: 10px;
+  background: var(--red); color: var(--yellow); font-weight: 700; font-size: 1.02rem;
+  transform: rotate(-1.5deg);
+}
+.leader .motto small { display: block; color: #fff; font-weight: 500; font-size: .75rem; opacity: .85; }
 .leader .tag { display: inline-block; margin-left: .3rem; background: var(--red); color: #fff; font-size: .8rem; padding: 0 .6em; border-radius: 5px; font-weight: 600; }
 .leader-top { border-color: var(--red); box-shadow: 6px 6px 0 var(--red); }
 .leader-top .leader-avatar { background: var(--yellow); border-color: var(--red); }
