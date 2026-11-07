@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Galada&family=Great+Vibes&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- আপডেটের পর ?v= নম্বর বাড়ান (style.css ও script.js দুটোতেই), তাহলে সবার ব্রাউজারে নতুন ফাইল আসবে -->
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 
@@ -37,9 +37,9 @@
     <button class="nav-toggle" id="navToggle" aria-label="মেনু খুলুন" aria-expanded="false">☰</button>
     <nav class="nav-links" id="navLinks">
       <a href="#history">ইতিহাস</a>
-      <a href="#notice">ঘোষণা</a>
       <a href="#manifesto">ইশতেহার</a>
       <a href="#leaders">কমিটি</a>
+      <a href="#notice">ঘোষণা</a>
       <a href="#games">খেলা</a>
       <a href="#slogan">স্লোগান</a>
       <a href="#quiz">কুইজ</a>
@@ -148,6 +148,27 @@
       </ol>
     </section>
 
+    <!-- ====== ইশতেহার ====== -->
+    <section class="section section-red" id="manifesto">
+      <h2 class="section-title">নির্বাচনী ইশতেহার</h2>
+      <p class="section-sub">কার্ডে ক্লিক করে দেখুন আমরা ক্ষমতায় গেলে কী কী করব (না)।</p>
+      <div class="cards" id="manifestoCards"></div>
+    </section>
+
+    <!-- ====== নেতৃবৃন্দ ====== -->
+    <section class="section" id="leaders">
+      <h2 class="section-title">কেন্দ্রীয় আহ্বায়ক কমিটি</h2>
+      <p class="section-sub">নেতার ছবিতে ক্লিক করুন, তাঁর অমূল্য বাণী শুনুন।</p>
+      <div class="filters" id="leaderFilters" role="group" aria-label="কমিটি ছাঁকুন"></div>
+      <div class="leaders" id="leadersGrid"></div>
+      <div class="carousel-ctrl" id="leaderCtrl">
+        <button type="button" id="leaderPrev" aria-label="আগের কমরেড">‹</button>
+        <span id="leaderPos" aria-live="polite">১ / ১২</span>
+        <button type="button" id="leaderNext" aria-label="পরের কমরেড">›</button>
+      </div>
+      <p class="swipe-hint">👉 ডানে-বামে সোয়াইপ করুন</p>
+    </section>
+
     <!-- ====== অফিসিয়াল ঘোষণাপত্র ====== -->
     <section class="section section-paper" id="notice">
       <h2 class="section-title">অফিসিয়াল ঘোষণাপত্র</h2>
@@ -176,27 +197,6 @@
         </footer>
       </article>
       <button class="btn btn-red" type="button" id="openNotice">🔍 মূল ঘোষণাপত্রের ছবি দেখুন</button>
-    </section>
-
-    <!-- ====== ইশতেহার ====== -->
-    <section class="section section-red" id="manifesto">
-      <h2 class="section-title">নির্বাচনী ইশতেহার</h2>
-      <p class="section-sub">কার্ডে ক্লিক করে দেখুন আমরা ক্ষমতায় গেলে কী কী করব (না)।</p>
-      <div class="cards" id="manifestoCards"></div>
-    </section>
-
-    <!-- ====== নেতৃবৃন্দ ====== -->
-    <section class="section" id="leaders">
-      <h2 class="section-title">কেন্দ্রীয় আহ্বায়ক কমিটি</h2>
-      <p class="section-sub">নেতার ছবিতে ক্লিক করুন, তাঁর অমূল্য বাণী শুনুন।</p>
-      <div class="filters" id="leaderFilters" role="group" aria-label="কমিটি ছাঁকুন"></div>
-      <div class="leaders" id="leadersGrid"></div>
-      <div class="carousel-ctrl" id="leaderCtrl">
-        <button type="button" id="leaderPrev" aria-label="আগের কমরেড">‹</button>
-        <span id="leaderPos" aria-live="polite">১ / ১২</span>
-        <button type="button" id="leaderNext" aria-label="পরের কমরেড">›</button>
-      </div>
-      <p class="swipe-hint">👉 ডানে-বামে সোয়াইপ করুন</p>
     </section>
 
     <!-- ====== আড্ডা জোন (খেলা) ====== -->
@@ -391,6 +391,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="script.js?v=25"></script>
+  <script src="script.js?v=26"></script>
 </body>
 </html>
