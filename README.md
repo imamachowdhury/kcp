@@ -48,7 +48,7 @@ git push -u origin main
 
 ৪. ১-২ মিনিট পর সাইট চালু হবে এখানে: `https://<your-username>.github.io/kcp/`
 
-পরে কিছু বদলালে শুধু:
+পরে কিছু বদলালে প্রথমে `index.html`-এ `style.css?v=` আর `script.js?v=` নম্বর এক বাড়িয়ে দিন (যেমন ৮ থেকে ৯), যাতে সবার ব্রাউজারে পুরোনো ফাইল না থাকে। তারপর:
 
 ```bash
 git add . && git commit -m "update" && git push
