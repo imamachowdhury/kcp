@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>কতোয়াল পুর কমিউনিস্ট পার্টি (KCP)</title>
+  <meta name="description" content="কতোয়াল পুর কমিউনিস্ট পার্টি (KCP) — দুনিয়ার আড্ডাবাজ এক হও! হেড অফিস: পিছের মুখ, বৃহত্তর কতোয়ালপুর।">
+  <meta property="og:title" content="কতোয়াল পুর কমিউনিস্ট পার্টি (KCP)">
+  <meta property="og:description" content="দুনিয়ার আড্ডাবাজ এক হও! চা আমাদের অধিকার, আড্ডা আমাদের সংগ্রাম।">
+  <!-- ফেসবুকে শেয়ার করলে এই ছবি দেখাবে -->
+  <meta property="og:url" content="https://imamachowdhury.github.io/kcp/">
+  <meta property="og:image" content="https://imamachowdhury.github.io/kcp/assets/banner.webp">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Galada&family=Great+Vibes&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ====== নেভিগেশন ====== -->
+  <header class="nav" id="top">
+    <a href="#home" class="brand">
+      <img class="brand-logo" src="assets/emblem.jpg" alt="" width="40" height="40">
+      <span>KCP</span>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="মেনু খুলুন" aria-expanded="false">☰</button>
+    <nav class="nav-links" id="navLinks">
+      <a href="#history">ইতিহাস</a>
+      <a href="#notice">ঘোষণা</a>
+      <a href="#manifesto">ইশতেহার</a>
+      <a href="#leaders">কমিটি</a>
+      <a href="#slogan">স্লোগান</a>
+      <a href="#quiz">কুইজ</a>
+      <a href="#join" class="nav-cta">সদস্য হোন</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ====== হিরো ====== -->
+    <section class="hero" id="home">
+      <div class="hero-rays" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <button class="hero-badge" id="heroLogo" type="button" aria-label="পার্টির প্রতীক — ক্লিক করুন">
+          <img src="assets/emblem.jpg" alt="কতোয়াল পুর কমিউনিস্ট পার্টির প্রতীক: কাস্তের ভেতরে চায়ের কাপ, তারা ও চা বাগান" width="640" height="640">
+        </button>
+        <p class="hero-kicker">হেড অফিস: পিছের মুখ, বৃহত্তর কতোয়ালপুর</p>
+        <h1>কতোয়াল পুর<br>কমিউনিস্ট পার্টি</h1>
+        <p class="hero-slogan"><span id="sloganRotator">দুনিয়ার আড্ডাবাজ এক হও!</span></p>
+        <div class="hero-actions">
+          <a href="#join" class="btn btn-yellow">✊ সদস্য হোন</a>
+          <a href="#notice" class="btn btn-outline">📜 কমিটি ঘোষণা দেখুন</a>
+        </div>
+        <p class="hero-note">প্রতীক: <b>কাস্তের ভেতরে চায়ের কাপ</b> — কারণ আমাদের বিপ্লব চা বাগানে শুরু, চায়ের কাপেই শেষ।</p>
+      </div>
+    </section>
+
+    <!-- ====== ব্রেকিং নিউজ ====== -->
+    <div class="ticker" aria-label="সর্বশেষ খবর">
+      <span class="ticker-label">ব্রেকিং</span>
+      <div class="ticker-track">
+        <div class="ticker-content" id="tickerContent"></div>
+      </div>
+    </div>
+
+    <!-- ====== পরিসংখ্যান ====== -->
+    <section class="stats">
+      <div class="stat">
+        <span class="stat-num" data-count="12">০</span>
+        <span class="stat-label">কেন্দ্রীয় নেতা<br><small>(৫ জন এখন ঘুমাচ্ছেন)</small></span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" data-count="1284">০</span>
+        <span class="stat-label">কাপ চা পান<br><small>(শুধু এই মাসে)</small></span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" data-count="342">০</span>
+        <span class="stat-label">ঘণ্টা আড্ডা<br><small>(সবগুলোই পিছের মুখে)</small></span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" data-count="0">০</span>
+        <span class="stat-label">প্রতিশ্রুতি পূরণ<br><small>(কাজ চলছে...)</small></span>
+      </div>
+    </section>
+
+    <!-- ====== পরবর্তী সভা ====== -->
+    <section class="meeting">
+      <div class="meeting-box">
+        <h2>পরবর্তী জরুরি আড্ডা শুরু হতে বাকি</h2>
+        <div class="countdown" id="countdown">
+          <div><span id="cdD">০</span><small>দিন</small></div>
+          <div><span id="cdH">০</span><small>ঘণ্টা</small></div>
+          <div><span id="cdM">০</span><small>মিনিট</small></div>
+          <div><span id="cdS">০</span><small>সেকেন্ড</small></div>
+        </div>
+        <p>📍 স্থান: সুফান বিকাশ ঘর, পিছের মুখ, বৃহত্তর কতোয়ালপুর · প্রতি শুক্রবার বিকাল ৫টা<br>
+          <small>(কমরেড সময় অনুযায়ী সবাই আসবেন সন্ধ্যা ৭টায়)</small></p>
+      </div>
+    </section>
+
+    <!-- ====== ইতিহাস ====== -->
+    <section class="section" id="history">
+      <h2 class="section-title">আমাদের গৌরবময় ইতিহাস</h2>
+      <p class="section-sub">যে ইতিহাস কেউ লেখেনি, তাই আমরা নিজেরাই লিখে ফেললাম।</p>
+      <ol class="timeline">
+        <li>
+          <span class="tl-year">প্রথম দিন</span>
+          <h3>পার্টির জন্ম</h3>
+          <p>বৃষ্টির কারণে খেলা বন্ধ। বন্ধুরা পিছের মুখে আটকা পড়ে সিদ্ধান্ত নেয় — "চলো, একটা পার্টি খুলি।" সবাই ভেবেছিল খাওয়া-দাওয়ার পার্টি। পরে জানা গেল রাজনৈতিক।</p>
+        </li>
+        <li>
+          <span class="tl-year">দ্বিতীয় দিন</span>
+          <h3>প্রথম বিভাজন</h3>
+          <p>চা না কফি — এই প্রশ্নে পার্টি দুই ভাগ হয়ে যায়। কফি গোষ্ঠী দুই ঘণ্টা পর দাম শুনে ফিরে আসে।</p>
+        </li>
+        <li>
+          <span class="tl-year">তৃতীয় সপ্তাহ</span>
+          <h3>ঐতিহাসিক অনশন</h3>
+          <p>দোকানে সিঙ্গারা শেষ হয়ে যাওয়ার প্রতিবাদে ৪৫ মিনিটের আমরণ অনশন। নতুন সিঙ্গারা ভাজা হলে অনশন ভাঙা হয়।</p>
+        </li>
+        <li>
+          <span class="tl-year">দ্বিতীয় মাস</span>
+          <h3>পার্টি অফিস প্রতিষ্ঠা</h3>
+          <p>সুফান বিকাশ ঘরের সামনের বেঞ্চটি আনুষ্ঠানিকভাবে পার্টি অফিস ঘোষণা। ভাড়া: মাসে ১০ টাকা, বিকাশে (ক্যাশ আউট চার্জ পার্টি বহন করবে না)।</p>
+        </li>
+        <li>
+          <span class="tl-year">০১/০৫/২০২৬</span>
+          <h3>কেন্দ্রীয় আহ্বায়ক কমিটি ঘোষণা</h3>
+          <p>স্মারক নং ককপা/২৬/০১-এর মাধ্যমে এক বছরের জন্য কমিটি ঘোষণা। পদ ৮টি, নেতা ১১ জন, কাজ ০টি। <a href="#notice">ঘোষণাপত্র দেখুন →</a></p>
+        </li>
+        <li>
+          <span class="tl-year">বর্তমান</span>
+          <h3>বিপ্লব প্রস্তুতি</h3>
+          <p>বিপ্লবের সব প্রস্তুতি সম্পন্ন। শুধু তারিখটা ঠিক করা বাকি। প্রস্তাবিত তারিখ: "আগামীকাল থেকে, ইনশাআল্লাহ।"</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ====== অফিসিয়াল ঘোষণাপত্র ====== -->
+    <section class="section section-paper" id="notice">
+      <h2 class="section-title">অফিসিয়াল ঘোষণাপত্র</h2>
+      <p class="section-sub">নামের ওপর ক্লিক করলে সেই নেতার প্রোফাইলে চলে যাবেন।</p>
+      <article class="letter">
+        <header class="letter-head">
+          <img src="assets/emblem.jpg" alt="" width="90" height="90">
+          <div>
+            <h3>কতোয়াল পুর কমিউনিস্ট পার্টি</h3>
+            <p>হেড অফিস: পিছের মুখ, বৃহত্তর কতোয়ালপুর</p>
+          </div>
+        </header>
+        <div class="letter-meta">
+          <span>স্মারক নং: ককপা/২৬/০১</span>
+          <span>তারিখ: ০১/০৫/২০২৬</span>
+        </div>
+        <p class="letter-body">এতদ্বারা কতোয়াল পুর কমিউনিস্ট পার্টির এক বছরের জন্য কেন্দ্রীয় আহ্বায়ক কমিটি ঘোষণা করা হলো:</p>
+        <div class="letter-list" id="noticeList"></div>
+        <footer class="letter-sign">
+          <img class="letter-stamp" src="assets/stamp.webp" alt="পার্টির সিল: অনুমোদিত, কেন্দ্রীয় আড্ডা কমিটি" width="1600" height="1600">
+          <div class="sig">
+            <span class="sig-script">Imam A Chy</span>
+            <a href="#m-imam"><b>ইমাম আহমদ চৌধুরী</b></a>
+            উপদেষ্টা পরিষদ সদস্য<br>কেসিপি (মার্ক্সবাদী)
+          </div>
+        </footer>
+      </article>
+      <button class="btn btn-red" type="button" id="openNotice">🔍 মূল ঘোষণাপত্রের ছবি দেখুন</button>
+    </section>
+
+    <!-- ====== ইশতেহার ====== -->
+    <section class="section section-red" id="manifesto">
+      <h2 class="section-title">নির্বাচনী ইশতেহার</h2>
+      <p class="section-sub">কার্ডে ক্লিক করে দেখুন আমরা ক্ষমতায় গেলে কী কী করব (না)।</p>
+      <div class="cards" id="manifestoCards"></div>
+    </section>
+
+    <!-- ====== নেতৃবৃন্দ ====== -->
+    <section class="section" id="leaders">
+      <h2 class="section-title">কেন্দ্রীয় আহ্বায়ক কমিটি</h2>
+      <p class="section-sub">নেতার ছবিতে ক্লিক করুন, তাঁর অমূল্য বাণী শুনুন।</p>
+      <div class="filters" id="leaderFilters" role="group" aria-label="কমিটি ছাঁকুন"></div>
+      <div class="leaders" id="leadersGrid"></div>
+    </section>
+
+    <!-- ====== বিপ্লব মিটার ====== -->
+    <section class="section section-dark" id="revolution">
+      <h2 class="section-title">বিপ্লব মিটার</h2>
+      <p class="section-sub">বোতাম চাপুন, বিপ্লব এগিয়ে নিন। সাবধান — কমরেডরা মাঝে মাঝে ঘুমিয়ে পড়েন।</p>
+      <div class="meter">
+        <div class="meter-bar"><div class="meter-fill" id="meterFill"></div></div>
+        <div class="meter-pct" id="meterPct">০%</div>
+      </div>
+      <p class="meter-msg" id="meterMsg">বিপ্লব এখনো ঘুমাচ্ছে। জাগিয়ে তুলুন!</p>
+      <button class="btn btn-yellow btn-big" id="revBtn">✊ ইনকিলাব জিন্দাবাদ!</button>
+    </section>
+
+    <!-- ====== স্লোগান জেনারেটর ====== -->
+    <section class="section" id="slogan">
+      <h2 class="section-title">স্লোগান মেশিন</h2>
+      <p class="section-sub">মিছিলে কী বলবেন ভেবে পাচ্ছেন না? মেশিন আপনার হয়ে ভাববে।</p>
+      <div class="slogan-box">
+        <p class="slogan-out" id="sloganOut">বোতাম চাপুন, স্লোগান নিন!</p>
+        <div class="slogan-actions">
+          <button class="btn btn-red" id="sloganBtn">🎲 নতুন স্লোগান</button>
+          <button class="btn btn-outline-dark" id="sloganCopy">📋 কপি করুন</button>
+        </div>
+        <p class="slogan-count">আজ পর্যন্ত তৈরি স্লোগান: <b id="sloganCount">০</b>টি</p>
+      </div>
+    </section>
+
+    <!-- ====== কুইজ ====== -->
+    <section class="section section-yellow" id="quiz">
+      <h2 class="section-title">আপনি কতটা খাঁটি কমরেড?</h2>
+      <p class="section-sub">পাঁচটি প্রশ্নের সৎ উত্তর দিন। পার্টি সব দেখছে।</p>
+      <div class="quiz" id="quizBox"></div>
+    </section>
+
+    <!-- ====== সদস্য কার্ড ====== -->
+    <section class="section" id="join">
+      <h2 class="section-title">সদস্য পদের আবেদন</h2>
+      <p class="section-sub">ফর্ম পূরণ করুন, সঙ্গে সঙ্গে সিলমোহরসহ অফিসিয়াল সদস্য কার্ড নিন।</p>
+      <div class="join-wrap">
+        <form class="join-form" id="joinForm" autocomplete="off">
+          <label for="jName">আপনার নাম</label>
+          <input id="jName" type="text" maxlength="28" placeholder="যেমন: কমরেড মফিজ" required>
+
+          <label for="jNick">ডাকনাম (পাড়ায় যে নামে চেনে)</label>
+          <input id="jNick" type="text" maxlength="20" placeholder="যেমন: আড্ডার রাজা">
+
+          <fieldset>
+            <legend>বিশেষ দক্ষতা (একাধিক বেছে নিন)</legend>
+            <label class="chk"><input type="checkbox" value="অন্তহীন আড্ডা" checked> 🗣️ অন্তহীন আড্ডা</label>
+            <label class="chk"><input type="checkbox" value="দিনে ১০ কাপ চা"> ☕ দিনে ১০ কাপ চা</label>
+            <label class="chk"><input type="checkbox" value="পেশাদার ঘুম"> 😴 পেশাদার ঘুম</label>
+            <label class="chk"><input type="checkbox" value="প্রতিশ্রুতি দেওয়া"> 🤝 প্রতিশ্রুতি দেওয়া</label>
+            <label class="chk"><input type="checkbox" value="ফেসবুক বিপ্লব"> 📱 ফেসবুক বিপ্লব</label>
+            <label class="chk"><input type="checkbox" value="সিঙ্গারা ধ্বংস"> 🥟 সিঙ্গারা ধ্বংস</label>
+          </fieldset>
+
+          <button type="submit" class="btn btn-red btn-block">🪪 সদস্য কার্ড তৈরি করুন</button>
+          <p class="fine">* আবেদন ফি: ০ টাকা। তবে প্রথম আড্ডায় সবাইকে চা খাওয়াতে হবে।</p>
+        </form>
+
+        <div class="card-preview">
+          <canvas id="cardCanvas" width="900" height="560" aria-label="সদস্য কার্ড"></canvas>
+          <button class="btn btn-yellow btn-block" id="cardDownload" disabled>⬇️ কার্ড ডাউনলোড করুন</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== চাঁদা ====== -->
+    <section class="section section-red" id="donate">
+      <h2 class="section-title">পার্টি তহবিলে চাঁদা দিন</h2>
+      <p class="section-sub">চাঁদা পাঠান সুফান বিকাশ ঘরে। আপনার টাকা সরাসরি বিপ্লবে যাবে (মানে চায়ের দোকানের বাকি শোধে)।</p>
+      <div class="donate-arena" id="donateArena">
+        <button class="btn btn-yellow btn-big" id="donateYes">💰 হ্যাঁ, চাঁদা দেব!</button>
+        <button class="btn btn-outline" id="donateNo">না, পরে দেব</button>
+      </div>
+      <p class="donate-msg" id="donateMsg"></p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <img class="footer-banner" src="assets/banner.webp" alt="KCP — কতোয়াল পুর কমিউনিস্ট পার্টি — দুনিয়ার আড্ডাবাজ এক হও!" width="2000" height="700" loading="lazy">
+    <p>হেড অফিস: পিছের মুখ, বৃহত্তর কতোয়ালপুর · পার্টি অফিস: সুফান বিকাশ ঘর</p>
+    <p class="footer-small">© <span id="year"></span> সকল অধিকার জনগণের (এবং সুফান বিকাশ ঘরের)।<br>
+      এটি একটি সম্পূর্ণ হাস্যরসাত্মক ওয়েবসাইট। বাস্তবের কোনো দলের সাথে মিল সম্পূর্ণ কাকতালীয়।</p>
+    <a href="#top" class="back-top">↑ উপরে যান</a>
+  </footer>
+
+  <!-- মূল ঘোষণাপত্রের ছবি -->
+  <dialog class="lightbox" id="lightbox" aria-label="মূল ঘোষণাপত্র">
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="বন্ধ করুন">✕</button>
+    <img src="assets/notice.jpg" alt="কেন্দ্রীয় আহ্বায়ক কমিটি ঘোষণার মূল কপি, স্মারক নং ককপা/২৬/০১" width="1600" height="2000" loading="lazy">
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <script src="script.js"></script>
+</body>
+</html>
