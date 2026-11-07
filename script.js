@@ -108,6 +108,25 @@ const QUIZ_RESULTS = [
   { max: 15, e: "👑", t: "কেন্দ্রীয় কমিটির যোগ্য!", d: "আপনি এতটাই আড্ডাবাজ যে আগামী কমিটিতে আপনাকে চতুর্থ যুগ্ম আহ্বায়ক করার প্রস্তাব উঠেছে। তবে বসার চেয়ার নিজে আনতে হবে।" },
 ];
 
+const EXCUSES = [
+  "আম্মা বাজারে পাঠাইছেন। আলু না নিয়া ফিরলে বিপ্লব না, আমার বিচার হবে।",
+  "ফোনে চার্জ নাই, তাই আসতে পারব না। (এই মেসেজটা ফোন থেকেই পাঠালাম)",
+  "রাস্তায় আছি, পাঁচ মিনিটে আসছি। (এখনো লুঙ্গি পরে বিছানায়)",
+  "হেভ্বি লাঞ্চ করছি মামা, এখন নড়লে পেট ফেটে যাবে।",
+  "মামা, আজকে ফিলিং নাই।",
+  "সুফান বিকাশ ঘরে আমার বাকি আছে, ওই রাস্তা দিয়ে যাওয়া আপাতত নিষেধ।",
+  "দুপুরের ঘুম এখনো শেষ হয়নি। সন্ধ্যায় শেষ হবে, ইনশাআল্লাহ।",
+  "নেটওয়ার্ক ছিল না, মেসেজ দেরিতে দেখলাম। (সিন করেছেন ৩ ঘণ্টা আগে)",
+  "চাচাতো ভাইয়ের বন্ধুর মামাতো ভাইয়ের বিয়ে, না গেলে মান-সম্মান থাকবে না।",
+  "আজকে খেলা আছে — বাংলাদেশের না, কিন্তু খেলা তো খেলা।",
+  "বৃষ্টি হচ্ছে... আমাদের এলাকায় না, তবে কোথাও না কোথাও তো হচ্ছে।",
+  "পরীক্ষা সামনে। (তিন মাস পরে, কিন্তু সামনে তো)",
+  "বাইকের তেল শেষ, আর হেঁটে যাওয়া পুঁজিবাদী ব্যায়াম।",
+  "আম্মা বলছেন বেশি আড্ডা দিলে পড়া হবে না। (পড়াও হচ্ছে না, আড্ডাও না)",
+  "মেহমান আইছন, চা বানাইয়া খাওয়াইতে অইবো। পার্টির চা পরে।",
+  "সার্ভার ডাউন মামা!",
+];
+
 const CARD_POSTS = ["প্রাথমিক সদস্য", "চা সরবরাহ সম্পাদক", "বেঞ্চ রক্ষণাবেক্ষণ কর্মকর্তা", "সিঙ্গারা পরিদর্শক", "মিছিলের পেছনের সারির নেতা", "আড্ডা গবেষক", "বিকাশ ঘর পাহারাদার", "ফেসবুক কমেন্ট যোদ্ধা"];
 
 /* ---------- সহায়ক ফাংশন ---------- */
@@ -119,6 +138,20 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ব্রাউজার স্টোরেজ বন্ধ থাকলে কিছু হবে না */ } },
 };
+const SITE = "https://imamachowdhury.github.io/kcp/";
+const buzz = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch { /* কিছু ফোনে কাঁপুনি নেই */ } };
+// নামের ডাকনাম অংশ (চাকায় লেখার জন্য): "ইকরামুল হক হাসান" → "হাসান"
+const shortName = (n) => n.split(" ").filter((w) => !["আহমদ", "চৌধুরী", "আল", "রহমান", "হক"].includes(w)).pop() || n;
+const avatarHtml = (p, cls = "") => p.p ? `<img class="${cls}" src="${p.p}" alt="" width="66" height="66">` : `<span class="${cls}">${p.a}</span>`;
+// ফোনে নিজস্ব শেয়ার মেনু, না থাকলে হোয়াটসঅ্যাপ
+async function shareText(text) {
+  const full = `${text}\n— ${PARTY} (KCP)`;
+  if (navigator.share) {
+    try { await navigator.share({ text: full, url: SITE }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  window.open("https://wa.me/?text=" + encodeURIComponent(`${full}\n${SITE}`), "_blank", "noopener");
+}
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const loadImg = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
 
@@ -207,9 +240,20 @@ navLinks.addEventListener("click", (e) => { if (e.target.tagName === "A") navLin
 (() => {
   const logo = $("#heroLogo");
   const lines = ["চা ঠান্ডা হয়ে যাচ্ছে, কমরেড!", "কাপে হাত দেবেন না, এটা পার্টির সম্পত্তি।", "কাস্তে দিয়ে চা পাতা তোলা হয়, ঘাস কাটা না!", "আরেক কাপ? বিল কে দেবে?", `☕ ${MOTTO}`];
+  let taps = 0, tapTimer;
   logo.addEventListener("click", () => {
     logo.classList.remove("wobble"); void logo.getBoundingClientRect(); logo.classList.add("wobble");
-    toast(pick(lines));
+    buzz(15);
+    taps++; clearTimeout(tapTimer); tapTimer = setTimeout(() => (taps = 0), 1500);
+    if (taps >= 5) { // গোপন বিপ্লব মোড
+      taps = 0;
+      document.body.classList.add("party");
+      confetti(260); buzz([60, 40, 60, 40, 120]);
+      toast("🎉 গোপন বিপ্লব মোড চালু! এই রহস্য কাউকে বলবেন না।", 4000);
+      setTimeout(() => document.body.classList.remove("party"), 6000);
+      return;
+    }
+    toast(taps >= 3 ? `আরও ${bn(5 - taps)} বার চাপুন... কিছু একটা হবে 👀` : pick(lines));
   });
 })();
 
@@ -302,15 +346,38 @@ const showLeader = (() => {
       let i; do { i = Math.floor(Math.random() * l.q.length); } while (i === last && l.q.length > 1);
       last = i;
       bubble.textContent = `"${l.q[i]}"`;
+      buzz(10);
       bubble.classList.remove("pop"); void bubble.offsetWidth; bubble.classList.add("pop");
     });
     grid.appendChild(card);
   });
 
+  // ফোনে কার্ডগুলো পাশাপাশি সোয়াইপ হয় — কত নম্বরে আছেন তা দেখানো
+  const pos = $("#leaderPos");
+  const visibleCards = () => [...grid.children].filter((c) => !c.hidden);
+  function currentIndex() {
+    const mid = grid.getBoundingClientRect().left + grid.clientWidth / 2;
+    let best = 0, bestD = Infinity;
+    visibleCards().forEach((c, i) => { const r = c.getBoundingClientRect(); const d = Math.abs(r.left + r.width / 2 - mid); if (d < bestD) { bestD = d; best = i; } });
+    return best;
+  }
+  function updatePos() { pos.textContent = `${bn(currentIndex() + 1)} / ${bn(visibleCards().length)}`; }
+  grid.addEventListener("scroll", updatePos, { passive: true });
+  function go(step) {
+    const cards = visibleCards();
+    const i = Math.max(0, Math.min(cards.length - 1, currentIndex() + step));
+    grid.scrollTo({ left: cards[i].offsetLeft - (grid.clientWidth - cards[i].offsetWidth) / 2, behavior: reduceMotion ? "auto" : "smooth" });
+    buzz(8);
+  }
+  $("#leaderPrev").addEventListener("click", () => go(-1));
+  $("#leaderNext").addEventListener("click", () => go(1));
+
   function applyFilter(k) {
     current = k;
     filters.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.k === k));
     grid.querySelectorAll(".leader").forEach((c) => { c.hidden = !(k === "all" || c.dataset.group === k); });
+    grid.scrollLeft = 0;
+    updatePos();
   }
   GROUPS.forEach((g) => {
     const n = g.k === "all" ? COMMITTEE.length : COMMITTEE.filter((c) => c.g === g.k).length;
@@ -340,7 +407,7 @@ const showLeader = (() => {
     const card = document.getElementById("m-" + id);
     if (!card) return;
     if (current !== "all") applyFilter("all");
-    card.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+    card.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center", inline: "center" });
     card.classList.remove("highlight"); void card.offsetWidth; card.classList.add("highlight");
     setTimeout(() => card.querySelector(".leader-avatar").click(), 500);
   }
@@ -383,6 +450,7 @@ const showLeader = (() => {
   btn.addEventListener("click", () => {
     if (locked) return;
     btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    buzz(12);
     if (level > 20 && Math.random() < 0.18) {
       level = Math.max(0, level - (8 + Math.floor(Math.random() * 10)));
       msg.textContent = pick(sleepy);
@@ -420,6 +488,11 @@ const showLeader = (() => {
     try { await navigator.clipboard.writeText(`${text} — ${PARTY} (KCP)`); toast("কপি হয়েছে! এখন ফেসবুকে পোস্ট করুন ✊"); }
     catch { toast("কপি হলো না। হাতে লিখে নিন, কমরেড।"); }
   });
+  $("#sloganShare").addEventListener("click", () => {
+    const text = out.textContent;
+    if (text.startsWith("বোতাম")) { toast("আগে একটা স্লোগান বানান, কমরেড!"); return; }
+    shareText(`✊ ${text}`);
+  });
 })();
 
 /* ---------- কুইজ ---------- */
@@ -434,8 +507,10 @@ const showLeader = (() => {
       <h3>${q.q}</h3>
       <div class="quiz-options">${q.o.map((o, i) => `<button class="quiz-opt" type="button" data-v="${i}">${o}</button>`).join("")}</div>`;
     box.querySelectorAll(".quiz-opt").forEach((b) => b.addEventListener("click", () => {
+      box.querySelectorAll(".quiz-opt").forEach((o) => (o.disabled = true));
+      b.classList.add("picked"); buzz(10);
       score += +b.dataset.v; step++;
-      step < QUIZ.length ? renderQ() : renderResult();
+      setTimeout(() => (step < QUIZ.length ? renderQ() : renderResult()), reduceMotion ? 0 : 320);
     }));
   }
   function renderResult() {
@@ -627,6 +702,185 @@ const showLeader = (() => {
   no.addEventListener("click", () => {
     msg.textContent = "ঠিক আছে, পরে দেবেন। তবে পার্টির খাতায় আপনার নামে ১ কাপ চা বাকি লেখা হলো ☕";
   });
+})();
+
+/* ---------- খেলা ১: আজকের চায়ের বিল কে দেবে? (ঘূর্ণি চাকা) ---------- */
+(() => {
+  const canvas = $("#wheel"), ctx = canvas.getContext("2d"), wrap = canvas.parentElement;
+  const res = $("#wheelResult"), btn = $("#wheelBtn");
+  const people = COMMITTEE;
+  const N = people.length, SLICE = 360 / N, S = canvas.width, R = S / 2;
+  const imgs = [];
+  let rot = 0, spinning = false;
+
+  function draw() {
+    const a = (2 * Math.PI) / N;
+    ctx.clearRect(0, 0, S, S);
+    people.forEach((p, i) => {
+      const start = -Math.PI / 2 + i * a;
+      ctx.beginPath(); ctx.moveTo(R, R); ctx.arc(R, R, R, start, start + a); ctx.closePath();
+      ctx.fillStyle = i % 2 ? "#f5c518" : "#c8102e"; ctx.fill();
+      ctx.strokeStyle = "#1d1a17"; ctx.lineWidth = 3; ctx.stroke();
+
+      ctx.save();
+      ctx.translate(R, R); ctx.rotate(start + a / 2); // এখন +x মানে কেন্দ্র থেকে বাইরের দিকে
+      // ছবি (মাথা বাইরের দিকে)
+      const pr = R * 0.135, px = R * 0.76;
+      ctx.save();
+      ctx.translate(px, 0); ctx.rotate(Math.PI / 2);
+      ctx.beginPath(); ctx.arc(0, 0, pr, 0, 2 * Math.PI); ctx.fillStyle = "#fff"; ctx.fill();
+      ctx.lineWidth = 4; ctx.strokeStyle = "#1d1a17"; ctx.stroke();
+      ctx.clip();
+      if (imgs[i]) ctx.drawImage(imgs[i], -pr, -pr, pr * 2, pr * 2);
+      else { ctx.fillStyle = "#c8102e"; ctx.fillRect(-pr, -pr, pr * 2, pr * 2); ctx.font = `${pr}px serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.a, 0, 2); }
+      ctx.restore();
+      // নাম
+      const name = shortName(p.n);
+      let size = 30;
+      ctx.font = `700 ${size}px "Hind Siliguri", sans-serif`;
+      while (ctx.measureText(name).width > R * 0.4 && size > 16) { size -= 2; ctx.font = `700 ${size}px "Hind Siliguri", sans-serif`; }
+      ctx.fillStyle = i % 2 ? "#1d1a17" : "#fff"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.fillText(name, px - pr - 10, 2);
+      ctx.restore();
+    });
+  }
+  draw();
+  Promise.all(people.map((p, i) => (p.p ? loadImg(p.p).then((im) => (imgs[i] = im)) : null))).then(draw);
+  document.fonts.ready.then(draw);
+
+  const bills = store.get("kcp-bills", {});
+  function finish(i) {
+    spinning = false; wrap.classList.remove("spinning"); btn.disabled = false;
+    const p = people[i];
+    let line;
+    if (p.id === "imam") line = "উপদেষ্টারা বিল দেন না, শুধু উপদেশ দেন। আবার ঘোরান! 🙄";
+    else if (p.id === "sufan") line = "কিন্তু দোকানটাই তো ওনার! তাই বিল আবার পার্টির খাতায় বাকি লেখা হলো 😅";
+    else if (p.id === "tanim") line = "আহ্বায়ক আসবেন দুই ঘণ্টা পরে। বিল তখন দেবেন (ইনশাআল্লাহ)।";
+    else {
+      bills[p.id] = (bills[p.id] || 0) + 1; store.set("kcp-bills", bills);
+      line = `প্রতিক্রিয়া: "${p.s || pick(p.q)}" · এ পর্যন্ত ${bn(bills[p.id])} বার বিল দিলেন`;
+    }
+    res.innerHTML = `<div class="wr">${avatarHtml(p, p.p ? "" : "wr-emoji")}<div><b>আজকের চায়ের বিল দেবেন</b><strong>কমরেড ${p.n}!</strong><small>${line}</small></div></div>`;
+    confetti(150); buzz([70, 40, 70]);
+  }
+  function spin() {
+    if (spinning) return;
+    spinning = true; wrap.classList.add("spinning"); btn.disabled = true;
+    res.innerHTML = `<p class="game-sub">চাকা ঘুরছে... সবাই পকেট সামলান! 🤞</p>`;
+    buzz(20);
+    const i = Math.floor(Math.random() * N);
+    const jitter = (Math.random() - 0.5) * SLICE * 0.7;
+    const want = (360 - (i + 0.5) * SLICE + jitter + 360) % 360; // এই কোণে থামলে i নম্বর কাঁটার নিচে
+    rot += 360 * 6 + ((want - (rot % 360)) + 360) % 360;
+    canvas.style.transform = `rotate(${rot}deg)`;
+    let done = false;
+    const end = () => { if (done) return; done = true; finish(i); };
+    canvas.addEventListener("transitionend", end, { once: true });
+    setTimeout(end, reduceMotion ? 50 : 5300);
+  }
+  btn.addEventListener("click", spin);
+  $("#wheelHub").addEventListener("click", spin);
+  canvas.addEventListener("click", spin);
+})();
+
+/* ---------- খেলা ২: চা ঢালো চ্যালেঞ্জ (চেপে ধরে রাখুন) ---------- */
+(() => {
+  const btn = $("#teaBtn"), fill = $("#teaFill"), line = $("#teaLine"), msg = $("#teaMsg");
+  const stage = $("#teaStage"), cup = $("#cupWrap"), bestEl = $("#teaBest");
+  let level = 0, target = 70, pouring = false, done = false, t0 = 0, raf = 0;
+  let best = store.get("kcp-tea", 0);
+  bestEl.textContent = bn(best);
+
+  function reset() {
+    level = 0; done = false;
+    target = 55 + Math.floor(Math.random() * 30);
+    line.style.bottom = target + "%";
+    fill.style.height = "0%";
+    cup.classList.remove("spilled", "perfect");
+    cup.classList.add("empty");
+  }
+  // যত বেশি ধরে রাখবেন, তত দ্রুত পড়বে (সময় থেকে হিসাব, তাই ফোন ধীর হলেও ঠিক থাকে)
+  const levelAt = (t) => { const h = (t - t0) / 1000; return 16 * h + 15 * h * h; };
+  function frame(t) {
+    if (!pouring) return;
+    level = levelAt(t);
+    if (level >= 100) { level = 100; fill.style.height = "100%"; stop(true); return; }
+    fill.style.height = level + "%";
+    raf = requestAnimationFrame(frame);
+  }
+  function start(e) {
+    if (e) e.preventDefault();
+    if (pouring) return;
+    if (done) reset();
+    pouring = true; btn.classList.add("holding"); stage.classList.add("pouring"); cup.classList.remove("empty");
+    msg.textContent = "ঢালছি... ঢালছি... 🫖";
+    buzz(25);
+    t0 = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+  function stop(spilled = false) {
+    if (!pouring) return;
+    pouring = false; cancelAnimationFrame(raf);
+    level = Math.min(100, levelAt(performance.now()));
+    fill.style.height = level + "%";
+    if (level >= 100) spilled = true;
+    btn.classList.remove("holding"); stage.classList.remove("pouring");
+    done = true;
+    btn.textContent = "🔁 আবার ঢালুন (চেপে ধরুন)";
+    if (spilled === true) {
+      cup.classList.add("spilled"); buzz([100, 50, 100]);
+      msg.textContent = "😭 উপচে পড়ল! টেবিল ভেসে গেল — আজকের বিল আপনার।";
+      return;
+    }
+    const diff = Math.abs(level - target);
+    const score = Math.max(0, Math.round(100 - diff * 4));
+    let text;
+    if (score >= 95) { text = "🏆 একদম পারফেক্ট! আপনি পার্টির অফিসিয়াল চা-বিশেষজ্ঞ।"; cup.classList.add("perfect"); confetti(140); buzz([50, 30, 50]); }
+    else if (score >= 75) { text = "👏 দারুণ! সুফান ভাইও এত ভালো ঢালতে পারেন না।"; cup.classList.add("perfect"); }
+    else if (level < target) text = score >= 40 ? "চলে... তবে কাপের চেয়ে চা কম। কিপটামি করবেন না!" : "😅 এইটা চা না, চায়ের স্মৃতি!";
+    else text = "😬 প্রায় উপচে যাচ্ছিল! হাত কাঁপছে নাকি?";
+    if (score > best) { best = score; store.set("kcp-tea", best); bestEl.textContent = bn(best); text += " নতুন রেকর্ড!"; }
+    msg.textContent = `স্কোর ${bn(score)}/১০০ — ${text}`;
+  }
+  reset();
+  btn.addEventListener("pointerdown", (e) => { if (e.button > 0) return; try { btn.setPointerCapture(e.pointerId); } catch { /* পুরোনো ব্রাউজার */ } start(e); });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach((ev) => btn.addEventListener(ev, () => stop()));
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+  btn.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) start(e); });
+  btn.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); stop(); } });
+})();
+
+/* ---------- খেলা ৩: আড্ডায় না আসার অজুহাত ---------- */
+(() => {
+  const out = $("#excuseOut");
+  let lastText = "", lastI = -1;
+  $("#excuseBtn").addEventListener("click", () => {
+    let i; do { i = Math.floor(Math.random() * EXCUSES.length); } while (i === lastI);
+    lastI = i;
+    const who = pick(COMMITTEE);
+    lastText = `"${EXCUSES[i]}" — কমরেড ${who.n}`;
+    out.innerHTML = `<p>"${EXCUSES[i]}"</p><span class="who">${avatarHtml(who)} কমরেড ${who.n}</span>`;
+    out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
+    buzz(10);
+  });
+  $("#excuseShare").addEventListener("click", () => {
+    if (!lastText) { toast("আগে একটা অজুহাত বানান, কমরেড!"); return; }
+    shareText(`🙈 আজকের আড্ডায় না আসার অজুহাত:\n${lastText}`);
+  });
+})();
+
+/* ---------- নিচের মেনু: কোন অংশে আছেন ---------- */
+(() => {
+  const links = [...document.querySelectorAll("#bottomNav a")];
+  const map = new Map(links.map((a) => [a.getAttribute("href").slice(1), a]));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      links.forEach((a) => a.classList.toggle("active", a === map.get(e.target.id)));
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  map.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+  links.forEach((a) => a.addEventListener("click", () => buzz(8)));
 })();
 
 /* ---------- ফুটার সাল ---------- */
