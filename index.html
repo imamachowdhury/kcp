@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Galada&family=Great+Vibes&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- আপডেটের পর ?v= নম্বর বাড়ান (style.css ও script.js দুটোতেই), তাহলে সবার ব্রাউজারে নতুন ফাইল আসবে -->
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
 
@@ -195,10 +195,18 @@
     <!-- ====== আড্ডা জোন (খেলা) ====== -->
     <section class="section" id="games">
       <h2 class="section-title">আড্ডা জোন</h2>
-      <p class="section-sub">তিনটা খেলা, শূন্য কাজ। বিপ্লবের ফাঁকে একটু খেলে নিন।</p>
+      <p class="section-sub">ছয়টা খেলা, শূন্য কাজ। বিপ্লবের ফাঁকে একটু খেলে নিন।</p>
+      <div class="game-tabs" id="gameTabs" role="tablist" aria-label="খেলা বেছে নিন">
+        <button type="button" role="tab" data-game="wheel"><span>🎡</span>বিল কে দেবে</button>
+        <button type="button" role="tab" data-game="tea"><span>☕</span>চা ঢালো</button>
+        <button type="button" role="tab" data-game="wake"><span>😴</span>কমরেড জাগাও</button>
+        <button type="button" role="tab" data-game="who"><span>🗣️</span>কে বলেছে?</button>
+        <button type="button" role="tab" data-game="catch"><span>🥟</span>সিঙ্গারা ধরো</button>
+        <button type="button" role="tab" data-game="excuse"><span>🙈</span>অজুহাত</button>
+      </div>
       <div class="games">
 
-        <article class="game">
+        <article class="game" role="tabpanel" data-game="wheel">
           <h3>🎡 আজকের চায়ের বিল কে দেবে?</h3>
           <p class="game-sub">চাকা ঘোরান — পার্টির সবচেয়ে ন্যায্য (এবং একমাত্র) বিচার পদ্ধতি।</p>
           <div class="wheel-wrap">
@@ -210,7 +218,7 @@
           <div class="wheel-result" id="wheelResult" aria-live="polite"></div>
         </article>
 
-        <article class="game">
+        <article class="game" role="tabpanel" data-game="tea">
           <h3>☕ চা ঢালো চ্যালেঞ্জ</h3>
           <p class="game-sub">বোতাম চেপে ধরে রাখুন, লাল দাগ পর্যন্ত চা উঠলে ছেড়ে দিন। উপচে পড়লে বিল আপনার।</p>
           <div class="tea-stage" id="teaStage">
@@ -228,7 +236,7 @@
           <p class="tea-best">আপনার সেরা স্কোর: <b id="teaBest">০</b> / ১০০</p>
         </article>
 
-        <article class="game">
+        <article class="game" role="tabpanel" data-game="excuse">
           <h3>🙈 আড্ডায় না আসার অজুহাত মেশিন</h3>
           <p class="game-sub">আহ্বায়ক ফোন দিচ্ছেন? চিন্তা নেই, মেশিন আপনার হয়ে অজুহাত বানাবে।</p>
           <div class="excuse-out" id="excuseOut"><p>বোতাম চাপুন, অজুহাত নিন!</p></div>
@@ -236,6 +244,35 @@
             <button class="btn btn-red" id="excuseBtn" type="button">🎲 নতুন অজুহাত</button>
             <button class="btn btn-outline-dark" id="excuseShare" type="button">📤 গ্রুপে পাঠান</button>
           </div>
+        </article>
+
+        <article class="game" role="tabpanel" data-game="wake">
+          <h3>😴 ঘুমন্ত কমরেড জাগাও</h3>
+          <p class="game-sub">সাংগঠনিক সম্পাদকের দায়িত্ব এখন আপনার! কমরেড ঘুম ঘুম চোখে উঁকি দিলেই ট্যাপ করুন। সাবধান — 🧾 বিলে চাপলে ২ পয়েন্ট কাটা।</p>
+          <div class="game-hud"><span>⏱️ <b id="wakeTime">৩০</b> সে.</span><span>⭐ <b id="wakeScore">০</b></span><span>🏆 <b id="wakeBest">০</b></span></div>
+          <div class="mole-grid" id="moleGrid"></div>
+          <p class="tea-msg" id="wakeMsg" aria-live="polite">৩০ সেকেন্ডে কতজনকে জাগাতে পারবেন?</p>
+          <button class="btn btn-red btn-block" id="wakeBtn" type="button">▶️ শুরু করুন</button>
+        </article>
+
+        <article class="game" role="tabpanel" data-game="who">
+          <h3>🗣️ কে বলেছে?</h3>
+          <p class="game-sub">বাণী পড়ুন, ঠিক কমরেডকে ধরুন। পিছের মুখের আসল লোক হলে ৮-এ ৮ পাবেন।</p>
+          <div class="game-hud"><span>প্রশ্ন <b id="whoQ">১</b>/৮</span><span>⭐ <b id="whoScore">০</b></span><span>🏆 <b id="whoBest">০</b></span></div>
+          <blockquote class="who-quote" id="whoQuote"></blockquote>
+          <div class="who-options" id="whoOptions"></div>
+          <p class="tea-msg" id="whoMsg" aria-live="polite"></p>
+        </article>
+
+        <article class="game" role="tabpanel" data-game="catch">
+          <h3>🥟 সিঙ্গারা ধরো</h3>
+          <p class="game-sub">আঙুল দিয়ে ঝুড়ি ডানে-বামে টানুন (কম্পিউটারে ← → চাবি)। 🥟 +১, ☕ +২, 🧾 বিল −৩!</p>
+          <div class="game-hud"><span>⏱️ <b id="catchTime">৩০</b> সে.</span><span>⭐ <b id="catchScore">০</b></span><span>🏆 <b id="catchBest">০</b></span></div>
+          <div class="catch-wrap">
+            <canvas id="catchCanvas" width="360" height="440" aria-label="সিঙ্গারা ধরার খেলা"></canvas>
+            <button class="btn btn-red btn-big catch-start" id="catchBtn" type="button">▶️ শুরু করুন</button>
+          </div>
+          <p class="tea-msg" id="catchMsg" aria-live="polite">৩০ সেকেন্ডে যত পারেন ধরুন!</p>
         </article>
 
       </div>
@@ -347,6 +384,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="script.js?v=22"></script>
+  <script src="script.js?v=23"></script>
 </body>
 </html>

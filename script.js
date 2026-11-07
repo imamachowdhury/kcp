@@ -152,6 +152,7 @@ async function shareText(text) {
   }
   window.open("https://wa.me/?text=" + encodeURIComponent(`${full}\n${SITE}`), "_blank", "noopener");
 }
+const GAME_STOP = {}; // ট্যাব বদলালে চলমান খেলা থামানোর জন্য
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const loadImg = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
 
@@ -843,6 +844,7 @@ const showLeader = (() => {
     msg.textContent = `স্কোর ${bn(score)}/১০০ — ${text}`;
   }
   reset();
+  GAME_STOP.tea = () => stop();
   btn.addEventListener("pointerdown", (e) => { if (e.button > 0) return; try { btn.setPointerCapture(e.pointerId); } catch { /* পুরোনো ব্রাউজার */ } start(e); });
   ["pointerup", "pointercancel", "lostpointercapture"].forEach((ev) => btn.addEventListener(ev, () => stop()));
   btn.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -867,6 +869,280 @@ const showLeader = (() => {
     if (!lastText) { toast("আগে একটা অজুহাত বানান, কমরেড!"); return; }
     shareText(`🙈 আজকের আড্ডায় না আসার অজুহাত:\n${lastText}`);
   });
+})();
+
+/* ---------- খেলা ৪: ঘুমন্ত কমরেড জাগাও ---------- */
+(() => {
+  const grid = $("#moleGrid"), timeEl = $("#wakeTime"), scoreEl = $("#wakeScore"), bestEl = $("#wakeBest");
+  const msg = $("#wakeMsg"), btn = $("#wakeBtn");
+  const DUR = 30;
+  const holes = [];
+  let score = 0, left = DUR, running = false, spawnT = 0, clockT = 0, t0 = 0;
+  let best = store.get("kcp-wake", 0);
+  bestEl.textContent = bn(best);
+
+  for (let i = 0; i < 9; i++) {
+    const el = document.createElement("button");
+    el.type = "button"; el.className = "hole"; el.setAttribute("aria-label", `বেঞ্চ ${bn(i + 1)}`);
+    el.innerHTML = `<span class="mole"></span><span class="zz"></span>`;
+    el.addEventListener("pointerdown", (e) => { e.preventDefault(); hit(i); });
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); hit(i); } });
+    grid.appendChild(el);
+    holes.push({ el, mole: el.children[0], zz: el.children[1], up: false, bill: false, done: false, timer: 0, name: "" });
+  }
+  const elapsed = () => (performance.now() - t0) / 1000;
+
+  function show(i) {
+    const h = holes[i];
+    h.bill = Math.random() < 0.2; h.done = false;
+    if (h.bill) { h.mole.className = "mole bill"; h.mole.textContent = "🧾"; h.zz.textContent = ""; }
+    else {
+      const p = pick(COMMITTEE);
+      h.name = shortName(p.n);
+      h.mole.className = "mole";
+      h.mole.innerHTML = p.p ? `<img src="${p.p}" alt="" draggable="false">` : p.a;
+      h.zz.textContent = "💤";
+    }
+    h.el.classList.remove("hit", "ouch"); h.el.classList.add("up"); h.up = true;
+    clearTimeout(h.timer);
+    h.timer = setTimeout(() => hide(i), Math.max(520, 1150 - elapsed() * 20)); // সময় যত যায়, তত দ্রুত লুকায়
+  }
+  function hide(i) { const h = holes[i]; h.up = false; h.el.classList.remove("up"); clearTimeout(h.timer); }
+  function spawn() {
+    if (!running) return;
+    const free = holes.map((h, i) => (h.up ? -1 : i)).filter((i) => i >= 0);
+    if (free.length) show(pick(free));
+    spawnT = setTimeout(spawn, Math.max(330, 800 - elapsed() * 16));
+  }
+  function hit(i) {
+    const h = holes[i];
+    if (!running || !h.up || h.done) return;
+    h.done = true;
+    if (h.bill) {
+      score = Math.max(0, score - 2);
+      h.el.classList.add("ouch");
+      msg.textContent = pick(["🧾 বিল ধরে ফেললেন! −২", "বিলে হাত দিলেন কেন! −২", "সুফান ভাই খুশি, আপনার −২"]);
+      buzz([60, 30, 60]);
+    } else {
+      score++;
+      h.el.classList.add("hit"); h.zz.textContent = "😳";
+      msg.textContent = pick([`কমরেড ${h.name} জেগেছেন!`, `${h.name}: "আমি জেগেই ছিলাম!"`, `${h.name}: "আর পাঁচ মিনিট..."`, `${h.name}: "আড্ডা শুরু হয়ে গেছে?"`, `${h.name}: "কে ডাকে? চা আছে?"`]);
+      buzz(15);
+    }
+    scoreEl.textContent = bn(score);
+    clearTimeout(h.timer); h.timer = setTimeout(() => hide(i), 260);
+  }
+  function start() {
+    score = 0; left = DUR; running = true; t0 = performance.now();
+    scoreEl.textContent = bn(0); timeEl.textContent = bn(DUR);
+    btn.disabled = true; btn.textContent = "⏳ খেলা চলছে...";
+    msg.textContent = "জাগান! জাগান! ⏰";
+    clearInterval(clockT);
+    clockT = setInterval(() => { left--; timeEl.textContent = bn(left); if (left <= 0) end(); }, 1000);
+    spawn();
+  }
+  function stop() {
+    running = false; clearTimeout(spawnT); clearInterval(clockT);
+    holes.forEach((_, i) => hide(i));
+    btn.disabled = false; btn.textContent = "🔁 আবার খেলুন";
+  }
+  function end() {
+    stop();
+    let text;
+    if (score < 8) text = "😴 আপনিও ঘুমিয়ে পড়েছিলেন নাকি?";
+    else if (score < 16) text = "🙂 মন্দ না! অর্ধেক কমিটি জেগেছে।";
+    else if (score < 25) text = "👏 দারুণ! সাংগঠনিক সম্পাদকের পদ নিয়ে টানাটানি শুরু।";
+    else text = "🏆 অসাধারণ! পুরো কমিটি জেগে গেছে — এবার বিপ্লব হবেই (চা খাওয়ার পর)।";
+    if (score > best) { best = score; store.set("kcp-wake", best); bestEl.textContent = bn(best); text += " নতুন রেকর্ড!"; confetti(140); }
+    msg.textContent = `${bn(score)} জনকে জাগিয়েছেন। ${text}`;
+    buzz([50, 30, 50]);
+  }
+  btn.addEventListener("click", start);
+  GAME_STOP.wake = () => { if (running) { stop(); msg.textContent = "খেলা থামানো হয়েছে। আবার শুরু করুন!"; } };
+})();
+
+/* ---------- খেলা ৫: কে বলেছে? ---------- */
+(() => {
+  const quoteEl = $("#whoQuote"), opts = $("#whoOptions"), msg = $("#whoMsg");
+  const qEl = $("#whoQ"), scoreEl = $("#whoScore"), bestEl = $("#whoBest");
+  const ROUNDS = 8;
+  const pool = [];
+  COMMITTEE.forEach((c) => new Set([c.s, ...c.q].filter(Boolean)).forEach((text) => pool.push({ text, c })));
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  let round = 0, score = 0, locked = false, usedText = new Set(), usedPeople = new Set();
+  let best = store.get("kcp-who", 0);
+  bestEl.textContent = bn(best);
+
+  function next() {
+    if (round >= ROUNDS) { finish(); return; }
+    let item, tries = 0;
+    do { item = pick(pool); tries++; } while ((usedText.has(item.text) || usedPeople.has(item.c.id)) && tries < 80);
+    usedText.add(item.text); usedPeople.add(item.c.id);
+    const choices = shuffle([item.c, ...shuffle(COMMITTEE.filter((c) => c.id !== item.c.id)).slice(0, 3)]);
+    qEl.textContent = bn(round + 1);
+    quoteEl.textContent = item.text;
+    quoteEl.classList.remove("pop"); void quoteEl.offsetWidth; quoteEl.classList.add("pop");
+    msg.textContent = "";
+    opts.innerHTML = choices.map((c) => `<button type="button" class="who-opt" data-id="${c.id}">${c.p ? `<img src="${c.p}" alt="" width="46" height="46">` : `<span class="wo-emoji">${c.a}</span>`}<span>${shortName(c.n)}</span></button>`).join("");
+    locked = false;
+    opts.querySelectorAll(".who-opt").forEach((b) => b.addEventListener("click", () => answer(b, item.c)));
+  }
+  function answer(b, right) {
+    if (locked) return;
+    locked = true;
+    opts.querySelectorAll(".who-opt").forEach((o) => { o.disabled = true; if (o.dataset.id === right.id) o.classList.add("right"); });
+    if (b.dataset.id === right.id) {
+      score++; scoreEl.textContent = bn(score);
+      msg.textContent = pick(["✅ একদম ঠিক!", "✅ আপনি তো পিছের মুখের লোক!", "✅ সঠিক! এক কাপ চা আপনার পাওনা।", "✅ বাহ! কমিটির খবর সব রাখেন দেখি।"]);
+      buzz(15);
+    } else {
+      b.classList.add("wrong");
+      msg.textContent = `❌ ভুল! এটা বলেছেন কমরেড ${right.n}।`;
+      buzz([40, 30, 40]);
+    }
+    round++;
+    setTimeout(next, reduceMotion ? 700 : 1400);
+  }
+  function finish() {
+    const r = score >= 7 ? ["👑", "পিছের মুখের আসল লোক!", "আপনি কমিটির সবাইকে চেনেন — উপদেষ্টা পরিষদে আপনার নাম প্রস্তাব করা হলো।"]
+      : score >= 4 ? ["✊", "চলনসই কমরেড", "আড্ডায় আরও নিয়মিত আসুন, সবার বাণী মুখস্থ হয়ে যাবে।"]
+      : ["🕵️", "আপনি কি অন্য পাড়ার?", "কমিটির কাউকেই চেনেন না! সন্দেহজনক... পার্টি আপনাকে নজরে রাখছে।"];
+    if (score > best) { best = score; store.set("kcp-who", best); bestEl.textContent = bn(best); }
+    if (score >= 7) confetti(150);
+    quoteEl.textContent = `${bn(ROUNDS)}-এ ${bn(score)} পেয়েছেন!`;
+    msg.textContent = "";
+    opts.innerHTML = `<div class="who-end"><div class="big">${r[0]}</div><h4>${r[1]}</h4><p>${r[2]}</p><button type="button" class="btn btn-red" id="whoAgain">🔁 আবার খেলুন</button></div>`;
+    $("#whoAgain").addEventListener("click", reset);
+  }
+  function reset() { round = 0; score = 0; usedText = new Set(); usedPeople = new Set(); scoreEl.textContent = bn(0); next(); }
+  reset();
+})();
+
+/* ---------- খেলা ৬: সিঙ্গারা ধরো ---------- */
+(() => {
+  const canvas = $("#catchCanvas"), ctx = canvas.getContext("2d"), btn = $("#catchBtn"), msg = $("#catchMsg");
+  const timeEl = $("#catchTime"), scoreEl = $("#catchScore"), bestEl = $("#catchBest");
+  const W = 360, H = 440, DUR = 30, BY = H - 48;
+  const dpr = Math.min(2, window.devicePixelRatio || 1); // রেটিনা স্ক্রিনে ঝকঝকে দেখানোর জন্য
+  canvas.width = W * dpr; canvas.height = H * dpr; ctx.scale(dpr, dpr);
+  const EMOJI = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", serif';
+  const TYPES = [{ e: "🥟", v: 1, w: 60 }, { e: "☕", v: 2, w: 20 }, { e: "🧾", v: -3, w: 20 }];
+  let items = [], pops = [], bx = W / 2, targetX = W / 2, score = 0, running = false;
+  let t0 = 0, last = 0, nextSpawn = 0, raf = 0;
+  const keys = { l: false, r: false };
+  let best = store.get("kcp-catch", 0);
+  bestEl.textContent = bn(best);
+
+  function pickType() { let r = Math.random() * 100; for (const t of TYPES) { r -= t.w; if (r < 0) return t; } return TYPES[0]; }
+  function draw() {
+    ctx.fillStyle = "#fff7e3"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(200,16,46,.06)";
+    for (let x = -H; x < W; x += 44) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 22, 0); ctx.lineTo(x + 22 + H, H); ctx.lineTo(x + H, H); ctx.fill(); }
+    ctx.fillStyle = "#6b4a2f"; ctx.fillRect(0, H - 12, W, 12);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = `34px ${EMOJI}`;
+    items.forEach((it) => ctx.fillText(it.t.e, it.x, it.y));
+    ctx.font = `54px ${EMOJI}`;
+    ctx.fillText("🧺", bx, BY);
+    ctx.font = '700 24px "Hind Siliguri", sans-serif';
+    pops.forEach((p) => {
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.v > 0 ? "#1e7a2a" : "#c8102e";
+      ctx.fillText((p.v > 0 ? "+" : "−") + bn(Math.abs(p.v)), p.x, p.y);
+    });
+    ctx.globalAlpha = 1;
+  }
+  function frame() {
+    if (!running) return;
+    const t = performance.now();
+    const dt = Math.max(0, Math.min(0.05, (t - last) / 1000)); last = t;
+    const el = (t - t0) / 1000;
+    const left = Math.max(0, DUR - el);
+    timeEl.textContent = bn(Math.ceil(left));
+    if (keys.l) targetX -= 430 * dt;
+    if (keys.r) targetX += 430 * dt;
+    targetX = Math.max(28, Math.min(W - 28, targetX));
+    bx += (targetX - bx) * Math.min(1, dt * 18);
+    if (t >= nextSpawn) { // সময় যত যায়, তত বেশি আর তত দ্রুত পড়ে
+      items.push({ t: pickType(), x: 24 + Math.random() * (W - 48), y: -20, vy: 150 + el * 7 + Math.random() * 60 });
+      nextSpawn = t + Math.max(300, 720 - el * 14);
+    }
+    items.forEach((it) => { it.y += it.vy * dt; });
+    items = items.filter((it) => {
+      if (it.y > BY - 26 && it.y < BY + 12 && Math.abs(it.x - bx) < 38) { caught(it); return false; }
+      return it.y < H + 30;
+    });
+    pops.forEach((p) => { p.y -= 40 * dt; p.life -= dt * 1.4; });
+    pops = pops.filter((p) => p.life > 0);
+    draw();
+    if (left <= 0) { end(); return; }
+    raf = requestAnimationFrame(frame);
+  }
+  function caught(it) {
+    score = Math.max(0, score + it.t.v); scoreEl.textContent = bn(score);
+    pops.push({ x: it.x, y: BY - 44, v: it.t.v, life: 1 });
+    if (it.t.v < 0) {
+      canvas.classList.remove("shake"); void canvas.offsetWidth; canvas.classList.add("shake");
+      msg.textContent = pick(["🧾 বিল ধরে ফেললেন! −৩", "সুফান ভাইয়ের বিল! −৩", "বিল কেন ধরলেন কমরেড! −৩"]);
+      buzz([60, 30, 60]);
+    } else {
+      buzz(10);
+      if (Math.random() < 0.3) msg.textContent = pick(["🥟 মচমচে!", "☕ আহা, গরম চা!", "দারুণ ধরা!", "আরও আসছে!"]);
+    }
+  }
+  function start() {
+    items = []; pops = []; score = 0; scoreEl.textContent = bn(0);
+    bx = targetX = W / 2;
+    running = true; btn.hidden = true;
+    msg.textContent = "ধরুন! ধরুন! 🥟";
+    t0 = last = nextSpawn = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+  function stop() { running = false; cancelAnimationFrame(raf); btn.hidden = false; btn.textContent = "🔁 আবার খেলুন"; }
+  function end() {
+    stop(); draw();
+    let text = score < 10 ? "😅 সিঙ্গারা সব মাটিতে! পাড়ার কুকুর খুশি।"
+      : score < 25 ? "🙂 মন্দ না! আজকের নাস্তা হয়ে গেল।"
+      : score < 40 ? "👏 দারুণ! আপনি পার্টির অফিসিয়াল সিঙ্গারা পরিদর্শক।"
+      : "🏆 অবিশ্বাস্য! পুরো দোকানের সিঙ্গারা আপনার ঝুড়িতে।";
+    if (score > best) { best = score; store.set("kcp-catch", best); bestEl.textContent = bn(best); text += " নতুন রেকর্ড!"; confetti(140); }
+    msg.textContent = `স্কোর ${bn(score)} — ${text}`;
+    buzz([50, 30, 50]);
+  }
+  function aim(e) { const r = canvas.getBoundingClientRect(); targetX = ((e.clientX - r.left) / r.width) * W; }
+  canvas.addEventListener("pointerdown", (e) => { if (!running) return; try { canvas.setPointerCapture(e.pointerId); } catch { /* পুরোনো ব্রাউজার */ } aim(e); });
+  canvas.addEventListener("pointermove", (e) => { if (running) aim(e); });
+  addEventListener("keydown", (e) => {
+    if (!running) return;
+    if (e.key === "ArrowLeft") { keys.l = true; e.preventDefault(); }
+    if (e.key === "ArrowRight") { keys.r = true; e.preventDefault(); }
+  });
+  addEventListener("keyup", (e) => { if (e.key === "ArrowLeft") keys.l = false; if (e.key === "ArrowRight") keys.r = false; });
+  btn.addEventListener("click", start);
+  const pause = () => { if (running) { stop(); msg.textContent = "খেলা থামানো হয়েছে। আবার শুরু করুন!"; } };
+  document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
+  GAME_STOP.catch = pause;
+  // শুরুর আগে নমুনা ছবি
+  items = [{ t: TYPES[0], x: 80, y: 110 }, { t: TYPES[1], x: 270, y: 170 }, { t: TYPES[2], x: 160, y: 250 }];
+  draw();
+  document.fonts.ready.then(() => { if (!running) draw(); });
+})();
+
+/* ---------- খেলার ট্যাব (একবারে একটা খেলা) ---------- */
+(() => {
+  const tabs = [...document.querySelectorAll("#gameTabs button")];
+  const panels = [...document.querySelectorAll(".games .game")];
+  let current = null;
+  function open(k, save = true) {
+    if (current && current !== k && GAME_STOP[current]) GAME_STOP[current]();
+    current = k;
+    tabs.forEach((b) => b.setAttribute("aria-selected", b.dataset.game === k));
+    panels.forEach((p) => { p.hidden = p.dataset.game !== k; });
+    if (save) store.set("kcp-game", k);
+  }
+  tabs.forEach((b) => b.addEventListener("click", () => { open(b.dataset.game); buzz(8); }));
+  const saved = store.get("kcp-game", "wheel");
+  open(tabs.some((b) => b.dataset.game === saved) ? saved : "wheel", false);
 })();
 
 /* ---------- নিচের মেনু: কোন অংশে আছেন ---------- */
