@@ -138,7 +138,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ব্রাউজার স্টোরেজ বন্ধ থাকলে কিছু হবে না */ } },
 };
-const SITE = "https://imamachowdhury.github.io/kcp/";
+const SITE = "https://joinkcp.com/";
 const buzz = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch { /* কিছু ফোনে কাঁপুনি নেই */ } };
 // নামের ডাকনাম অংশ (চাকায় লেখার জন্য): "ইকরামুল হক হাসান" → "হাসান"
 const shortName = (n) => n.split(" ").filter((w) => !["আহমদ", "চৌধুরী", "আল", "রহমান", "হক"].includes(w)).pop() || n;

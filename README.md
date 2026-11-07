@@ -58,6 +58,8 @@ git push -u origin main
 
 ৪. ১-২ মিনিট পর সাইট চালু হবে এখানে: `https://<your-username>.github.io/kcp/`
 
+নিজস্ব ডোমেইন: সাইটটি এখন **https://joinkcp.com** ঠিকানায় চলে (Cloudflare-এ কেনা)। Cloudflare DNS-এ `@`-এর জন্য GitHub-এর ৪টা A রেকর্ড (185.199.108–111.153) আর `www` → `imamachowdhury.github.io` CNAME রেকর্ড আছে, সবগুলো "DNS only" (ধূসর মেঘ)। GitHub-এ Settings → Pages → Custom domain-এ `joinkcp.com` দেওয়া আছে।
+
 পরে কিছু বদলালে প্রথমে `index.html`-এ `style.css?v=` আর `script.js?v=` নম্বর এক বাড়িয়ে দিন (যেমন ৮ থেকে ৯), যাতে সবার ব্রাউজারে পুরোনো ফাইল না থাকে। তারপর:
 
 ```bash
