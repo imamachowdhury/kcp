@@ -156,23 +156,8 @@ const GAME_STOP = {}; // ট্যাব বদলালে চলমান খ�
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const loadImg = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
 
-// সিলের ছবির ক্রিম পটভূমি সরিয়ে শুধু লাল কালি রাখা (যেকোনো রঙের ওপর বসানো যায়)
-const stampReady = loadImg("assets/stamp.webp").then((img) => {
-  if (!img) return null;
-  const size = 640;
-  const c = document.createElement("canvas");
-  c.width = c.height = size;
-  const x = c.getContext("2d");
-  x.drawImage(img, 0, 0, size, size);
-  const px = x.getImageData(0, 0, size, size), d = px.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const ink = Math.min(1, Math.max(0, (235 - d[i + 1]) / 175)); // সবুজ মান কম = লাল কালি
-    d[i] = 184; d[i + 1] = 32; d[i + 2] = 52; d[i + 3] = Math.round(ink * 255);
-  }
-  x.putImageData(px, 0, 0);
-  return c;
-});
-stampReady.then((c) => { const el = $(".letter-stamp"); if (c && el) el.src = c.toDataURL("image/png"); });
+// সিলের ছবি (পটভূমি স্বচ্ছ, যেকোনো রঙের ওপর বসানো যায়)
+const stampReady = loadImg("assets/logo/stamp-600.webp");
 
 let toastTimer;
 function toast(msg, ms = 2800) {
@@ -539,7 +524,7 @@ const showLeader = (() => {
   const W = canvas.width, H = canvas.height;
   let emblem = null, stamp = null;
   const ready = Promise.all([
-    loadImg("assets/emblem.jpg").then((i) => (emblem = i)),
+    loadImg("assets/logo/seal-600.webp").then((i) => (emblem = i)),
     stampReady.then((c) => (stamp = c)),
     document.fonts.load('40px "Galada"'),
     document.fonts.load('700 30px "Hind Siliguri"'),
@@ -587,12 +572,10 @@ const showLeader = (() => {
     ctx.strokeStyle = "#f5c518"; ctx.lineWidth = 10; roundRect(14, 14, W - 28, H - 28, 22); ctx.stroke();
 
     // প্রতীক
-    ctx.save();
-    roundRect(40, 34, 160, 160, 20); ctx.fillStyle = "#f7f1e3"; ctx.fill();
-    ctx.clip();
-    if (emblem) ctx.drawImage(emblem, 40, 34, 160, 160);
-    ctx.restore();
-    ctx.strokeStyle = "#f5c518"; ctx.lineWidth = 4; roundRect(40, 34, 160, 160, 20); ctx.stroke();
+    ctx.beginPath(); ctx.arc(120, 114, 84, 0, Math.PI * 2);
+    ctx.fillStyle = "#f6efe1"; ctx.fill();
+    ctx.strokeStyle = "#f5c518"; ctx.lineWidth = 5; ctx.stroke();
+    if (emblem) ctx.drawImage(emblem, 48, 42, 144, 144);
 
     // শিরোনাম
     ctx.fillStyle = "#f5c518"; ctx.textBaseline = "alphabetic";

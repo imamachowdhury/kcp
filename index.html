@@ -15,20 +15,23 @@
   <meta property="og:image:height" content="630">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-  <link rel="apple-touch-icon" href="assets/favicon.png">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Galada&family=Great+Vibes&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- আপডেটের পর ?v= নম্বর বাড়ান (style.css ও script.js দুটোতেই), তাহলে সবার ব্রাউজারে নতুন ফাইল আসবে -->
-  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 
   <!-- ====== নেভিগেশন ====== -->
   <header class="nav" id="top">
     <a href="#home" class="brand">
-      <img class="brand-logo" src="assets/emblem.jpg" alt="" width="40" height="40">
+      <img class="brand-logo" src="assets/logo/seal-256.webp" alt="" width="44" height="44">
       <span>KCP</span>
     </a>
     <button class="nav-toggle" id="navToggle" aria-label="মেনু খুলুন" aria-expanded="false">☰</button>
@@ -51,7 +54,7 @@
       <div class="hero-rays" aria-hidden="true"></div>
       <div class="hero-inner">
         <button class="hero-badge" id="heroLogo" type="button" aria-label="পার্টির প্রতীক — ক্লিক করুন">
-          <img src="assets/emblem.jpg" alt="কতোয়াল পুর কমিউনিস্ট পার্টির প্রতীক: কাস্তের ভেতরে চায়ের কাপ, তারা ও চা বাগান" width="640" height="640">
+          <img src="assets/logo/seal-600.webp" alt="কতোয়াল পুর কমিউনিস্ট পার্টির প্রতীক: কাস্তের ভেতরে চায়ের কাপ, তারা ও চা বাগান" width="600" height="600">
         </button>
         <p class="hero-kicker">হেড অফিস: পিছের মুখ, বৃহত্তর কতোয়ালপুর</p>
         <h1>কতোয়াল পুর<br>কমিউনিস্ট পার্টি</h1>
@@ -151,7 +154,7 @@
       <p class="section-sub">নামের ওপর ক্লিক করলে সেই নেতার প্রোফাইলে চলে যাবেন।</p>
       <article class="letter">
         <header class="letter-head">
-          <img src="assets/emblem.jpg" alt="" width="90" height="90">
+          <img src="assets/logo/seal-256.webp" alt="" width="90" height="90">
           <div>
             <h3>কতোয়াল পুর কমিউনিস্ট পার্টি</h3>
             <p>হেড অফিস: পিছের মুখ, বৃহত্তর কতোয়ালপুর</p>
@@ -164,7 +167,7 @@
         <p class="letter-body">এতদ্বারা কতোয়াল পুর কমিউনিস্ট পার্টির এক বছরের জন্য কেন্দ্রীয় আহ্বায়ক কমিটি ঘোষণা করা হলো:</p>
         <div class="letter-list" id="noticeList"></div>
         <footer class="letter-sign">
-          <img class="letter-stamp" src="assets/stamp.webp" alt="পার্টির সিল: অনুমোদিত, কেন্দ্রীয় আড্ডা কমিটি" width="1600" height="1600">
+          <img class="letter-stamp" src="assets/logo/stamp-600.webp" alt="পার্টির সিল: অনুমোদিত, কেন্দ্রীয় আড্ডা কমিটি" width="600" height="600">
           <div class="sig">
             <span class="sig-script">Imam A Chy</span>
             <a href="#m-imam"><b>ইমাম আহমদ চৌধুরী</b></a>
@@ -363,7 +366,7 @@
   </main>
 
   <footer class="footer">
-    <img class="footer-banner" src="assets/banner.webp" alt="KCP — কতোয়াল পুর কমিউনিস্ট পার্টি — দুনিয়ার আড্ডাবাজ এক হও!" width="2000" height="700" loading="lazy">
+    <img class="footer-banner" src="assets/logo/banner-dark-1200.webp" alt="KCP — কতোয়াল পুর কমিউনিস্ট পার্টি — দুনিয়ার আড্ডাবাজ এক হও!" width="1200" height="420" loading="lazy">
     <p>হেড অফিস: পিছের মুখ, বৃহত্তর কতোয়ালপুর · পার্টি অফিস: সুফান বিকাশ ঘর</p>
     <p class="footer-small">© <span id="year"></span> সকল অধিকার জনগণের (এবং সুফান বিকাশ ঘরের)।<br>
       এটি একটি সম্পূর্ণ হাস্যরসাত্মক ওয়েবসাইট। বাস্তবের কোনো দলের সাথে মিল সম্পূর্ণ কাকতালীয়।</p>
@@ -388,6 +391,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="script.js?v=24"></script>
+  <script src="script.js?v=25"></script>
 </body>
 </html>
