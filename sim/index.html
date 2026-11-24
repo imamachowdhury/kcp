@@ -418,7 +418,8 @@ let door = null;
 const DUKAN_AT = { x: 43.2, y: 66.8 };
 const dukan = buildings.filter(b => b !== office).reduce((m, b) => { const d = pip(DUKAN_AT.x, DUKAN_AT.y, b.p) ? -1 : Math.hypot(b.cx - DUKAN_AT.x, b.cy - DUKAN_AT.y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b;
 // the cream house with the tin roof behind Mamur Dukan's compound wall
-const mamuHouse = (() => { const [x, y] = MAMU_AT(7.5, 10.8); return buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b; })();
+const mamuAt = (a, o) => { const [x, y] = MAMU_AT(a, o); return buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b; };
+const mamuHouse = mamuAt(7.5, 10.8), mamuBack = mamuAt(-2.1, 17.5); // and the low grey-tin house seen over the gate
 const officeU = (() => { const dx = office.cx - door.x, dy = office.cy - door.y, L = Math.hypot(dx, dy) || 1; return { x: dx / L, y: dy / L }; })();
 const officeV = { x: -officeU.y, y: officeU.x };
 const DROP_R = 18;
@@ -554,6 +555,7 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     mamu.tag = MAMU_AT(-3.5, 14);
     mamu.walls = [[[MAMU_AT(-14, 5.2), MAMU_AT(-5, 5.2)], 2.0, "#b9b6ae", "#d2cfc7"], [[MAMU_AT(1.95, 5.2), MAMU_AT(12, 5.2)], 2.2, "#efe5c0", "#fbf4dc"], [[MAMU_AT(12, 5.2), MAMU_AT(12, 18.5)], 2.2, "#efe5c0", "#fbf4dc"]];
     mamu.gate = [MAMU_AT(-1.55, 5.2), MAMU_AT(1.75, 5.2)];
+    if (mamuBack) { mamuBack.h = 3.0; mamuBack.floors = 1; mamuBack.tin = true; mamuBack.roof = "#a8adb0"; mamuBack.tank = mamuBack.stair = mamuBack.cloth = mamuBack.dish = null; }
     if (mamuHouse) { mamuHouse.h = 3.4; mamuHouse.floors = 1; mamuHouse.tin = true; mamuHouse.roof = "#9a6a50"; mamuHouse.tank = mamuHouse.stair = mamuHouse.cloth = mamuHouse.dish = null; }
   }
   if (dukan) { // one long storey under grey tin, open to the road

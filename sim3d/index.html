@@ -352,7 +352,8 @@ const officeV = { x: -officeU.y, y: officeU.x };
 const DUKAN_AT = { x: 43.2, y: 66.8 };
 const dukan = buildings.filter(b => b !== office).reduce((m, b) => { const d = pip(DUKAN_AT.x, DUKAN_AT.y, b.p) ? -1 : Math.hypot(b.cx - DUKAN_AT.x, b.cy - DUKAN_AT.y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b;
 // the cream house with the tin roof behind Mamur Dukan's compound wall
-const mamuHouse = (() => { const [x, y] = MAMU_AT(7.5, 10.8); return buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b; })();
+const mamuAt = (a, o) => { const [x, y] = MAMU_AT(a, o); return buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b; };
+const mamuHouse = mamuAt(7.5, 10.8), mamuBack = mamuAt(-2.1, 17.5); // and the low grey-tin house seen over the gate
 // a building's frame: u points from its road into it, v along the road; w and d are its size along v and u
 function frameOf(b) {
   const nr = nearestRoad(b.cx, b.cy), L = Math.hypot(b.cx - nr.x, b.cy - nr.y) || 1, u = { x: (b.cx - nr.x) / L, y: (b.cy - nr.y) / L }, v = { x: -u.y, y: u.x };
@@ -653,7 +654,7 @@ const tanks = [], stairs = [];
     b.ips = R() < .3;
     const wall = rgb(b === office ? "#f5c518" : WALLS[(R() * WALLS.length) | 0]);
     const tin = b !== office && b.h < 4 && R() < .7;
-    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse) continue; // these have their own models below
+    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack) continue; // these have their own models below
     let cum = 0;
     b.p.forEach((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dz = n[1] - q[1], L = Math.hypot(dx, dz); if (L < .01) return;
@@ -1038,21 +1039,20 @@ if (dukan) {
   mamu.h = 3.3;
   // the stall: a box open at the front on a low plinth
   box(3.3, .35, 3.0, 0, .175, .1, conc);
-  box(3, 2.6, .2, 0, 1.65, -1.2, plaster); for (const sx of [-1, 1]) box(.2, 2.6, 2.6, sx * 1.4, 1.65, 0, plaster);
-  box(3, .12, 2.6, 0, 2.99, 0, plaster);
+  box(3, 2.45, .2, 0, 1.575, -1.2, plaster); for (const sx of [-1, 1]) box(.2, 2.45, 2.6, sx * 1.4, 1.575, 0, plaster); // walls stop under the tin
   const shelf = canvasTex(256, 200, (c) => {
     c.fillStyle = "#2b2520"; c.fillRect(0, 0, 256, 200); const R = rng32(41), cols = ["#e0301e", "#f5c518", "#2f8a4f", "#f08a24", "#3b6fd1", "#f6efe1", "#c2185b"];
     for (let r = 0; r < 4; r++) { c.fillStyle = "#7a5a3a"; c.fillRect(0, 46 + r * 44, 256, 4); for (let x = 3; x < 250;) { const w = 5 + R() * 12, hh = 12 + R() * 22; c.fillStyle = cols[(R() * 7) | 0]; c.fillRect(x, 46 + r * 44 - hh, w, hh); x += w + 2; } }
   });
-  plane(2.6, 2.5, lam({ map: shelf }), 0, 1.6, -1.09);
+  plane(2.6, 2.4, lam({ map: shelf }), 0, 1.55, -1.09);
   const curtain = canvasTex(64, 128, (c) => { c.fillStyle = "#7a1f2b"; c.fillRect(0, 0, 64, 128); c.fillStyle = "rgba(245,197,24,.55)"; for (let y = 8; y < 128; y += 18) for (let x = 6; x < 64; x += 16) { c.beginPath(); c.arc(x, y, 3, 0, Math.PI * 2); c.fill(); } c.fillStyle = "rgba(0,0,0,.25)"; for (let x = 0; x < 64; x += 10) c.fillRect(x, 0, 3, 128); });
   for (const sx of [-1, 1]) plane(.5, 2.1, lam({ map: curtain, side: THREE.DoubleSide }), sx * 1.05, 1.6, 1.22);
   const chipsT = canvasTex(32, 160, (c) => { const R = rng32(43), cols = ["#e0301e", "#f5c518", "#2f8a4f", "#f08a24", "#3b6fd1", "#c2185b"]; for (let y = 0; y < 160; y += 22) { c.fillStyle = cols[(R() * 6) | 0]; c.fillRect(2, y, 28, 20); c.fillStyle = "rgba(255,255,255,.6)"; c.fillRect(8, y + 7, 16, 5); } });
   for (let k = 0; k < 9; k++) { const p = plane(.16, 1.0, lam({ map: chipsT, side: THREE.DoubleSide }), -.75 + k * .19, 2.3 - (k % 2) * .1, 1.1 + (k % 3) * .04); p.rotation.y = k % 2 ? .25 : -.25; }
   box(1.4, .85, .45, -.15, .77, .95, wood);                                            // counter
-  box(.12, 2.75, .12, 1.36, 1.72, 1.3, lam({ color: "#2f6db3" }));                     // blue post at the stall mouth
-  const tin = slope(3.7, -1.35, 3.3, 2.25, 2.55, lam({ map: sheetTex([150, 112, 86], true, 47) })); tin.material.map.wrapS = tin.material.map.wrapT = THREE.RepeatWrapping;
-  plane(1.9, .34, new THREE.MeshBasicMaterial({ map: signTex(["রিয়েল মামুর দোকান"], "#c8102e", "#f6efe1", 360, 64, 34) }), 0, 2.72, 1.33);
+  box(.12, 2.5, .12, 1.36, 1.6, 1.3, lam({ color: "#2f6db3" }));                     // blue post at the stall mouth
+  const tin = slope(3.7, -1.35, 3.25, 2.25, 2.75, lam({ map: sheetTex([150, 112, 86], true, 47) })); tin.material.map.wrapS = tin.material.map.wrapT = THREE.RepeatWrapping;
+  { const sg = plane(2.3, .4, new THREE.MeshBasicMaterial({ map: signTex(["রিয়েল মামুর দোকান"], "#c8102e", "#f6efe1", 400, 70, 40) }), 0, 2.36, 2.24); sg.rotation.x = -.12; } // board hung from the tin's edge
   const coco = lam({ color: "#5d8f2e" });                                              // green coconuts by the door
   for (const [cx, cz] of [[1.0, 1.75], [1.25, 1.85], [1.12, 1.6], [.85, 1.9]]) { const m = new THREE.Mesh(new THREE.SphereGeometry(.17, 10, 8), coco); m.position.set(cx, .17, cz); m.castShadow = true; g.add(m); }
   { const [bx, bz] = L(-1.95, 4.6); box(1.2, .08, .38, bx - .1, .46, bz, wood); for (const dx of [-.45, .35]) box(.08, .42, .3, bx + dx, .21, bz, wood); } // the bench
@@ -1075,6 +1075,13 @@ if (dukan) {
     for (let x = 8; x < 60; x += 7) c.fillRect(x, 86, 2.5, 38);                       // the barred bottom
   });
   for (const [a0, a1] of [[-1.55, .2], [.2, 1.75]]) { const [xa, za] = L(a0, 5.2), [xb] = L(a1, 5.2); plane(Math.abs(xb - xa), 2.0, lam({ map: gateT, side: THREE.DoubleSide }), (xa + xb) / 2, 1.05, za + .02); }
+}
+// the low house behind the gate: plain walls under grey tin
+if (mamuBack) {
+  const f = frameOf(mamuBack), { g, box } = landmark(f);
+  mamuBack.h = 3.8;
+  box(f.w, 2.8, f.d, 0, 1.4, 0, lam({ color: "#e2dccb" }));
+  hipRoof(g, f.w, f.d, 2.8, 3.8, sheetTex([168, 172, 174], true, 61));
 }
 // the cream house behind the wall: one storey, a pink band along the top, a tin roof and the black tank by its west end
 if (mamuHouse) {
@@ -2013,7 +2020,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 // test hook
 window.__sim3 = {
   get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
-  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, brick, mamu, mamuHouse, get placeTags() { return placeTags; }, openShop, closeShop,
+  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };
