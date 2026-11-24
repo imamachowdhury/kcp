@@ -190,6 +190,22 @@
     .icon-btn { width: 38px; height: 38px; font-size: 17px; }
   }
   @media (hover: hover) and (pointer: fine) { #horn { width: 80px; height: 80px; } }
+  /* phone driving buttons: steer on the left, gas and brake on the right (shown with the horn) */
+  .pad { display: none; }
+  .pad button { position: fixed; z-index: 3; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px); width: 70px; height: 70px; padding: 0;
+    border: 3px solid var(--ink); border-radius: 50%; background: rgba(246, 239, 225, .9); box-shadow: 3px 3px 0 var(--ink); color: var(--ink);
+    font: 700 26px/1 var(--font-body); cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .pad .pl { left: max(14px, env(safe-area-inset-left)); }
+  .pad .pr { left: calc(max(14px, env(safe-area-inset-left)) + 82px); }
+  .pad .pg { right: max(14px, env(safe-area-inset-right)); width: 78px; height: 104px; border-radius: 18px; background: #2f8a4f; color: var(--paper); font-size: 17px; }
+  .pad .pg small { display: block; font-size: 20px; margin-bottom: 4px; }
+  .pad .pb { right: calc(max(14px, env(safe-area-inset-right)) + 90px); width: 72px; height: 72px; border-radius: 18px; background: var(--red); color: var(--paper); font-size: 16px; }
+  .pad .on { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); filter: brightness(.88); }
+  @media (pointer: coarse) {
+    #horn + .pad { display: block; }
+    #horn[hidden] + .pad { display: none; }
+    #horn { right: max(14px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 122px); width: 78px; height: 78px; font-size: 17px; }
+  }
 </style>
 </head>
 <body>
@@ -214,6 +230,7 @@
   </div>
 </div>
 <button id="horn" hidden>প্যাঁ-পোঁ!<small id="hornKey">Space</small></button>
+<div class="pad" id="pad"><button class="pl" data-k="pad-l" aria-label="বামে ঘোরাও">◀</button><button class="pr" data-k="pad-r" aria-label="ডানে ঘোরাও">▶</button><button class="pb" data-k="pad-brake">ব্রেক</button><button class="pg" data-k="pad-gas"><small>▲</small>গ্যাস</button></div>
 <div class="attrib">ম্যাপ © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
 
 <div class="screen" id="start">
@@ -233,7 +250,7 @@
       <li><span>💰</span><span>প্রতি কমরেডের <b>ভাড়া</b> পাবে, গরু-দেয়ালে ধাক্কায় <b>জরিমানা</b>। টাকা জমিয়ে <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।</span></li>
       <li><span>⚡</span><span>সাবধান: মাঝপথে <b>লোডশেডিং</b> আর <b>ঝুম বৃষ্টি</b>! একসাথে ৩ জন নামালে <b>হ্যাটট্রিক</b>।</span></li>
     </ul>
-    <p class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> বা <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> দিয়ে চালাও · <kbd>Space</kbd> = হর্ন<br>মোবাইলে: স্ক্রিনে আঙুল রেখে যেদিকে যেতে চাও সেদিকে টানো</p>
+    <p class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> বা <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> দিয়ে চালাও · <kbd>Space</kbd> = হর্ন<br>মোবাইলে: নিচে ◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস আর ব্রেক (চাইলে স্ক্রিনে আঙুল টেনেও চালানো যায়)</p>
     <div class="drivers" id="drivers">
       <p class="sec">আজকে সিএনজি চালাবেন কে?</p>
       <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু এক্সিডেন্টের ভয়ও বেশি।</small></button>
@@ -701,6 +718,13 @@ const hornBtn = document.getElementById("horn");
 hornBtn.addEventListener("pointerdown", e => { e.preventDefault(); horn(); });
 function flashHorn() { hornBtn.classList.add("hit"); setTimeout(() => hornBtn.classList.remove("hit"), 120); }
 if (matchMedia("(pointer: coarse)").matches) document.getElementById("hornKey").textContent = "হর্ন";
+// phone buttons press "pad-*" keys while a finger is on them
+for (const b of document.querySelectorAll("#pad button")) {
+  const k = b.dataset.k, off = () => { keys.delete(k); b.classList.remove("on"); };
+  b.addEventListener("pointerdown", e => { e.preventDefault(); keys.add(k); b.classList.add("on"); });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(ev, off);
+  b.addEventListener("contextmenu", e => e.preventDefault());
+}
 
 function readInput() {
   let ix = 0, iy = 0;
@@ -708,6 +732,12 @@ function readInput() {
   if (keys.has("arrowright") || keys.has("d")) ix += 1;
   if (keys.has("arrowup") || keys.has("w")) iy -= 1;
   if (keys.has("arrowdown") || keys.has("s")) iy += 1;
+  const pl = keys.has("pad-l"), pr = keys.has("pad-r"), pg = keys.has("pad-gas");
+  if (keys.has("pad-brake")) return { ix: 0, iy: 0, m: 0, brake: true };
+  if (P && (pl || pr || pg)) { // phone buttons: turn left or right of where the CNG points
+    const st = (pr ? 1 : 0) - (pl ? 1 : 0), a = P.a + st * .8;
+    return { ix: Math.cos(a), iy: Math.sin(a), m: pg ? 1 : st ? .4 : 0, tk: .55 };
+  }
   if (stick) {
     const dx = stick.x - stick.ox, dy = stick.y - stick.oy, L = Math.hypot(dx, dy);
     if (L > 8) { const m = Math.min(1, L / 55); ix = dx / L * m; iy = dy / L * m; }
@@ -1256,12 +1286,12 @@ function update(dt) {
   else if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
   else if (inp.m > .12) {
     const da = wrapAng(Math.atan2(inp.iy, inp.ix) - P.a);
-    const tr = (P.v < 3 ? 6 : 4.2) * DRV().turn * (1 - (has("up-umbrella") ? 0 : .35) * rainLevel) * dt;
+    const tr = (P.v < 3 ? 6 : 4.2) * (inp.tk || 1) * DRV().turn * (1 - (has("up-umbrella") ? 0 : .35) * rainLevel) * dt;
     if (P.v > 10 && Math.abs(da) > 1.1) skids.push({ x: P.x, y: P.y, a: P.a, t: 0 });
     P.a = wrapAng(P.a + clamp(da, -tr, tr));
     const tv = maxV * inp.m * Math.max(.12, Math.cos(da));
     P.v += clamp(tv - P.v, -24 * dt, 9 * dt);
-  } else P.v += clamp(-P.v, -15 * dt, 15 * dt);
+  } else { const b = inp.brake ? 34 : 15; P.v += clamp(-P.v, -b * dt, b * dt); }
   if (P.v > maxV) P.v = Math.max(maxV, P.v - 22 * dt);
   P.x += Math.cos(P.a) * P.v * dt; P.y += Math.sin(P.a) * P.v * dt;
   if (DRV().crashy && P.stun <= 0 && P.v > 13) { // Ponki Vai takes corners flat out, and sometimes it goes wrong

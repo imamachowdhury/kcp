@@ -164,6 +164,23 @@
     .count { white-space: nowrap; } .seats { margin-left: 4px; }
     #horn { width: 84px; height: 84px; font-size: 17px; }
   }
+  /* phone driving buttons: steer on the left, gas and brake on the right (shown with the horn) */
+  .pad { display: none; }
+  .pad button { position: fixed; z-index: 3; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px); width: 70px; height: 70px; padding: 0;
+    border: 3px solid var(--ink); border-radius: 50%; background: rgba(246, 239, 225, .9); box-shadow: 3px 3px 0 var(--ink); color: var(--ink);
+    font: 700 26px/1 var(--font-body); cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .pad .pl { left: max(14px, env(safe-area-inset-left)); }
+  .pad .pr { left: calc(max(14px, env(safe-area-inset-left)) + 82px); }
+  .pad .pg { right: max(14px, env(safe-area-inset-right)); width: 78px; height: 104px; border-radius: 18px; background: #2f8a4f; color: var(--paper); font-size: 17px; }
+  .pad .pg small { display: block; font-size: 20px; margin-bottom: 4px; }
+  .pad .pb { right: calc(max(14px, env(safe-area-inset-right)) + 90px); width: 72px; height: 72px; border-radius: 18px; background: var(--red); color: var(--paper); font-size: 16px; }
+  .pad .on { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); filter: brightness(.88); }
+  @media (pointer: coarse) {
+    #horn + .pad { display: block; }
+    #horn[hidden] + .pad { display: none; }
+    #horn { right: max(14px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 122px); width: 78px; height: 78px; font-size: 17px; }
+  }
+  @media (pointer: coarse) { #target { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 92px); } }
 </style>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
 </head>
@@ -195,6 +212,7 @@
   </div>
 </div>
 <button id="horn" hidden>প্যাঁ-পোঁ!<small>Space</small></button>
+<div class="pad" id="pad"><button class="pl" data-k="pad-l" aria-label="বামে ঘোরাও">◀</button><button class="pr" data-k="pad-r" aria-label="ডানে ঘোরাও">▶</button><button class="pb" data-k="pad-brake">ব্রেক</button><button class="pg" data-k="pad-gas"><small>▲</small>গ্যাস</button></div>
 <div class="keys" id="keys" hidden>W/↑ চালাও · S/↓ ব্রেক · A D/← → ঘোরাও · Space হর্ন · C ক্যামেরা</div>
 
 <div class="screen" id="start">
@@ -1539,12 +1557,23 @@ const hornBtn = el("horn");
 hornBtn.addEventListener("pointerdown", e => { e.preventDefault(); horn(); flashHorn(); });
 function flashHorn() { hornBtn.classList.add("hit"); setTimeout(() => hornBtn.classList.remove("hit"), 120); }
 if (mobile) hornBtn.querySelector("small").textContent = "হর্ন";
+// phone buttons press "pad-*" keys while a finger is on them
+for (const b of document.querySelectorAll("#pad button")) {
+  const k = b.dataset.k, off = () => { keys.delete(k); b.classList.remove("on"); };
+  b.addEventListener("pointerdown", e => { e.preventDefault(); keys.add(k); b.classList.add("on"); });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(ev, off);
+  b.addEventListener("contextmenu", e => e.preventDefault());
+}
 function readInput() {
   let steer = 0, gas = 0;
   if (keys.has("arrowleft") || keys.has("a")) steer -= 1;
   if (keys.has("arrowright") || keys.has("d")) steer += 1;
   if (keys.has("arrowup") || keys.has("w")) gas += 1;
   if (keys.has("arrowdown") || keys.has("s")) gas -= 1;
+  if (keys.has("pad-l")) steer -= 1;
+  if (keys.has("pad-r")) steer += 1;
+  if (keys.has("pad-gas")) gas += 1;
+  if (keys.has("pad-brake")) gas -= 1;
   if (stick) {
     const dx = clamp((stick.x - stick.ox) / 50, -1, 1), dy = clamp((stick.y - stick.oy) / 50, -1, 1);
     stickKnob.style.transform = `translate(${dx * 32}px, ${dy * 32}px)`;
@@ -2214,7 +2243,7 @@ requestAnimationFrame(loop);
 // ready once the first frame (and its shaders) are done
 requestAnimationFrame(() => requestAnimationFrame(() => {
   el("play").disabled = false; el("play").textContent = "সিএনজি স্টার্ট দাও";
-  el("loading").textContent = mobile ? "বাম দিকে আঙুল টেনে চালাও, ডানে হর্ন।" : "W/↑ চালাও · A D ঘোরাও · Space হর্ন · C ক্যামেরা · Enter শুরু";
+  el("loading").textContent = mobile ? "◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস-ব্রেক আর হর্ন। (আঙুল টেনেও চালানো যায়)" : "W/↑ চালাও · A D ঘোরাও · Space হর্ন · C ক্যামেরা · Enter শুরু";
 }));
 
 // test hook
