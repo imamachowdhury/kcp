@@ -42,7 +42,11 @@
     [[-38.8, 109.5], [-31.7, 105.9], [-19.9, 104.7], [-18.7, 110.7], [-20.5, 121.3], [-18.7, 127.2], [-22.3, 133.1], [-29.4, 135.5], [-35.3, 131.9], [-37.7, 123.7], [-39.4, 116.6]],
     [[-35.3, 145], [-24.6, 143.8], [-22.3, 149.7], [-23.4, 161.5], [-35.3, 161.5], [-36.5, 152]],
     // east, past the fields, just south of the road
-    [[99.7, 87.6], [110.4, 86.4], [113.9, 91.7], [112.2, 98.8], [103.3, 100.6], [98, 96.5]]
+    [[99.7, 87.6], [110.4, 86.4], [113.9, 91.7], [112.2, 98.8], [103.3, 100.6], [98, 96.5]],
+    // at Kotalpur Central Jame Mosque, from the satellite (Street View doesn't reach it): the walled pond in the yard east of
+    // the prayer hall, and the long pond in the trees south of the yard, a bamboo jetty off its west bank
+    [[269.5, 116], [280.8, 115.6], [282.2, 127.6], [270, 128]],
+    [[278, 162], [296, 161.5], [300, 165], [302, 180], [302, 210], [299, 219], [282, 219.5], [277.5, 214], [276.5, 185], [277, 166]]
   );
   // how the houses near the office really look from above (one storey, mostly tin); the games override their random
   // height and roof for the building that contains `at`
@@ -64,13 +68,13 @@
   M.dukanArea = { kiosk: [24.8, 69.85], banner: [27, 48], brickShed: [46.5, 45.4], site: [67.8, 60.7] };
   // small things on the ground the game draws: benches, bamboo fences, a concrete gate frame, a brick ring well, patches
   // of red earth (dirt) and concrete (slab), a brick-lined drain, brick walls, boundary walls (bwall; `jali` is how many
-  // meters from the start carry the pierced band, `col` and `base` recolour it), metal gates (gate, and tingate under a
-  // tin roof), barbed wire, a haystack, a drying sheet, a brick-heaped tank lid, electric poles, a signboard, a tin-sheet fence,
-  // areca palms, papaya trees, a log pile, bamboo clumps, a gourd trellis (macha) and a triangular road sign (rsign); `open` is
+  // meters from the start carry the pierced band, `col` and `base` recolour it), metal gates (gate, tingate under a
+  // tin roof, roofgate under a concrete canopy), barbed wire, a haystack, a drying sheet, a brick-heaped tank lid, electric poles, a signboard, a tin-sheet fence,
+  // areca palms, papaya trees, a log pile, bamboo clumps, a creeper over a fence, a gourd trellis (macha), a triangular road sign (rsign) and a bamboo jetty into a pond; `open` is
   // ground the game keeps trees off
   M.props = [
     { k: "bench", p: [[154.6, 31.6], [156.4, 33.2]] },
-    { k: "fence", p: [[157.5, 33.4], [150, 34.5], [146.8, 40], [146.5, 52]] },
+    { k: "fence", p: [[157.5, 33.4], [150, 34.5], [145.2, 40]] },
     { k: "posts", p: [[164.6, 32.4], [169.6, 32.4]] },
     { k: "well", at: [173.5, 31.4] },
     { k: "dirt", p: [[163.6, 28.6], [170.6, 28.6], [169.4, 34.3], [164.8, 34.3]] },
@@ -116,6 +120,26 @@
     // gourds over a muddy patch, and a triangular road sign at its corner on the lane, facing the junction
     { k: "macha", p: [[21.6, 86.6], [19.8, 97.5], [9.5, 96.5], [10.5, 85.5]] },
     { k: "rsign", at: [22.1, 86.1], face: [34, 69.7] },
+    { k: "jetty", p: [[275.6, 177.1], [283.2, 177.1]] },
+    // across the road from Sufan Palace, after the Street View panoramas at 24.836198, 91.954074 and 24.836025, 91.954051
+    // (Dec 2022): a bare-brick wall with square pillars round the plot south of the bamboo fence, a brick-paved path east
+    // beside it with a pole at its mouth, then the compound with the roofed green gate: a cream wall up to the gate, and
+    // south of it a wall of white and green tiles with a pierced band on top, bending away from the road. Bamboo stands
+    // thick along the west side of the road south of the Palace, behind a bamboo fence
+    { k: "wall", h: 1.7, p: [[145.2, 40], [144.6, 54.2], [162, 54.2]] },
+    { k: "dirt", p: [[143.4, 54.5], [166, 54.5], [166, 56.6], [143.4, 56.6]] }, { k: "epole", at: [143.6, 57.3] },
+    { k: "bwall", col: "#ece4c8", p: [[162, 56.9], [144.2, 56.9], [144.2, 59.8]] },
+    { k: "roofgate", p: [[144.2, 59.8], [144.2, 62.8]] },
+    { k: "bwall", col: "#e9ede6", base: "#2f7a5a", jali: 14, p: [[144.2, 62.8], [144.2, 70.5], [150, 76.5]] },
+    { k: "fence", p: [[133.2, 49], [132.4, 80]] },
+    { k: "bamboo", at: [130.5, 58] }, { k: "bamboo", at: [129.5, 64] }, { k: "bamboo", at: [131, 70] }, { k: "bamboo", at: [128.5, 76] },
+    // from the bend north-east of the Palace (Street View at 24.836340, 91.954102): bamboo fence posts on the east side of
+    // the road going south, a creeper smothering the bamboo fence at the corner, a bamboo clump over a heap of cut logs
+    // inside it, and the electric poles on the west side of the road going north
+    { k: "fence", p: [[145.8, 34.4], [145.2, 40]] },
+    { k: "creeper", p: [[150, 34.5], [154.8, 33.8]] },
+    { k: "bamboo", at: [148, 38.2] }, { k: "logs", p: [[148.2, 40.2], [150.6, 39.4]] },
+    { k: "epole", at: [150.3, 12] }, { k: "epole", at: [150.4, -4] },
     { k: "tinfence", p: [[-9, 241.6], [-8, 233], [0.5, 233], [-0.1, 237.2]] },
     { k: "tinfence", p: [[-0.3, 239.4], [-0.6, 243], [-9, 241.6]] },
     { k: "epole", at: [-2.4, 243.9] },
@@ -125,7 +149,7 @@
             [[31.6, 87.8], [46.7, 87.8], [46.7, 106.7], [31.6, 106.7]],
             [[21.2, 155], [35.2, 155], [35.2, 178], [24, 178], [18.9, 171]],
             [[15.8, 179.5], [18.3, 179.5], [18.3, 185.1], [15.8, 185.1]], [[34.2, 171], [40, 171], [40, 176], [34.2, 176]], [[-9.4, 232.6], [0.9, 232.6], [-0.2, 243.4], [-9.4, 242]],
-            [[22.2, 85.7], [20.4, 98.3], [8.7, 97.3], [9.8, 84.6]]];
+            [[22.2, 85.7], [20.4, 98.3], [8.7, 97.3], [9.8, 84.6]], [[143.4, 53.8], [166, 53.8], [166, 57.2], [143.4, 57.2]]];
   // the school's grounds: the white-walled playing field in front (yard; edge `gate` is the open corner where the path
   // leaves), the flag pole, and two haystacks out by the paddy
   M.school = {
@@ -161,6 +185,7 @@
     [[-45, -15], [52, -15], [52, 10], [24, 30], [8, 50], [-40, 26]],    // north, up to the second pond
     [[28, 106], [62, 110], [100, 126], [100, 178], [22, 178]],          // south of the house across the lane
     [[80, 100], [136, 96], [136, 178], [102, 178]],                     // south-east, past the east pond
-    [[60, 13], [106, 12], [122, 24], [118, 48], [60, 48]]               // behind the school, to the south
+    [[60, 13], [106, 12], [122, 24], [118, 48], [60, 48]],              // behind the school, to the south
+    [[214, 102], [249, 102], [249, 136], [284, 136], [290, 128], [306, 150], [306, 225], [228, 225], [214, 170]] // round the mosque's yard and the long pond
   ];
 })(window.KOTALPUR);
