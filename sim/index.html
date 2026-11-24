@@ -80,6 +80,8 @@
     background: rgba(29, 26, 23, .55); overflow: auto; touch-action: pan-y;
   }
   .screen.hidden { display: none; }
+  .pause-tip { font-size: 13px; color: var(--ink-soft); margin: 12px 0 0; }
+  @media (pointer: coarse) { .pause-tip { display: none; } }
   .panel {
     background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 8px 8px 0 var(--ink);
     width: 100%; max-width: 470px; padding: 20px 20px 18px; text-align: center;
@@ -232,7 +234,7 @@
   <div class="card count"><span id="count">০/১১</span><span class="seats" id="seats"><i></i><i></i><i></i></span><small>কমরেড সভায় · সিট</small></div>
   <div class="spacer"></div>
   <button class="icon-btn" id="mute" aria-label="শব্দ বন্ধ/চালু">🔊</button>
-  <a class="icon-btn" href="../" aria-label="KCP হোমপেজে ফিরে যান">🏠</a>
+  <button class="icon-btn" id="pauseBtn" aria-label="খেলা থামাও">⏸</button>
 </div>
 <div class="card money" id="money" hidden>৳০<small>আজকের ভাড়া</small></div>
 <canvas id="mini" hidden></canvas>
@@ -285,6 +287,20 @@
       <a class="btn ghost" href="../">KCP তে ফিরে যান</a>
     </div>
     <p class="loading" id="loading">ম্যাপ লোড হচ্ছে...</p>
+  </div>
+</div>
+
+<div class="screen hidden" id="pauseScr">
+  <div class="panel">
+    <p class="kicker">খেলা থামানো আছে</p>
+    <h2>চা বিরতি ☕</h2>
+    <p class="verdict" id="pauseVerdict">সিএনজি সাইড করে রাখা হলো, ঘড়িও থেমে আছে। কমরেডরা আরেকটু ঘুমাক।</p>
+    <div class="btns">
+      <button class="btn" id="resume">আবার চালাও ▶</button>
+      <button class="btn ghost" id="restart">নতুন করে শুরু</button>
+      <a class="btn ghost" href="../">KCP তে ফিরে যান</a>
+    </div>
+    <p class="pause-tip">কিবোর্ডে P বা Esc চাপলেও থামে আর চলে।</p>
   </div>
 </div>
 
@@ -717,6 +733,8 @@ const keys = new Set();
 addEventListener("keydown", e => {
   const k = e.key.toLowerCase();
   if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+  if ((k === "p" || k === "escape") && !e.repeat && state === "play") { setPause(!paused); return; }
+  if (paused) return;
   if (k === " " && !e.repeat && !talk) { horn(); flashHorn(); }
   if (talk && ["1", "2", "3"].includes(k)) answerTalk(["tea", "chips", "emran"][+k - 1]);
   if (k === "m") toggleMute();
@@ -2476,7 +2494,22 @@ function attract(t) {
   cam = { x: door.x + Math.cos(t * .05) * 260, y: door.y + Math.sin(t * .07) * 200, z: baseZoom() * .8 };
   drawWorld(t); drawSky(t);
 }
-document.addEventListener("visibilitychange", () => { paused = document.hidden; last = performance.now(); keys.clear(); engineUpdate(); });
+document.addEventListener("visibilitychange", () => { if (state === "play") { if (document.hidden) setPause(true); return; } paused = document.hidden; last = performance.now(); keys.clear(); engineUpdate(); });
+// pause: freezes the clock and everything on the road, and silences all sound until resumed
+function setPause(on) {
+  if (on && state !== "play") return;
+  if (paused === on) return;
+  paused = on; keys.clear(); last = performance.now();
+  stick = null;
+  el("pauseScr").classList.toggle("hidden", !on);
+  el("pauseVerdict").textContent = `${VEH().go} সাইড করে রাখা হলো, ঘড়িও থেমে আছে। কমরেডরা আরেকটু ঘুমাক।`;
+  try { if (ac) { if (on) ac.suspend(); else ac.resume(); } } catch (e) {}
+  if (!on) engineUpdate();
+}
+el("pauseBtn").addEventListener("click", () => setPause(true));
+el("resume").addEventListener("click", () => setPause(false));
+el("restart").addEventListener("click", () => { setPause(false); startGame(); });
+
 
 /* ================= screens ================= */
 function startGame() {
@@ -2614,6 +2647,7 @@ function samCrash() {
 }
 function endGame(all, reason) {
   if (state === "over") return;
+  if (paused) setPause(false);
   state = "over"; stick = null; closeTalk(); engineUpdate();
   const n = delivered.length, N = comrades.length;
   let best = 0;
