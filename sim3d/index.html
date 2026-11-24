@@ -540,6 +540,10 @@ const MOSQUE_YARD = [[249.5, 104], [257.9, 104.6], [261.3, 104.85], [271, 105.5]
 const SCHOOL = MAP.school, school = SCHOOL ? nearB(SCHOOL.at[0], SCHOOL.at[1]) : null;
 // the walled house south of Sufan Bikash Ghor, across the lane (MAP.walled)
 const walled = MAP.walled ? nearB(MAP.walled.at[0], MAP.walled.at[1]) : null;
+// the cream house with pink bands further down that lane (MAP.pinkHouse)
+const pinkHouse = MAP.pinkHouse ? nearB(MAP.pinkHouse.at[0], MAP.pinkHouse.at[1]) : null;
+// the tin-roofed house just south of it: block, brick wing, kitchen, bamboo shed (MAP.tinHouse)
+const tinHouse = MAP.tinHouse ? MAP.tinHouse.at.map(([x, y]) => nearB(x, y)) : [];
 // a building's frame: u points from its road into it, v along the road; w and d are its size along v and u
 function frameOf(b) {
   const nr = nearestRoad(b.cx, b.cy), L = Math.hypot(b.cx - nr.x, b.cy - nr.y) || 1, u = { x: (b.cx - nr.x) / L, y: (b.cy - nr.y) / L }, v = { x: -u.y, y: u.x };
@@ -892,7 +896,7 @@ for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], 
     const wall = rgb(b === office ? "#f5c518" : (w => b.look && b.look.wall || w)(WALLS[(R() * WALLS.length) | 0]));
     let tin = b !== office && b.h < 4 && R() < .7;
     if (b.look) { b.h = b.look.h; tin = b.look.tin; } // as seen on the satellite (MAP.looks)
-    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack || b === mosque || b === mosqueShed || b === school || b === walled) continue; // these have their own models below
+    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack || b === mosque || b === mosqueShed || b === school || b === walled || b === pinkHouse || tinHouse.includes(b)) continue; // these have their own models below
     let cum = 0;
     b.p.forEach((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dz = n[1] - q[1], L = Math.hypot(dx, dz); if (L < .01) return;
@@ -1555,6 +1559,99 @@ if (walled) {
   for (const x of [ucx - 1.6, ucx + 1.6]) win(front, x, Y2, uz1, 1.4, 1.3);
   win(south, -ucz, Y2, hw, 1.4, 1.3); win(north, ucz, Y2, -ux0, 1.4, 1.3);
 }
+// the cream house down the lane (MAP.pinkHouse), after the street photos: cream walls on a pink plinth, a pink band under
+// a weathered parapet, a bay pushed out at the north-west corner, brown wooden shutters behind grilles under thin pink
+// sunshades, and pink lozenge panels over the windows
+if (pinkHouse) {
+  const [a, c, d] = pinkHouse.p, W = Math.hypot(c[0] - a[0], c[1] - a[1]), D = Math.hypot(d[0] - c[0], d[1] - c[1]);
+  const f = { x: pinkHouse.p.reduce((t, q) => t + q[0], 0) / 4, y: pinkHouse.p.reduce((t, q) => t + q[1], 0) / 4, u: { x: (d[0] - c[0]) / D, y: (d[1] - c[1]) / D } };
+  const { g, box } = landmark(f), hw = W / 2, F = D / 2, PL = .45, H = 3.0, T = PL + H; // +x runs south, +z faces the lane
+  const cream = lam({ color: "#efe3a8" }), pink = lam({ color: "#cf5f7c" }), slab = lam({ color: "#ddd3a6" }), para = lam({ color: "#c9bf98" });
+  const shutM = lam({ map: canvasTex(64, 72, (c2) => { c2.fillStyle = "#e9dfa6"; c2.fillRect(0, 0, 64, 72); c2.fillStyle = "#7a4a26"; c2.fillRect(4, 4, 56, 64); c2.strokeStyle = "#5a3418"; c2.lineWidth = 2; c2.strokeRect(6, 6, 25, 60); c2.strokeRect(33, 6, 25, 60); c2.strokeStyle = "#2a2622"; c2.lineWidth = 2; for (let x = 10; x < 60; x += 7) { c2.beginPath(); c2.moveTo(x, 4); c2.lineTo(x, 68); c2.stroke(); } for (const y of [24, 46]) { c2.beginPath(); c2.moveTo(4, y); c2.lineTo(60, y); c2.stroke(); } }) });
+  const panelM = lam({ map: canvasTex(96, 32, (c2) => { c2.fillStyle = "#efe3a8"; c2.fillRect(0, 0, 96, 32); c2.strokeStyle = "#c94f72"; c2.lineWidth = 3; for (let k = 0; k < 4; k++) { const x0 = 3 + k * 23.5; c2.strokeRect(x0, 3, 20, 26); c2.beginPath(); c2.moveTo(x0 + 10, 6); c2.lineTo(x0 + 17, 16); c2.lineTo(x0 + 10, 26); c2.lineTo(x0 + 3, 16); c2.closePath(); c2.stroke(); } }) });
+  const doorM = lam({ map: canvasTex(48, 80, (c2) => { c2.fillStyle = "#4a3a30"; c2.fillRect(0, 0, 48, 80); c2.strokeStyle = "#2a201a"; c2.lineWidth = 2; c2.strokeRect(5, 5, 17, 70); c2.strokeRect(26, 5, 17, 70); }) });
+  pinkHouse.h = T + .9;
+  const house = (w, dd, x, z) => { // a block with its plinth, slab, pink band and parapet
+    box(w + .2, PL, dd + .2, x, PL / 2, z, pink); box(w, H, dd, x, PL + H / 2, z, cream);
+    box(w + .4, .22, dd + .4, x, T + .11, z, slab); box(w + .46, .24, dd + .46, x, T + .34, z, pink);
+    for (const [ww, d2, px, pz] of [[w + .4, .14, x, z + dd / 2 + .13], [w + .4, .14, x, z - dd / 2 - .13], [.14, dd + .4, x + w / 2 + .13, z], [.14, dd + .4, x - w / 2 - .13, z]]) box(ww, .6, d2, px, T + .76, pz, para);
+  };
+  house(W, D, 0, 0); house(1.1, 3.8, -hw - .55, F - 2.1); // the house, and the bay at its north-west corner
+  const face = (ry) => { const q = new THREE.Group(); q.rotation.y = ry; g.add(q); return q; };
+  const put = (q, geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; q.add(m); return m; };
+  const win = (q, x, z, w = 1.5) => { // shutters behind a grille, a thin pink sunshade, a lozenge panel above
+    put(q, new THREE.PlaneGeometry(w, 1.55), shutM, x, PL + 1.55, z + .01);
+    put(q, new THREE.BoxGeometry(w + .3, .07, .45), cream, x, PL + 2.42, z + .22); put(q, new THREE.BoxGeometry(w + .3, .1, .04), pink, x, PL + 2.42, z + .45);
+    put(q, new THREE.PlaneGeometry(w + .2, .5), panelM, x, T - .3, z + .01);
+  };
+  const front = face(0), back = face(Math.PI), north = face(-Math.PI / 2), south = face(Math.PI / 2);
+  win(front, -hw - .55, F, .8); win(front, -1.6, F); win(front, 1.8, F);            // the lane side, the bay's end included
+  win(north, F - 2.1, hw + 1.1, 1.8);                                                // the bay's north face
+  put(north, new THREE.PlaneGeometry(1.1, 2.2), doorM, -.6, PL + 1.1, hw + .01);     // the front door, steps down to the yard
+  put(north, new THREE.BoxGeometry(1.8, .3, .6), slab, -.6, .15, hw + .3); put(north, new THREE.BoxGeometry(1.8, .15, .5), slab, -.6, .075, hw + .75);
+  win(north, -3.3, hw); win(north, 1.4, hw, 1.1);
+  for (const x of [-2.4, 1.6]) win(back, x, F);
+  for (const x of [-3, 0, 3]) win(south, x, hw);
+}
+// the tin-roofed house south of the cream one (MAP.tinHouse), after the street photos: a plastered block on the lane with
+// pilasters down its side and a chimney box at its corner, a bare-brick wing running east with brown shutters, a grey
+// lean-to along the wing's back, a grey kitchen with a striped curtain over its door, and a bamboo shed under tin
+if (tinHouse.length === 4) {
+  const [blk, wing, kit, shed] = tinHouse, g = new THREE.Group(); scene.add(g); // built straight in map coordinates
+  const box = (x0, x1, z0, z1, h0, h1, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, h1 - h0, z1 - z0), mat); m.position.set((x0 + x1) / 2, (h0 + h1) / 2, (z0 + z1) / 2); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  const quad = (mat, w, h, x, y, z, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); m.position.set(x, y, z); m.rotation.y = ry; m.receiveShadow = true; g.add(m); return m; };
+  const slope = (x0, x1, z0, h0, z1, h1, mat) => { const L = Math.hypot(z1 - z0, h1 - h0), m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, .05, L), mat); m.position.set((x0 + x1) / 2, (h0 + h1) / 2, (z0 + z1) / 2); m.rotation.x = Math.atan2(h0 - h1, z1 - z0); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  const NF = Math.PI, WF = -Math.PI / 2, SF = 0; // plane turns to face north, west, south
+  const tinT = (base, seed, rx) => { const t = sheetTex(base, true, seed); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, 1); return lam({ map: t, side: THREE.DoubleSide }); };
+  const plaster = lam({ color: "#d9d0b9" }), pil = lam({ color: "#e4dcc8" }), plinth = lam({ color: "#b6af9d" }), grey = lam({ color: "#a9a59a" }), dark = lam({ color: "#2a2622" });
+  const brickM = (rx, ry) => { const t = canvasTex(128, 64, (c2) => {
+    c2.fillStyle = "#b9a48c"; c2.fillRect(0, 0, 128, 64); const R = rng32(41);
+    for (let r = 0; r < 8; r++) for (let k = -1; k < 9; k++) { const v = .82 + R() * .3; c2.fillStyle = `rgb(${[176, 98, 66].map(q => Math.round(q * v)).join(",")})`; c2.fillRect(k * 16 + (r % 2) * 8 + 1, r * 8 + 1, 14, 6); }
+  }, true); t.repeat.set(rx, ry); return lam({ map: t }); };
+  const grilleM = lam({ map: canvasTex(48, 48, (c2) => { c2.fillStyle = "#1e1b18"; c2.fillRect(0, 0, 48, 48); c2.fillStyle = "#6d6a64"; for (let x = 5; x < 48; x += 8) c2.fillRect(x, 0, 2, 48); c2.fillRect(0, 22, 48, 2); }) });
+  const win = (x, z, ry, w, h, y, leaf) => { // a grilled opening with its two wooden leaves swung back flat against the wall
+    const nx = Math.sin(ry), nz = Math.cos(ry), tx = Math.cos(ry), tz = -Math.sin(ry);
+    quad(grilleM, w, h, x + nx * .02, y, z + nz * .02, ry);
+    for (const sd of [-1, 1]) quad(leaf, w / 2, h, x + tx * sd * w * .75 + nx * .03, y, z + tz * sd * w * .75 + nz * .03, ry);
+  };
+  const maroon = lam({ color: "#7a2e2a", side: THREE.DoubleSide }), brown = lam({ color: "#6b4426", side: THREE.DoubleSide });
+  // the plastered block on the lane: pilasters every couple of meters down its side, a ledge under the eaves
+  box(18.05, 23.85, 178.45, 186.55, 0, .3, plinth); box(18.2, 23.8, 178.6, 186.4, .3, 3.1, plaster);
+  for (let k = 0; k <= 4; k++) { const z = Math.min(186.25, Math.max(178.75, 178.6 + k * 1.95)); box(18.06, 18.22, z - .17, z + .17, .3, 3.1, pil); }
+  box(18.08, 23.92, 178.48, 186.52, 2.9, 3.1, pil);
+  win(21.6, 178.6, NF, 1.1, 1.3, 1.6, maroon);
+  { const v = new THREE.Mesh(new THREE.CircleGeometry(.12, 10), dark); v.position.set(19.3, 2.4, 178.58); v.rotation.y = NF; g.add(v); }
+  { const rg = new THREE.Group(); rg.position.set(21, 0, 182.5); rg.rotation.y = Math.PI / 2; g.add(rg); hipRoof(rg, 7.8, 5.6, 3.1, 4.7, sheetTex([150, 152, 150], true, 61)); }
+  box(22.9, 24.2, 178.35, 179.65, 0, 4.4, plaster); box(22.75, 24.35, 178.2, 179.8, 4.4, 4.56, plinth); // the chimney box
+  blk.h = 4.7;
+  // the bare-brick wing: brick piers between the windows, brown shutters, a rusty hipped roof a little lower
+  box(23.8, 34.6, 178.5, 184.7, 0, .3, plinth); box(23.8, 34.5, 178.6, 184.6, .3, 2.8, brickM(4.8, 1.2));
+  for (const x of [26.9, 29.9, 33]) box(x - .2, x + .2, 178.45, 178.6, .3, 2.8, brickM(.2, 1.2));
+  for (const x of [25.4, 28.4, 31.5]) win(x, 178.6, NF, 1.1, 1.3, 1.5, brown);
+  win(34.5, 181.6, Math.PI / 2, 1, 1.2, 1.5, brown);
+  { const rg = new THREE.Group(); rg.position.set(29.15, 0, 181.6); g.add(rg); hipRoof(rg, 10.7, 6, 2.8, 4.1, sheetTex([140, 138, 132], true, 67)); }
+  box(23.8, 32, 184.6, 187.4, 0, 2.3, grey); slope(23.7, 32.1, 184.4, 2.75, 187.7, 2.2, tinT([150, 150, 146], 71, 2));
+  wing.h = 4.1;
+  // the grey kitchen: a striped curtain over its door, the electric meter box on its lane side
+  box(18.6, 22.6, 186.4, 189.2, 0, 2.3, lam({ color: "#9d998e" })); slope(18.4, 22.8, 186.2, 2.75, 189.5, 2.25, tinT([158, 158, 152], 73, 1.2));
+  quad(dark, .9, 1.9, 20.4, .95, 189.22, SF);
+  quad(lam({ map: canvasTex(32, 64, (c2) => { ["#c0392b", "#e67e22", "#f1c40f", "#27ae60", "#8e44ad", "#e67e22"].forEach((cl, k) => { c2.fillStyle = cl; c2.fillRect(0, k * 11, 32, 11); }); }), side: THREE.DoubleSide }), .95, 1.3, 20.4, 1.25, 189.25, SF);
+  box(18.48, 18.6, 186.7, 187.1, 1.7, 2.1, lam({ color: "#d6d4cc" }));
+  kit.h = 2.8;
+  // the bamboo shed: posts, slatted walls you can see through, a lattice window, a grey tin roof
+  const bam = lam({ color: "#9b8a5e" }), slats = (w, lattice) => { const t = canvasTex(64, 64, (c2) => {
+    c2.clearRect(0, 0, 64, 64); c2.fillStyle = "#8d7d55";
+    if (lattice) { c2.strokeStyle = "#8d7d55"; c2.lineWidth = 3; for (let k = -64; k < 64; k += 10) { c2.beginPath(); c2.moveTo(k, 0); c2.lineTo(k + 64, 64); c2.moveTo(k + 64, 0); c2.lineTo(k, 64); c2.stroke(); } }
+    else for (let y = 1; y < 64; y += 7) c2.fillRect(0, y, 64, 4);
+  }, true); t.repeat.set(w / 1.4, 1.6); return lam({ map: t, alphaTest: .5, side: THREE.DoubleSide }); };
+  for (const [x, z] of [[22.2, 189.6], [24.7, 189.6], [27.2, 189.6], [22.2, 191.6], [27.2, 191.6], [22.2, 193.6], [24.7, 193.6], [27.2, 193.6]]) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(.06, .07, 2.5, 6), bam); m.position.set(x, 1.25, z); m.castShadow = true; g.add(m);
+  }
+  quad(slats(5), 5, 2.2, 24.7, 1.2, 189.6, NF); quad(slats(5), 5, 2.2, 24.7, 1.2, 193.6, SF); quad(slats(4), 4, 2.2, 27.2, 1.2, 191.6, Math.PI / 2);
+  quad(slats(1.6), 1.6, 2.2, 22.2, 1.2, 190.4, WF); quad(slats(1.4, true), 1.4, 1.2, 22.2, 1.7, 192.9, WF); // its door gap between
+  const shedTin = tinT([160, 164, 166], 79, 1.5); slope(21.9, 27.5, 191.6, 3, 189.2, 2.35, shedTin); slope(21.9, 27.5, 191.6, 3, 194, 2.35, shedTin);
+  shed.h = 3;
+}
 // little roadside shops (MAP.looks `shop`): the open front toward the road, hung with chips over a white counter
 {
   const shopT = canvasTex(128, 96, (c2) => {
@@ -1572,7 +1669,8 @@ if (walled) {
     const step = new THREE.Mesh(new THREE.BoxGeometry(L + .2, .2, .7), lam({ color: "#b9b4a6" })); step.position.set(best.mx + ox / oL * .35, .1, best.my + oy / oL * .35); step.rotation.y = Math.atan2(ox, oy); step.receiveShadow = true; scene.add(step);
   }
 }
-// fences, benches, gate posts, wells, bare earth, concrete, drains, walls, boundary walls, a gate, logs, bamboo and papaya (MAP.props)
+// fences, benches, gate posts, wells, bare earth, concrete, drains, walls, boundary walls, gates, barbed wire, hay, a
+// drying sheet, logs, bamboo and papaya (MAP.props)
 {
   const at = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; scene.add(m); return m; };
   const bamboo = lam({ color: "#a08a55" }), conc = lam({ color: "#a9a59a" }), wood = lam({ color: "#a89478" });
@@ -1611,20 +1709,79 @@ if (walled) {
       at(new THREE.Mesh(new THREE.CircleGeometry(1.15, 18), lam({ color: "#3d3a2a" })), x, .5, y).rotation.x = -Math.PI / 2;
       at(new THREE.Mesh(new THREE.SphereGeometry(.5, 8, 6), lam({ color: "#6f8f3a" })), x - .5, .75, y + .3);
     } else if (pr.k === "bwall") { // a boundary wall: pale blue below, a pierced jali band on top for its first `jali` meters, a coping
-      let run = 0;
+      let run = 0; const wm = pr.col ? lam({ color: pr.col }) : blueW, bm = pr.base ? lam({ color: pr.base }) : null;
       for (let i = 1; i < pr.p.length; i++) {
         const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), ux = (bx - ax) / L, uy = (by - ay) / L;
         const j = Math.max(0, Math.min(L, (pr.jali || 0) - run)); run += L;
-        at(new THREE.Mesh(new THREE.BoxGeometry(L + .2, 1.0, .2), blueW), (ax + bx) / 2, .5, (ay + by) / 2, ry);
+        at(new THREE.Mesh(new THREE.BoxGeometry(L + .2, 1.0, .2), wm), (ax + bx) / 2, .5, (ay + by) / 2, ry);
         if (j > 0) at(new THREE.Mesh(new THREE.BoxGeometry(j, .5, .12), jaliM(j)), ax + ux * j / 2, 1.25, ay + uy * j / 2, ry);
-        if (L - j > 0) at(new THREE.Mesh(new THREE.BoxGeometry(L - j + .2, .5, .2), blueW), ax + ux * (j + L) / 2, 1.25, ay + uy * (j + L) / 2, ry);
+        if (L - j > 0) at(new THREE.Mesh(new THREE.BoxGeometry(L - j + .2, .5, .2), wm), ax + ux * (j + L) / 2, 1.25, ay + uy * (j + L) / 2, ry);
         at(new THREE.Mesh(new THREE.BoxGeometry(L + .3, .1, .3), wallTop), (ax + bx) / 2, 1.55, (ay + by) / 2, ry);
-        for (let s2 = 0; s2 <= L + .01; s2 += L / Math.max(1, Math.round(L / 3))) at(new THREE.Mesh(new THREE.BoxGeometry(.32, 1.6, .32), blueW), ax + ux * s2, .8, ay + uy * s2, ry);
+        if (bm) at(new THREE.Mesh(new THREE.BoxGeometry(L + .26, .32, .26), bm), (ax + bx) / 2, .16, (ay + by) / 2, ry);
+        if (!pr.col) for (let s2 = 0; s2 <= L + .01; s2 += L / Math.max(1, Math.round(L / 3))) at(new THREE.Mesh(new THREE.BoxGeometry(.32, 1.6, .32), wm), ax + ux * s2, .8, ay + uy * s2, ry);
       }
     } else if (pr.k === "gate") { // a white metal gate in an X pattern between two pillars with ball tops
       const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax);
       for (const [x, y] of pr.p) { at(new THREE.Mesh(new THREE.BoxGeometry(.42, 1.9, .42), blueW), x, .95, y); at(new THREE.Mesh(new THREE.SphereGeometry(.17, 10, 8), wallTop), x, 2.05, y); }
       at(new THREE.Mesh(new THREE.PlaneGeometry(L - .42, 1.7), gateM), (ax + bx) / 2, .9, (ay + by) / 2, ry);
+    } else if (pr.k === "tingate") { // a black arched gate between banded cream pillars, under a little red tin roof
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), mx = (ax + bx) / 2, my = (ay + by) / 2;
+      const creamP = lam({ color: "#e6dca6" }), pinkP = lam({ color: "#cf5f7c" }), yel = lam({ color: "#d9b84a" }), wh = lam({ color: "#f3f1ea" });
+      for (const [x, y] of pr.p) {
+        at(new THREE.Mesh(new THREE.BoxGeometry(.5, 2.5, .5), creamP), x, 1.25, y, ry); at(new THREE.Mesh(new THREE.BoxGeometry(.54, .45, .54), pinkP), x, .225, y, ry);
+        at(new THREE.Mesh(new THREE.BoxGeometry(.53, .12, .53), yel), x, 1.15, y, ry); at(new THREE.Mesh(new THREE.BoxGeometry(.53, .07, .53), wh), x, 1.27, y, ry); at(new THREE.Mesh(new THREE.BoxGeometry(.53, .12, .53), yel), x, 1.39, y, ry);
+      }
+      const red = sheetTex([184, 52, 63], false, 3); red.wrapS = red.wrapT = THREE.RepeatWrapping; red.repeat.set(1, 1); const redM = lam({ map: red, side: THREE.DoubleSide });
+      const nx = -(by - ay) / L, ny = (bx - ax) / L; // across the gate
+      for (const sd of [-1, 1]) { const m = at(new THREE.Mesh(new THREE.BoxGeometry(L + 1.1, .05, 1.0), redM), mx + nx * sd * .45, 2.75, my + ny * sd * .45, ry); m.rotateX(sd * .5); }
+      at(new THREE.Mesh(new THREE.BoxGeometry(L + 1.1, .12, .12), lam({ color: "#9a2a35" })), mx, 2.98, my, ry);
+      at(new THREE.Mesh(new THREE.PlaneGeometry(L - .5, 2.1), lam({ map: canvasTex(128, 96, (c2) => { // black bars under an arch, white scrolls
+        c2.clearRect(0, 0, 128, 96); c2.strokeStyle = "#1c1a18"; c2.lineWidth = 3;
+        c2.beginPath(); c2.moveTo(2, 96); c2.lineTo(2, 22); c2.quadraticCurveTo(64, -6, 126, 22); c2.lineTo(126, 96); c2.moveTo(64, 10); c2.lineTo(64, 96); c2.moveTo(2, 92); c2.lineTo(126, 92); c2.stroke();
+        c2.lineWidth = 2; c2.beginPath(); for (let x = 9; x < 126; x += 7) { const top = 22 - Math.sin(x / 128 * Math.PI) * 13; c2.moveTo(x, top); c2.lineTo(x, 92); } c2.stroke();
+        c2.strokeStyle = "#e8e6e0"; c2.lineWidth = 2; for (const x of [16, 112]) { c2.beginPath(); c2.arc(x, 48, 6, 0, Math.PI * 1.6); c2.arc(x, 66, 6, Math.PI, Math.PI * 2.6); c2.stroke(); }
+      }), alphaTest: .5, side: THREE.DoubleSide })), mx, 1.05, my, ry);
+    } else if (pr.k === "wire") { // barbed wire: three strands on rough wooden posts
+      const post = lam({ color: "#7a6448" }), strand = lam({ color: "#4a4640" });
+      for (let i = 1; i < pr.p.length; i++) {
+        const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), n = Math.max(1, Math.round(L / 2.4));
+        for (let k = 0; k <= n; k++) at(new THREE.Mesh(new THREE.CylinderGeometry(.04, .05, 1.25, 5), post), ax + (bx - ax) * k / n, .62, ay + (by - ay) * k / n);
+        for (const h of [.35, .7, 1.05]) at(new THREE.Mesh(new THREE.BoxGeometry(L, .015, .015), strand), (ax + bx) / 2, h, (ay + by) / 2, ry);
+      }
+    } else if (pr.k === "hay") { // a loose heap of straw
+      const [x, y] = pr.at, m = at(new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), lam({ color: "#b9944e" })), x, 0, y);
+      m.scale.set(2.4, 1.3, 1.9);
+    } else if (pr.k === "sheet") { // a white sheet on the grass with rice spread out to dry
+      const xs = pr.p.map(q => q[0]), ys = pr.p.map(q => q[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+      at(new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, .02, y1 - y0), lam({ color: "#eeeeea" })), (x0 + x1) / 2, .02, (y0 + y1) / 2);
+      at(new THREE.Mesh(new THREE.BoxGeometry(x1 - x0 - .5, .04, y1 - y0 - .4), lam({ color: "#b08a45" })), (x0 + x1) / 2, .04, (y0 + y1) / 2);
+    } else if (pr.k === "tank") { // a concrete tank lid by a wall, a heap of old bricks and a couple of sacks on it
+      const xs = pr.p.map(q => q[0]), ys = pr.p.map(q => q[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), R = rng32(91);
+      at(new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, .5, y1 - y0), lam({ color: "#bdb8ab" })), (x0 + x1) / 2, .25, (y0 + y1) / 2);
+      const bm = [lam({ color: "#a8553a" }), lam({ color: "#8e4632" }), lam({ color: "#b96a4a" })];
+      for (let k = 0; k < 16; k++) { const m = at(new THREE.Mesh(new THREE.BoxGeometry(.24, .08, .12), bm[k % 3]), x0 + .3 + R() * (x1 - x0 - .6), .54 + (k % 4) * .08, y0 + .3 + R() * (y1 - y0) * .5, R() * 3); m.rotation.z = (R() - .5) * .5; }
+      for (const [c, f] of [["#ecebe4", .75], ["#6f9a7c", .9]]) { const m = at(new THREE.Mesh(new THREE.SphereGeometry(.35, 8, 6), lam({ color: c })), (x0 + x1) / 2, .62, y0 + (y1 - y0) * f); m.scale.set(1, .6, 1.2); }
+    } else if (pr.k === "epole") { // a concrete electric pole with a cross-arm
+      const [x, y] = pr.at, cm = lam({ color: "#b8b3a8" });
+      at(new THREE.Mesh(new THREE.CylinderGeometry(.09, .16, 8.5, 6), cm), x, 4.25, y);
+      at(new THREE.Mesh(new THREE.BoxGeometry(1.3, .1, .1), cm), x, 7.9, y);
+    } else if (pr.k === "tinfence") { // old corrugated sheets laid on their sides, nailed to wooden legs, patched and rusty
+      const R = rng32(Math.round(pr.p[0][0] * 7 + pr.p[0][1])), legM = lam({ color: "#6f5a40" });
+      const mats = [[140, 92, 70], [118, 124, 106], [152, 112, 82], [128, 104, 90]].map((c, k) => { const t = sheetTex(c, true, 83 + k); t.center.set(.5, .5); t.rotation = Math.PI / 2; return lam({ map: t, side: THREE.DoubleSide }); });
+      for (let i = 1; i < pr.p.length; i++) {
+        const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), n = Math.max(1, Math.round(L / 1.7));
+        for (let k = 0; k < n; k++) for (const row of [0, 1]) {
+          const t = (k + .5) / n, hh = .72 + R() * .1, off = (R() - .5) * .06;
+          at(new THREE.Mesh(new THREE.BoxGeometry(L / n + .12, hh, .02), mats[(R() * 4) | 0]), ax + (bx - ax) * t - Math.sin(ry) * off, .28 + row * .7 + hh / 2, ay + (by - ay) * t - Math.cos(ry) * off, ry);
+        }
+        for (let k = 0; k <= n; k++) at(new THREE.Mesh(new THREE.BoxGeometry(.08, 1.85, .08), legM), ax + (bx - ax) * k / n, .92, ay + (by - ay) * k / n, ry);
+      }
+    } else if (pr.k === "areca") { // areca palms: tall thin grey trunks, a small tuft of fronds on top
+      const trunk = lam({ color: "#a9a59b" }), frond = lam({ color: "#4f8a35", side: THREE.DoubleSide });
+      pr.at.forEach(([x, y], k) => {
+        const hh = 7 + (k % 3) * 1.4; at(new THREE.Mesh(new THREE.CylinderGeometry(.09, .13, hh, 6), trunk), x, hh / 2, y);
+        for (let j = 0; j < 6; j++) { const fr = new THREE.Mesh(new THREE.ConeGeometry(.28, 2.2, 3), frond); fr.geometry.translate(0, 1.1, 0); fr.position.set(x, hh, y); fr.rotation.set(1.1, j / 6 * Math.PI * 2 + k, 0, "YXZ"); fr.scale.z = .25; fr.castShadow = true; scene.add(fr); }
+      });
     } else if (pr.k === "papaya") { // a papaya tree: a thin grey trunk, a crown of big lobed leaves, green fruit under it
       const [x, y] = pr.at, tw = lam({ color: "#9a958a" }), leafM = lam({ color: "#4f8f34" }), fruitM = lam({ color: "#6f9f2a" });
       at(new THREE.Mesh(new THREE.CylinderGeometry(.08, .13, 3.6, 7), tw), x, 1.8, y);
@@ -2877,7 +3034,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
   get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
-  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
+  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };

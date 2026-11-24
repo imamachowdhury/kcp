@@ -7,6 +7,17 @@
   // second over its south half, its front (the first edge) facing west onto the lane. OpenStreetMap only has a 4 m box
   M.buildings[235] = [[33, 90], [33, 103.5], [45.5, 103.5], [45.5, 90]];
   M.walled = { at: [39.2, 96.7] }; // the game gives it a model of its own
+  // further down the lane (street photos at 24.835134, 91.952972): the cream house with pink bands, under big trees, its
+  // west face (the first edge) to the lane. OpenStreetMap has a 4 x 6 m box here; the game gives it a model of its own
+  M.buildings[258] = [[23.6, 159], [23.6, 167], [33.6, 167], [33.6, 159]];
+  M.pinkHouse = { at: [28.6, 163] };
+  // just south of it (street photos at 24.834932, 91.952926): the tin-roofed house, a plastered block on the lane with a
+  // bare-brick wing running east (an L, a lean-to along its back), then a grey lean-to kitchen and a bamboo shed behind.
+  // OpenStreetMap had two small boxes here; the game draws all four itself
+  M.buildings[315] = [[18.2, 178.6], [18.2, 186.4], [23.8, 186.4], [23.8, 178.6]];
+  M.buildings[316] = [[23.8, 178.6], [23.8, 187.4], [32, 187.4], [32, 184.6], [34.5, 184.6], [34.5, 178.6]];
+  M.buildings.push([[18.6, 186.4], [18.6, 189.2], [22.6, 189.2], [22.6, 186.4]], [[22.2, 189.6], [22.2, 193.6], [27.2, 193.6], [27.2, 189.6]]);
+  M.tinHouse = { at: [[21, 182.5], [29, 181.6], [20.6, 187.8], [24.7, 191.6]] }; // the block, the wing, the kitchen, the shed
   // Kotalpur Government Primary School, as the satellite shows it: one long storey, the veranda (the first edge) facing
   // east onto the walled playing field. OpenStreetMap has it a little narrower and tilted
   M.buildings[95] = [[85.3, 5.8], [85.5, -18.6], [74.4, -18.8], [74.2, 5.6]];
@@ -52,7 +63,9 @@
   ];
   // small things on the ground the game draws: benches, bamboo fences, a concrete gate frame, a brick ring well, patches
   // of red earth (dirt) and concrete (slab), a brick-lined drain, brick walls, boundary walls (bwall; `jali` is how many
-  // meters from the start carry the pierced band), a metal gate, papaya trees, a log pile and bamboo clumps; `open` is
+  // meters from the start carry the pierced band, `col` and `base` recolour it), metal gates (gate, and tingate under a
+  // tin roof), barbed wire, a haystack, a drying sheet, a brick-heaped tank lid, electric poles, a tin-sheet fence,
+  // areca palms, papaya trees, a log pile and bamboo clumps; `open` is
   // ground the game keeps trees off
   M.props = [
     { k: "bench", p: [[154.6, 31.6], [156.4, 33.2]] },
@@ -78,10 +91,27 @@
     { k: "bwall", p: [[46.5, 88], [46.5, 106.5], [31.8, 106.5], [31.8, 103.3]] },
     { k: "bwall", p: [[31.8, 98.4], [31.8, 99.3]], jali: 1 },
     { k: "gate", p: [[31.8, 95.6], [31.8, 98.4]] },
-    { k: "papaya", at: [32.4, 92.2] }, { k: "papaya", at: [32.5, 94.6] }, { k: "papaya", at: [46, 105.6] }
+    { k: "papaya", at: [32.4, 92.2] }, { k: "papaya", at: [32.5, 94.6] }, { k: "papaya", at: [46, 105.6] },
+    // the cream house's grounds: a cream wall with a pink foot along the lane and round the south side, the gate under
+    // its red tin roof at the north end of the lane wall, barbed wire on bamboo posts along the north and east, and a
+    // haystack and rice drying on a sheet outside the south wall
+    { k: "bwall", p: [[21.24, 158.1], [19.16, 170.7], [33.8, 170.7]], col: "#e6dca6", base: "#cf5f7c" },
+    { k: "tingate", p: [[21.7, 155.3], [21.24, 158.1]] },
+    { k: "wire", p: [[21.7, 155.3], [35, 155.3], [35, 170.7], [33.8, 170.7]] },
+    { k: "hay", at: [30.2, 174.3] }, { k: "sheet", p: [[24.6, 175.2], [27.4, 175.2], [27.4, 177], [24.6, 177]] },
+    // by the tin-roofed house: a concrete tank lid heaped with bricks against its lane wall, and an electric pole
+    { k: "tank", p: [[16.8, 184.8], [18.1, 184.8], [18.1, 187.2], [16.8, 187.2]] }, { k: "epole", at: [16.3, 188.6] },
+    // where the lane meets the road (street photos at 24.834345, 91.952744): a fence of old tin sheets on wooden legs
+    // round a plot of areca palms, a gap for a gate in its lane side, a pole at its south-east corner
+    { k: "tinfence", p: [[-9, 241.6], [-8, 233], [0.5, 233], [-0.1, 237.2]] },
+    { k: "tinfence", p: [[-0.3, 239.4], [-0.6, 243], [-9, 241.6]] },
+    { k: "epole", at: [-2.4, 243.9] },
+    { k: "areca", at: [[-1.8, 234.6], [-4.2, 234.2], [-6.6, 235.4], [-2.6, 237.6], [-5.2, 238], [-7.4, 239.2], [-2.2, 241.2], [-4.6, 240.8], [-6.8, 241.4]] }
   );
   M.open = [[[150, 27.5], [195, 27.5], [195, 34.4], [150, 34.4]], [[112.4, 27], [135, 27], [135, 35.2], [112.4, 35.2]],
-            [[31.6, 87.8], [46.7, 87.8], [46.7, 106.7], [31.6, 106.7]]];
+            [[31.6, 87.8], [46.7, 87.8], [46.7, 106.7], [31.6, 106.7]],
+            [[21.2, 155], [35.2, 155], [35.2, 178], [24, 178], [18.9, 171]],
+            [[15.8, 184], [18.3, 184], [18.3, 189.6], [15.8, 189.6]], [[-9.4, 232.6], [0.9, 232.6], [-0.2, 243.4], [-9.4, 242]]];
   // the school's grounds: the white-walled playing field in front (yard; edge `gate` is the open corner where the path
   // leaves), the flag pole, and two haystacks out by the paddy
   M.school = {
