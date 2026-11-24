@@ -698,7 +698,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 const SKY = new THREE.Color("#a9d4ea");
 scene.background = SKY.clone(); scene.fog = new THREE.Fog(SKY.clone(), 110, 330);
-const camera = new THREE.PerspectiveCamera(60, 1, .5, 900);
+const camera = new THREE.PerspectiveCamera(60, 1, .5, 380); // the fog is solid sky by 330 m, so nothing further is drawn
 const hemi = new THREE.HemisphereLight("#dff1ff", "#7d8a4a", 1.6); scene.add(hemi);
 const sun = new THREE.DirectionalLight("#fff0d2", 2.4);
 const SUN_DIR = new THREE.Vector3(-1, .62, .45).normalize(); // low afternoon sun in the west (x is east, z is south)
@@ -795,6 +795,60 @@ const RING = { sleep: "#5a6aa8", awake: "#2f9a4a", flee: "#e07a1f", talk: "#f5c5
 
 /* ================= the town ================= */
 const lam = (o) => new THREE.MeshLambertMaterial(o);
+// Bake the meshes under `root` that never move again into one mesh per look (material settings, shadow flags) and, with
+// `cell`, per square of the map, so thousands of little props cost a few hundred draw calls. Skips the subtrees in `stop`,
+// meshes wider than `maxR` and anything hidden; materials in `live` (changed at runtime) are only merged with themselves.
+function mergeUnder(root, stop, { live = null, cell = 0, maxR = Infinity } = {}) {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), sp = new THREE.Sphere(), hex = (c) => c && c.isColor ? c.getHex() : c;
+  const key = (m) => live && live.has(m) ? m.uuid : [m.type, hex(m.color), hex(m.emissive), m.map && m.map.uuid, m.alphaMap && m.alphaMap.uuid, m.transparent, m.opacity, m.side,
+    m.vertexColors, m.flatShading, m.depthWrite, m.depthTest, m.alphaTest, m.blending, m.fog, m.polygonOffset, m.polygonOffsetFactor, m.polygonOffsetUnits].join("|");
+  const buckets = new Map(), gone = [];
+  const walk = (o) => {
+    if (stop.has(o) || !o.visible) return;
+    for (const c of o.children) walk(c);
+    if (!o.isMesh || o.isInstancedMesh || o.children.length || o === root) return;
+    const g = o.geometry; if (!g.attributes.position || Object.keys(g.morphAttributes).length) return;
+    if (!g.boundingSphere) g.computeBoundingSphere();
+    sp.copy(g.boundingSphere).applyMatrix4(o.matrixWorld); if (sp.radius > maxR) return;
+    const ck = cell ? Math.floor(sp.center.x / cell) + "," + Math.floor(sp.center.z / cell) : "", rel = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
+    const gi = g.index ? g.toNonIndexed() : g, multi = Array.isArray(o.material);
+    const parts = multi ? (gi.groups.length ? gi.groups : [{ start: 0, count: Infinity, materialIndex: 0 }]) : [{ start: 0, count: Infinity, materialIndex: 0 }];
+    for (const pt of parts) {
+      const mat = multi ? o.material[pt.materialIndex] : o.material; if (!mat) continue;
+      const k = ck + "#" + key(mat) + "#" + o.castShadow + o.receiveShadow + o.renderOrder;
+      if (!buckets.has(k)) buckets.set(k, { mat, cast: o.castShadow, recv: o.receiveShadow, order: o.renderOrder, list: [] });
+      buckets.get(k).list.push({ g: gi, start: pt.start, end: Math.min(gi.attributes.position.count, pt.start + pt.count), rel });
+    }
+    gone.push(o);
+  };
+  walk(root);
+  const v = new THREE.Vector3(), nm = new THREE.Matrix3();
+  for (const b of buckets.values()) {
+    let n = 0; for (const it of b.list) n += it.end - it.start;
+    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2), col = b.mat.vertexColors ? new Float32Array(n * 3).fill(1) : null;
+    let w = 0;
+    for (const it of b.list) {
+      const P = it.g.attributes.position, N = it.g.attributes.normal, U = it.g.attributes.uv, Cc = it.g.attributes.color, flip = it.rel.determinant() < 0;
+      nm.getNormalMatrix(it.rel);
+      for (let i = it.start; i < it.end; i++) {
+        const s = flip && (i - it.start) % 3 ? i + ((i - it.start) % 3 === 1 ? 1 : -1) : i; // mirrored: swap two corners of every triangle to keep it facing out
+        v.fromBufferAttribute(P, s).applyMatrix4(it.rel); pos[w * 3] = v.x; pos[w * 3 + 1] = v.y; pos[w * 3 + 2] = v.z;
+        if (N) { v.fromBufferAttribute(N, s).applyMatrix3(nm).normalize(); nor[w * 3] = v.x; nor[w * 3 + 1] = v.y; nor[w * 3 + 2] = v.z; }
+        if (U) { uv[w * 2] = U.getX(s); uv[w * 2 + 1] = U.getY(s); }
+        if (col && Cc) { col[w * 3] = Cc.getX(s); col[w * 3 + 1] = Cc.getY(s); col[w * 3 + 2] = Cc.getZ(s); }
+        w++;
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("normal", new THREE.BufferAttribute(nor, 3)); geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+    if (col) geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    geo.computeBoundingSphere();
+    const m = new THREE.Mesh(geo, b.mat); m.castShadow = b.cast; m.receiveShadow = b.recv; m.renderOrder = b.order; root.add(m);
+  }
+  for (const o of gone) { o.parent.remove(o); }
+  return gone.length;
+}
 function geom(pos, nor, uv, col, idx) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
@@ -978,30 +1032,46 @@ for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], 
   scene.add(tankM, stairM);
 }
 
-// trees: mostly round village trees, some coconut palms
+// trees: mostly round village trees, some coconut palms. Drawn as instanced meshes, one set per 120 m square of the map,
+// so the renderer can skip the squares out of view (and out of the sun's shadow box) instead of drawing all 5000 every frame
 {
-  const round = trees.filter(t => !t.palm), palms = trees.filter(t => t.palm), dummy = new THREE.Object3D(), col = new THREE.Color();
-  const trunkM = new THREE.InstancedMesh(new THREE.CylinderGeometry(.22, .34, 1, 6), lam({ color: "#6b4a2b" }), trees.length);
-  const canM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshLambertMaterial({ flatShading: true }), round.length);
-  const R = rng32(99);
-  trees.forEach((t, i) => {
-    const th = t.palm ? 7 + t.r * 1.2 : t.tall ? 6 + t.r * .9 : 1.6 + t.r * .5;
-    dummy.position.set(t.x, th / 2, t.y); dummy.rotation.set(t.palm ? (R() - .5) * .25 : 0, 0, t.palm ? (R() - .5) * .25 : 0); dummy.scale.set(1, th, 1); dummy.updateMatrix();
-    trunkM.setMatrixAt(i, dummy.matrix); t.th = th;
-  });
-  round.forEach((t, i) => {
-    dummy.position.set(t.x, t.th + t.r * .75, t.y); dummy.rotation.set(R() * 3, R() * 3, R() * 3); dummy.scale.set(t.r * 1.15, t.r * (t.tall ? .7 : .95), t.r * 1.15); dummy.updateMatrix();
-    canM.setMatrixAt(i, dummy.matrix); canM.setColorAt(i, col.set(t.dark ? "#5f8c3e" : ["#76a24e", "#86ad55", "#6f9a45"][i % 3]));
-  });
-  // palm crowns: a star of drooping leaves
-  const leaf = new THREE.ConeGeometry(.45, 4.2, 4); leaf.translate(0, 2.1, 0); leaf.rotateX(Math.PI / 2.3); leaf.scale(1, .35, 1);
-  const palmM = new THREE.InstancedMesh(leaf, lam({ color: "#4f8a35" }), palms.length * 7);
-  let k = 0;
-  for (const t of palms) for (let j = 0; j < 7; j++) {
-    dummy.position.set(t.x, t.th, t.y); dummy.rotation.set(0, j / 7 * Math.PI * 2 + t.x, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); palmM.setMatrixAt(k++, dummy.matrix);
+  const dummy = new THREE.Object3D(), col = new THREE.Color(), R = rng32(99);
+  const trunkGeo = new THREE.CylinderGeometry(.22, .34, 1, 6), canGeo = new THREE.IcosahedronGeometry(1, 1);
+  const leaf = new THREE.ConeGeometry(.45, 4.2, 4); leaf.translate(0, 2.1, 0); leaf.rotateX(Math.PI / 2.3); leaf.scale(1, .35, 1); // palm crowns: a star of drooping leaves
+  const trunkMat = lam({ color: "#6b4a2b" }), canMat = new THREE.MeshLambertMaterial({ flatShading: true }), palmMat = lam({ color: "#4f8a35" });
+  const cells = new Map();
+  for (const t of trees) {
+    t.th = t.palm ? 7 + t.r * 1.2 : t.tall ? 6 + t.r * .9 : 1.6 + t.r * .5;
+    const key = Math.floor(t.x / 120) + "," + Math.floor(t.y / 120);
+    if (!cells.has(key)) cells.set(key, []); cells.get(key).push(t);
   }
-  trunkM.castShadow = canM.castShadow = palmM.castShadow = true;
-  scene.add(trunkM, canM, palmM);
+  let ci = 0;
+  for (const list of cells.values()) {
+    const round = list.filter(t => !t.palm), palms = list.filter(t => t.palm);
+    const trunkM = new THREE.InstancedMesh(trunkGeo, trunkMat, list.length);
+    list.forEach((t, i) => {
+      dummy.position.set(t.x, t.th / 2, t.y); dummy.rotation.set(t.palm ? (R() - .5) * .25 : 0, 0, t.palm ? (R() - .5) * .25 : 0); dummy.scale.set(1, t.th, 1); dummy.updateMatrix();
+      trunkM.setMatrixAt(i, dummy.matrix);
+    });
+    const parts = [trunkM];
+    if (round.length) {
+      const canM = new THREE.InstancedMesh(canGeo, canMat, round.length);
+      round.forEach((t, i) => {
+        dummy.position.set(t.x, t.th + t.r * .75, t.y); dummy.rotation.set(R() * 3, R() * 3, R() * 3); dummy.scale.set(t.r * 1.15, t.r * (t.tall ? .7 : .95), t.r * 1.15); dummy.updateMatrix();
+        canM.setMatrixAt(i, dummy.matrix); canM.setColorAt(i, col.set(t.dark ? "#5f8c3e" : ["#76a24e", "#86ad55", "#6f9a45"][(ci + i) % 3]));
+      });
+      ci += round.length; parts.push(canM);
+    }
+    if (palms.length) {
+      const palmM = new THREE.InstancedMesh(leaf, palmMat, palms.length * 7);
+      let k = 0;
+      for (const t of palms) for (let j = 0; j < 7; j++) {
+        dummy.position.set(t.x, t.th, t.y); dummy.rotation.set(0, j / 7 * Math.PI * 2 + t.x, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); palmM.setMatrixAt(k++, dummy.matrix);
+      }
+      parts.push(palmM);
+    }
+    for (const m of parts) { m.castShadow = true; m.computeBoundingSphere(); scene.add(m); }
+  }
 }
 
 // Sufan Bikash Ghor: sign board, flag on the roof, drop zone ring
@@ -2125,6 +2195,9 @@ for (const b of buntings) {
   }
 }
 
+// the world is built; apart from the flags, the drop zone and the bunting it never moves again, so bake it into a few hundred meshes
+mergeUnder(scene, new Set([dropRing, dropDisc, officeFlag, schoolFlag, ...buntFlags].filter(Boolean)), { cell: 120, maxR: 40 });
+
 /* ================= models: CNG, people, cows ================= */
 function box(w, h, d, color, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lam({ color })); m.position.set(x, y, z); m.castShadow = true; return m; }
 const paintMat = lam({ color: PAINT[shop.paint] || C.green, side: THREE.DoubleSide });
@@ -2288,6 +2361,11 @@ function makeScooter() {
   return { g, body, spot, lens, drvShirt, drvFace };
 }
 const scoot = makeScooter(); scene.add(scoot.g);
+// and the vehicles: everything but the parts the shop and the driver choice swap or recolour is baked, per vehicle body
+for (const r of [cng, scoot]) {
+  const keep = new Set([r.stick, r.umb, r.bumper, r.led, r.lens, r.drvShirt, r.spot].filter(Boolean)), live = new Set([paintMat, r.lens.material, r.drvShirt.material]);
+  mergeUnder(r.body, keep, { live }); keep.add(r.body); mergeUnder(r.g, keep, { live });
+}
 const ride = () => vehId === "scooter" && !garage ? scoot : cng; // the shop's garage always shows the CNG
 // paint, stickers and visible upgrades on the CNG; `paint` can be a paint the shop is only previewing
 function applyLook(paint = shop.paint) {
@@ -3245,10 +3323,22 @@ syncWallet();
 
 /* ================= loop & start ================= */
 let last = performance.now(), paused = false;
+// a phone that can't keep up gets a softer picture instead of a choppy one: if frames average over 36 ms (under ~28 fps)
+// for two seconds, draw fewer pixels, down to one per screen pixel. 36 ms leaves alone phones capped at 30 fps to save battery
+let perfT = 0, perfN = 0, perfSum = 0;
+function tunePixels(ms) {
+  if (document.hidden || ms > 200) return; // a hidden tab or a one-off hitch says nothing about the phone
+  perfSum += ms; perfN++; perfT += ms;
+  if (perfT < 2000) return;
+  const pr = renderer.getPixelRatio();
+  if (perfSum / perfN > 36 && pr > 1) { renderer.setPixelRatio(Math.max(1, pr - .25)); resize(); }
+  perfT = perfSum = perfN = 0;
+}
 function loop(now) {
-  const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
+  const raw = now - last, dt = Math.min(.05, Math.max(0, raw / 1000)); last = now;
   const t = now / 1000;
   if (paused) { requestAnimationFrame(loop); return; }
+  tunePixels(raw);
   if (state === "play" && talk) tickTalk(dt);
   else if (state === "play") update(dt);
   if (state === "menu" && !garage) { // slow drone orbit over the party office
