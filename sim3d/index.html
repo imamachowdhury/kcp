@@ -213,7 +213,11 @@
   }
   @media (pointer: coarse) { #target { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 92px); } }
 </style>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
+<!-- three.js r160 kept next to the game (minified, MIT, see vendor/three.LICENSE): one less server to wait on or be blocked by -->
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<link rel="modulepreload" href="./vendor/three.module.min.js">
+<link rel="preload" href="../sim/kotalpur-map.js" as="script">
+<link rel="preload" href="../sim/kotalpur-extra.js" as="script">
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -335,6 +339,22 @@
 <script src="../sim/kotalpur-map.js"></script>
 <script src="../sim/kotalpur-extra.js"></script>
 <script src="../sim/card.js"></script>
+<script>
+// if the game's code never comes up (three.js didn't download, an old browser, no WebGL), say so instead of "loading" forever
+(function () {
+  var shown = false;
+  function fail() {
+    if (shown || window.__sim3) return; shown = true;
+    var l = document.getElementById("loading"), p = document.getElementById("play");
+    if (l) l.textContent = "খেলাটা লোড হলো না। নেট চেক করে আবার চেষ্টা করুন (পুরোনো ফোনে ৩ডি না-ও চলতে পারে)।";
+    if (p) { p.disabled = false; p.textContent = "আবার চেষ্টা করুন ↻"; p.onclick = function (e) { e.stopImmediatePropagation(); location.reload(); }; }
+  }
+  addEventListener("error", function (e) { // a script that failed to load, or code that threw before the game was up
+    var t = e.target; if (e instanceof ErrorEvent || (t && t.tagName === "SCRIPT")) setTimeout(fail, 1500);
+  }, true);
+  addEventListener("load", function () { setTimeout(fail, 12000); });
+})();
+</script>
 <script type="module">
 import * as THREE from "three";
 
@@ -693,7 +713,8 @@ const cv = el("game");
 const mobile = matchMedia("(pointer: coarse)").matches;
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !mobile || devicePixelRatio < 2, powerPreference: "high-performance" });
 renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.5 : 2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// soft shadows sample the shadow map many times per pixel; phones get the plain filtered kind, which looks nearly the same here
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = mobile ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 const SKY = new THREE.Color("#a9d4ea");
@@ -3324,14 +3345,20 @@ syncWallet();
 /* ================= loop & start ================= */
 let last = performance.now(), paused = false;
 // a phone that can't keep up gets a softer picture instead of a choppy one: if frames average over 36 ms (under ~28 fps)
-// for two seconds, draw fewer pixels, down to one per screen pixel. 36 ms leaves alone phones capped at 30 fps to save battery
+// for two seconds, step down one notch: fewer pixels (down to one per screen pixel), then a coarser shadow map, then no
+// sun shadows at all. 36 ms leaves alone phones capped at 30 fps to save battery
 let perfT = 0, perfN = 0, perfSum = 0;
 function tunePixels(ms) {
   if (document.hidden || ms > 200) return; // a hidden tab or a one-off hitch says nothing about the phone
   perfSum += ms; perfN++; perfT += ms;
   if (perfT < 2000) return;
-  const pr = renderer.getPixelRatio();
-  if (perfSum / perfN > 36 && pr > 1) { renderer.setPixelRatio(Math.max(1, pr - .25)); resize(); }
+  if (perfSum / perfN > 36) {
+    const pr = renderer.getPixelRatio();
+    if (pr > 1) { renderer.setPixelRatio(Math.max(1, pr - .25)); resize(); }
+    else if (sun.castShadow && sun.shadow.mapSize.x > 512) { // rebuilt at the new size on the next frame
+      sun.shadow.mapSize.set(512, 512); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+    } else if (sun.castShadow) sun.castShadow = false; // the hemisphere light still shades every face
+  }
   perfT = perfSum = perfN = 0;
 }
 function loop(now) {
