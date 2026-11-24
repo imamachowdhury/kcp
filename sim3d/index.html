@@ -280,6 +280,7 @@
     <div class="btns">
       <button class="btn" id="again">আবার খেলো</button>
       <button class="btn alt" id="shopFromEnd">দোকান 🛒</button>
+      <button class="btn ghost" id="share">ছবি শেয়ার 📸</button>
       <a class="btn ghost" href="../">KCP</a>
     </div>
   </div>
@@ -296,6 +297,7 @@
 </div>
 
 <script src="../sim/kotalpur-map.js"></script>
+<script src="../sim/card.js"></script>
 <script type="module">
 import * as THREE from "three";
 
@@ -2013,6 +2015,14 @@ function samCrash() {
   sam.mesh.rotation.z = Math.PI / 2; sam.mesh.position.y = .4;
   const g = gid; setTimeout(() => g === gid && endGame(false, "sam"), 1800);
 }
+let lastCard = null;
+el("share").addEventListener("click", () => {
+  if (!lastCard) return;
+  const text = `"সভায় আনো! ৩ডি" খেলায় আমি ${bn(lastCard.n)}/${bn(lastCard.N)} জন কমরেডকে শুক্রবারের সভায় এনেছি (${rideLabel()})। তুমি পারবে? ✊☕`;
+  const url = "https://joinkcp.com/sim3d/";
+  if (window.KCPCard) KCPCard.open({ ...lastCard, text, url });
+  else if (navigator.share) navigator.share({ title: "সভায় আনো! · KCP", text, url }).catch(() => {});
+});
 function endGame(all, reason) {
   if (state === "over") return;
   state = "over"; stick = null; stickEl.style.display = "none"; closeTalk(); engineUpdate();
@@ -2034,6 +2044,9 @@ function endGame(all, reason) {
     const ok = c.state === "done", ph = c.emoji ? `<div class="ph">${c.emoji}</div>` : `<div class="ph" style="background-image:url('../assets/people/${c.id}.jpg')"></div>`;
     return `<figure class="${ok ? "" : "miss"}">${ph}${c.n}${ok ? "" : c.state === "sleep" ? " 💤" : c.state === "ride" ? " 🛺" : " 🏃"}</figure>`;
   }).join("");
+  lastCard = { mode: "৩ডি", path: "sim3d", kicker: el("endKicker").textContent, title: el("endTitle").textContent, n, N, verdict: el("endVerdict").textContent,
+    driver: { id: driverId, n: DRV().n }, vehicle: VEH().n, earn: total, sam: reason === "sam", awards: [],
+    faces: comrades.map(c => ({ id: c.id, n: c.n, emoji: c.emoji, ok: c.state === "done" })) };
   if (reason !== "sam") { if (all || n >= 8) sfx.fanfare(); else if (n === 0) sfx.sadTrombone(); }
   ["hud", "mini", "horn", "stickZone", "keys", "target"].forEach(id => el(id).hidden = true);
   arrow.visible = false;

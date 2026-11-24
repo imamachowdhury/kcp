@@ -302,7 +302,7 @@
     <div class="btns">
       <button class="btn" id="again">আবার খেলো</button>
       <button class="btn alt" id="shopFromEnd">দোকান 🛒</button>
-      <button class="btn ghost" id="share">শেয়ার করো</button>
+      <button class="btn ghost" id="share">ছবি শেয়ার 📸</button>
       <a class="btn ghost" href="../">KCP</a>
     </div>
   </div>
@@ -320,6 +320,7 @@
 </div>
 
 <script src="kotalpur-map.js"></script>
+<script src="card.js"></script>
 <script>
 (() => {
 "use strict";
@@ -2596,7 +2597,7 @@ syncWallet();
 el("play").addEventListener("click", startGame);
 el("again").addEventListener("click", startGame);
 
-let lastResult = 0;
+let lastResult = 0, lastCard = null;
 function samCrash() {
   state = "ending"; P.v = 0; shake = .8; flash = .7;
   sfx.vineBoom(); setTimeout(() => sfx.sadTrombone(), 600);
@@ -2664,19 +2665,18 @@ function endGame(all, reason) {
   shop.wallet += total; saveShop();
   el("endEarn").innerHTML = `💰 ${earnText}<br>পকেটে মোট: <b>৳${bn(shop.wallet)}</b>`;
   lastResult = n;
+  lastCard = { path: "sim", kicker: el("endKicker").textContent, title: el("endTitle").textContent, n, N, verdict: el("endVerdict").textContent,
+    driver: { id: driverId, n: DRV().n }, vehicle: VEH().n, earn: total, sam: reason === "sam", awards: aw,
+    faces: comrades.map(c => ({ id: c.id, n: c.n, emoji: c.a, ok: c.state === "done" })) };
   el("horn").hidden = true; el("money").hidden = true;
   setTimeout(() => el("end").classList.remove("hidden"), all ? 0 : 400);
 }
 
-el("share").addEventListener("click", async () => {
-  const text = `"সভায় আনো!" খেলায় আমি ${bn(lastResult)}/${bn(comrades.length)} জন কমরেডকে শুক্রবারের সভায় এনেছি। তুমি পারবে? ✊☕`;
+el("share").addEventListener("click", () => {
+  const text = `"সভায় আনো!" খেলায় আমি ${bn(lastResult)}/${bn(comrades.length)} জন কমরেডকে শুক্রবারের সভায় এনেছি (${rideLabel()})। তুমি পারবে? ✊☕`;
   const url = "https://joinkcp.com/sim/";
-  try {
-    if (navigator.share) { await navigator.share({ title: "সভায় আনো! · KCP", text, url }); return; }
-    await navigator.clipboard.writeText(`${text} ${url}`);
-    el("share").textContent = "কপি হয়েছে!";
-    setTimeout(() => { el("share").textContent = "শেয়ার করো"; }, 1600);
-  } catch (e) {}
+  if (lastCard && window.KCPCard) KCPCard.open({ ...lastCard, text, url });
+  else if (navigator.share) navigator.share({ title: "সভায় আনো! · KCP", text, url }).catch(() => {});
 });
 
 // expose a tiny hook for automated play-testing
