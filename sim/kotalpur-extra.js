@@ -11,13 +11,13 @@
   // west face (the first edge) to the lane. OpenStreetMap has a 4 x 6 m box here; the game gives it a model of its own
   M.buildings[258] = [[23.6, 159], [23.6, 167], [33.6, 167], [33.6, 159]];
   M.pinkHouse = { at: [28.6, 163] };
-  // just south of it (street photos at 24.834932, 91.952926): the tin-roofed house, a plastered block on the lane with a
-  // bare-brick wing running east (an L, a lean-to along its back), then a grey lean-to kitchen and a bamboo shed behind.
-  // OpenStreetMap had two small boxes here; the game draws all four itself
-  M.buildings[315] = [[18.2, 178.6], [18.2, 186.4], [23.8, 186.4], [23.8, 178.6]];
-  M.buildings[316] = [[23.8, 178.6], [23.8, 187.4], [32, 187.4], [32, 184.6], [34.5, 184.6], [34.5, 178.6]];
-  M.buildings.push([[18.6, 186.4], [18.6, 189.2], [22.6, 189.2], [22.6, 186.4]], [[22.2, 189.6], [22.2, 193.6], [27.2, 193.6], [27.2, 189.6]]);
-  M.tinHouse = { at: [[21, 182.5], [29, 181.6], [20.6, 187.8], [24.7, 191.6]] }; // the block, the wing, the kitchen, the shed
+  // just south of it (street photos at 24.834932, 91.952926, placed by the Street View panoramas along the lane): the
+  // tin-roofed house, a plastered block on the lane with a bare-brick wing running east (an L, a lean-to along its back),
+  // then a grey lean-to kitchen and a bamboo shed behind. OpenStreetMap had two small boxes here; the game draws all four
+  M.buildings[315] = [[18.2, 174.1], [18.2, 181.9], [23.8, 181.9], [23.8, 174.1]];
+  M.buildings[316] = [[23.8, 174.1], [23.8, 182.9], [32, 182.9], [32, 180.1], [34.5, 180.1], [34.5, 174.1]];
+  M.buildings.push([[18.6, 181.9], [18.6, 184.7], [22.6, 184.7], [22.6, 181.9]], [[22.2, 185.1], [22.2, 189.1], [27.2, 189.1], [27.2, 185.1]]);
+  M.tinHouse = { at: [[21, 178], [29, 177.1], [20.6, 183.3], [24.7, 187.1]] }; // the block, the wing, the kitchen, the shed
   // Kotalpur Government Primary School, as the satellite shows it: one long storey, the veranda (the first edge) facing
   // east onto the walled playing field. OpenStreetMap has it a little narrower and tilted
   M.buildings[95] = [[85.3, 5.8], [85.5, -18.6], [74.4, -18.8], [74.2, 5.6]];
@@ -98,9 +98,9 @@
     { k: "bwall", p: [[21.24, 158.1], [19.16, 170.7], [33.8, 170.7]], col: "#e6dca6", base: "#cf5f7c" },
     { k: "tingate", p: [[21.7, 155.3], [21.24, 158.1]] },
     { k: "wire", p: [[21.7, 155.3], [35, 155.3], [35, 170.7], [33.8, 170.7]] },
-    { k: "hay", at: [30.2, 174.3] }, { k: "sheet", p: [[24.6, 175.2], [27.4, 175.2], [27.4, 177], [24.6, 177]] },
+    { k: "hay", at: [37, 173.4] }, { k: "sheet", p: [[24.6, 171.4], [27.4, 171.4], [27.4, 173.2], [24.6, 173.2]] },
     // by the tin-roofed house: a concrete tank lid heaped with bricks against its lane wall, and an electric pole
-    { k: "tank", p: [[16.8, 184.8], [18.1, 184.8], [18.1, 187.2], [16.8, 187.2]] }, { k: "epole", at: [16.3, 188.6] },
+    { k: "tank", p: [[16.8, 180.3], [18.1, 180.3], [18.1, 182.7], [16.8, 182.7]] }, { k: "epole", at: [16.3, 184.1] },
     // where the lane meets the road (street photos at 24.834345, 91.952744): a fence of old tin sheets on wooden legs
     // round a plot of areca palms, a gap for a gate in its lane side, a pole at its south-east corner
     { k: "tinfence", p: [[-9, 241.6], [-8, 233], [0.5, 233], [-0.1, 237.2]] },
@@ -111,7 +111,7 @@
   M.open = [[[150, 27.5], [195, 27.5], [195, 34.4], [150, 34.4]], [[112.4, 27], [135, 27], [135, 35.2], [112.4, 35.2]],
             [[31.6, 87.8], [46.7, 87.8], [46.7, 106.7], [31.6, 106.7]],
             [[21.2, 155], [35.2, 155], [35.2, 178], [24, 178], [18.9, 171]],
-            [[15.8, 184], [18.3, 184], [18.3, 189.6], [15.8, 189.6]], [[-9.4, 232.6], [0.9, 232.6], [-0.2, 243.4], [-9.4, 242]]];
+            [[15.8, 179.5], [18.3, 179.5], [18.3, 185.1], [15.8, 185.1]], [[34.2, 171], [40, 171], [40, 176], [34.2, 176]], [[-9.4, 232.6], [0.9, 232.6], [-0.2, 243.4], [-9.4, 242]]];
   // the school's grounds: the white-walled playing field in front (yard; edge `gate` is the open corner where the path
   // leaves), the flag pole, and two haystacks out by the paddy
   M.school = {
