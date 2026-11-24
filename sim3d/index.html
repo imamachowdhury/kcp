@@ -478,7 +478,7 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const wrapAng = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
 function rng32(seed) { return () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
-const HW = { tertiary: 6, unclassified: 4.5, residential: 4 };
+const HW = { tertiary: 6, unclassified: 4.5, residential: 4, track: 2 };
 const roads = MAP.roads.map(r => ({ hw: HW[r.k] || 3.5, p: r.p, k: r.k }));
 const roadSegs = [];
 for (const r of roads) for (let i = 1; i < r.p.length; i++) {
@@ -545,6 +545,8 @@ const mamuHouse = mamuAt(7.5, 10.8), mamuBack = mamuAt(-2.1, 17.5); // and the l
 const nearB = (x, y) => buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b;
 const mosque = nearB(259.6, 122.2), mosqueShed = nearB(275.9, 130.1);
 const MOSQUE_YARD = [[249.5, 104], [257.9, 104.6], [261.3, 104.85], [271, 105.5], [281, 114], [283.5, 135], [249.5, 135]]; // the gate is the 2nd edge
+// Kotalpur Government Primary School and its walled field (MAP.school, from kotalpur-extra.js)
+const SCHOOL = MAP.school, school = SCHOOL ? nearB(SCHOOL.at[0], SCHOOL.at[1]) : null;
 // a building's frame: u points from its road into it, v along the road; w and d are its size along v and u
 function frameOf(b) {
   const nr = nearestRoad(b.cx, b.cy), L = Math.hypot(b.cx - nr.x, b.cy - nr.y) || 1, u = { x: (b.cx - nr.x) / L, y: (b.cy - nr.y) / L }, v = { x: -u.y, y: u.x };
@@ -610,6 +612,10 @@ const trees = [];
     }
   }
   for (let i = trees.length; i--;) if (pip(trees[i].x, trees[i].y, MOSQUE_YARD)) trees.splice(i, 1); // keep the mosque yard clear
+  { // and the paddy, the school field, and round the flag pole and the haystacks
+    const open = [...(MAP.fields || []), ...(MAP.open || []), ...(SCHOOL ? [SCHOOL.yard] : [])], posts = SCHOOL ? [SCHOOL.flag, ...SCHOOL.hay] : [];
+    for (let i = trees.length; i--;) { const t = trees[i]; if (open.some(p => pip(t.x, t.y, p)) || posts.some(([x, y]) => Math.hypot(t.x - x, t.y - y) < 3.5)) trees.splice(i, 1); }
+  }
 }
 function roadsidePoint(sg, f, gap) {
   const x = sg.ax + (sg.bx - sg.ax) * f, y = sg.ay + (sg.by - sg.ay) * f, L = Math.hypot(sg.bx - sg.ax, sg.by - sg.ay) || 1;
@@ -853,6 +859,23 @@ ribbon(roads, .08, "#ffffff", 0, roadTex, 4);
   const m = new THREE.Mesh(B.build(), lam({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); m.receiveShadow = true; scene.add(m);
 }
 
+// paddy round the school: golden rows with green bunds every 14 m by 12 m; the school field a paler, trodden green
+{
+  const pT = canvasTex(256, 256, (c) => {
+    c.fillStyle = "#d9c977"; c.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 9) { c.fillStyle = "rgba(140,112,40,.22)"; c.fillRect(0, y, 256, 3); }
+    c.fillStyle = "#a9b96f"; c.fillRect(0, 0, 256, 8); c.fillRect(0, 0, 8, 256);
+  }, true);
+  const flat = (polys, y, mat, off) => {
+    const B = Builder(), c = rgb("#ffffff");
+    for (const p of polys) { const tris = THREE.ShapeUtils.triangulateShape(p.map(([x, z]) => new THREE.Vector2(x, z)), []), ids = p.map(([x, z]) => B.v(x, y, z, UP, x / 14, z / 12, c)); for (const [a, b2, c2] of tris) B.tri(ids[a], ids[b2], ids[c2], UP); }
+    mat.vertexColors = true; mat.polygonOffset = true; mat.polygonOffsetFactor = mat.polygonOffsetUnits = -off;
+    const m = new THREE.Mesh(B.build(), mat); m.receiveShadow = true; scene.add(m);
+  };
+  if (MAP.fields) flat(MAP.fields, .03, lam({ map: pT }), 1);
+  if (SCHOOL) flat([SCHOOL.yard], .03, lam({ color: "#c4d293" }), 1);
+}
+
 // houses: walls with windows, flat concrete roofs or tin roofs, water tanks and stair rooms on top
 const WALLS = ["#efe4cc", "#e6d3b3", "#d8e0cf", "#ecd2c2", "#d3dde4", "#f2ead8", "#e8dba0", "#f0c9a8"];
 const ROOFS = ["#a3aeb6", "#bcc4c9", "#ddd2ba", "#8f9ca5", "#b9a58a"];
@@ -860,17 +883,17 @@ const TINS = ["#9c5a3c", "#8e989e", "#a86b45", "#7d8a90"];
 const tanks = [], stairs = [];
 for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], lk.at[1], b.p)); if (b) b.look = lk; }
 {
-  const R = rng32(23), WB = Builder(), RB = Builder(), TB = Builder(), PB = Builder();
+  const R = rng32(23), WB = Builder(), RB = Builder(), TB = Builder(), PB = Builder(), AB = Builder();
   for (const b of buildings) {
     const area = b.p.reduce((a, q, i) => { const n = b.p[(i + 1) % b.p.length]; return a + q[0] * n[1] - n[0] * q[1]; }, 0) / 2;
     const sgn = area >= 0 ? 1 : -1, big = Math.abs(area) > 260;
     const raw = b === office ? 6.4 : (big ? 6.6 : 3.4) + R() * (big ? 6.4 : 4.4);
     b.h = Math.max(1, Math.round(raw / 3.2)) * 3.2;           // whole storeys, so the window texture lines up
     b.ips = R() < .3;
-    const wall = rgb(b === office ? "#f5c518" : WALLS[(R() * WALLS.length) | 0]);
+    const wall = rgb(b === office ? "#f5c518" : (w => b.look && b.look.wall || w)(WALLS[(R() * WALLS.length) | 0]));
     let tin = b !== office && b.h < 4 && R() < .7;
     if (b.look) { b.h = b.look.h; tin = b.look.tin; } // as seen on the satellite (MAP.looks)
-    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack || b === mosque || b === mosqueShed) continue; // these have their own models below
+    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack || b === mosque || b === mosqueShed || b === school) continue; // these have their own models below
     let cum = 0;
     b.p.forEach((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dz = n[1] - q[1], L = Math.hypot(dx, dz); if (L < .01) return;
@@ -878,8 +901,17 @@ for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], 
       const a = WB.v(q[0], 0, q[1], nn, u0, 0, wall), b2 = WB.v(n[0], 0, n[1], nn, u0 + L / 3.2, 0, wall);
       const c2 = WB.v(n[0], b.h, n[1], nn, u0 + L / 3.2, b.h / 3.2, wall), d = WB.v(q[0], b.h, q[1], nn, u0, b.h / 3.2, wall);
       WB.tri(a, b2, c2, nn); WB.tri(a, c2, d, nn); cum += L;
+      if (b.look && b.look.trim) { // red sunshades over the windows (the window sits mid-tile on the wall texture)
+        const tc = rgb(b.look.trim), ex = dx / L, ez = dz / L, up = [nn[0] * .4, .92, nn[2] * .4];
+        for (let j = Math.ceil(u0 - .5); ; j++) {
+          const dd = (j + .5 - u0) * 3.2; if (dd > L - .9) break; if (dd < .9) continue;
+          const px = q[0] + ex * dd, pz = q[1] + ez * dd, v = [];
+          for (const [s2, o, y] of [[-.85, 0, 2.6], [.85, 0, 2.6], [.85, .55, 2.38], [-.85, .55, 2.38]]) v.push(AB.v(px + ex * s2 + nn[0] * o, y, pz + ez * s2 + nn[2] * o, up, 0, 0, tc));
+          AB.tri(v[0], v[1], v[2], up); AB.tri(v[0], v[2], v[3], up);
+        }
+      }
       if (!tin) { // low parapet wall around a flat roof
-        const pc = rgb("#e9e2d3"), ph = b.h + .45;
+        const pc = rgb(b.look && b.look.trim || "#e9e2d3"), ph = b.h + .45;
         const pa = PB.v(q[0], b.h, q[1], nn, 0, 0, pc), pb = PB.v(n[0], b.h, n[1], nn, 0, 0, pc), pcc = PB.v(n[0], ph, n[1], nn, 0, 0, pc), pd = PB.v(q[0], ph, q[1], nn, 0, 0, pc);
         PB.tri(pa, pb, pcc, nn); PB.tri(pa, pcc, pd, nn);
         const inn = [-nn[0], 0, -nn[2]], ia = PB.v(q[0], b.h, q[1], inn, 0, 0, pc), ib = PB.v(n[0], b.h, n[1], inn, 0, 0, pc), ic = PB.v(n[0], ph, n[1], inn, 0, 0, pc), id = PB.v(q[0], ph, q[1], inn, 0, 0, pc);
@@ -899,12 +931,14 @@ for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], 
       for (const [a, b2, c2] of tris) RB.tri(ids[a], ids[b2], ids[c2], UP);
       if (b !== office) {
         const v = i => b.p[i % b.p.length], at = (f, i) => [b.cx + (v(i)[0] - b.cx) * f, b.cy + (v(i)[1] - b.cy) * f];
-        if (R() < .7) tanks.push({ p: at(.5, 0), h: b.h });
-        if (big && R() < .7) stairs.push({ p: at(.4, 2), h: b.h, a: ang });
+        const tk = R() < .7, lk = b.look || {};
+        if (lk.tank || (tk && !lk.stair)) tanks.push({ p: lk.tank || at(.5, 0), h: b.h });
+        if (lk.stair) stairs.push({ p: lk.stair, h: b.h, a: ang }); else if (big && R() < .7) stairs.push({ p: at(.4, 2), h: b.h, a: ang });
       }
     }
   }
   const walls = new THREE.Mesh(WB.build(), lam({ map: winTex, vertexColors: true })); walls.castShadow = walls.receiveShadow = true;
+  const shades = new THREE.Mesh(AB.build(), lam({ vertexColors: true, side: THREE.DoubleSide })); shades.castShadow = true; scene.add(shades);
   const roofs = new THREE.Mesh(RB.build(), lam({ vertexColors: true })); roofs.castShadow = roofs.receiveShadow = true;
   const tinM = new THREE.Mesh(TB.build(), lam({ map: tinTex, vertexColors: true })); tinM.castShadow = tinM.receiveShadow = true;
   const parM = new THREE.Mesh(PB.build(), lam({ vertexColors: true })); parM.castShadow = parM.receiveShadow = true;
@@ -1402,6 +1436,119 @@ if (mamuHouse) {
     for (const a of [0, 2.1, 4.2]) {
       const horn = new THREE.Mesh(new THREE.CylinderGeometry(.24, .06, .55, 10, 1, true), lam({ color: "#c9ccce", side: THREE.DoubleSide }));
       horn.rotation.z = Math.PI / 2; const hg = new THREE.Group(); hg.add(horn); horn.position.x = .3; hg.rotation.set(0, a, -.25); hg.position.set(sx, 6.4, sy); yard.add(hg);
+    }
+  }
+}
+// Kotalpur Government Primary School, after the photos: one storey of classrooms behind a veranda of red brick pillars under
+// a deep red brick band with the blue name board, steel railings, a raised brick block with a weathered name plate over the
+// office at the north end and a cream stair room on it; the national flag in front, the white wall round the field and
+// two haystacks out by the paddy
+let schoolFlag = null;
+if (school) {
+  const [a, c, d] = school.p, W = Math.hypot(c[0] - a[0], c[1] - a[1]), D = Math.hypot(d[0] - c[0], d[1] - c[1]);
+  const f = { x: school.p.reduce((t, q) => t + q[0], 0) / 4, y: school.p.reduce((t, q) => t + q[1], 0) / 4, w: W, d: D, u: { x: (d[0] - c[0]) / D, y: (d[1] - c[1]) / D } };
+  const { g, box, plane } = landmark(f), hw = W / 2, F = D / 2, PL = .45, WH = 3.0, TOP = PL + WH, VD = 2.2; // +x is north, +z the field
+  const brickT = (seed, rw, rh) => { const t = canvasTex(128, 64, (c2) => {
+    c2.fillStyle = "#c9b8a2"; c2.fillRect(0, 0, 128, 64); const R = rng32(seed);
+    for (let r = 0; r < 8; r++) for (let k = -1; k < 9; k++) { const v = .85 + R() * .3; c2.fillStyle = `rgb(${[168, 67, 46].map(q => Math.round(q * v)).join(",")})`; c2.fillRect(k * 16 + (r % 2) * 8 + 1, r * 8 + 1, 14, 6); }
+  }, true); t.repeat.set(rw, rh); return lam({ map: t }); };
+  const cream = lam({ color: "#efe2a2" }), slab = lam({ color: "#bcb6a6" });
+  school.h = TOP + 1.15 + 1.5;
+  box(W + .4, PL, D + 1.5, 0, PL / 2, .55, lam({ color: "#c9c2b2" }));                       // plinth, wide in front
+  box(W, WH, D - VD, 0, PL + WH / 2, -VD / 2, cream);                                        // the classrooms
+  box(W, .18, VD, 0, TOP - .09, F - VD / 2, cream);                                          // veranda ceiling
+  box(W - .2, .12, D - .2, 0, TOP + .1, 0, slab);                                            // roof slab
+  for (const z of [-F + .15, F - .15]) box(W, 1.15, .3, 0, TOP + .575, z, brickT(95 + (z > 0), W / 2.2, 1));  // the deep brick band
+  for (const s of [-1, 1]) box(.3, 1.15, D - .6, s * (hw - .15), TOP + .575, 0, brickT(97, D / 2.2, 1));
+  const bays = 6, bw = W / bays;
+  for (let k = 0; k <= bays; k++) box(.6, WH, .6, Math.max(-hw + .3, Math.min(hw - .3, -hw + k * bw)), PL + WH / 2, F - .3, brickT(100 + k, .3, 3)); // pillars
+  for (const s of [-1, 1]) box(.6, WH, .6, s * (hw - .3), PL + WH / 2, -F + .3, brickT(110, .3, 3));                       // back corners
+  const steel = lam({ color: "#c9ced1" }), stepBay = 2;
+  for (let k = 0; k < bays; k++) { if (k === stepBay) continue; const x = -hw + (k + .5) * bw; for (const y of [.55, 1.05]) box(bw - .6, .05, .05, x, PL + y, F - .3, steel); for (let r = 1; r < 8; r++) box(.03, .5, .03, x - bw / 2 + .3 + (bw - .6) * r / 8, PL + .8, F - .3, steel); }
+  { const x = -hw + (stepBay + .5) * bw; box(2.4, .3, .45, x, .15, F + 1.52, lam({ color: "#bdb6a5" })); box(2.4, .15, .45, x, .075, F + 1.97, lam({ color: "#b3ac9b" })); }
+  // the classroom fronts in the shade of the veranda: cream doors, louvre strips, the office's grilled window and its name
+  const NAMES = ["প্রথম শ্রেণি", "দ্বিতীয় শ্রেণি", "তৃতীয় শ্রেণি", "চতুর্থ শ্রেণি", "পঞ্চম শ্রেণি", "অফিস"]; // south to north
+  const fT = canvasTex(1536, 192, (c2) => {
+    c2.fillStyle = "#e7dc9e"; c2.fillRect(0, 0, 1536, 192); const B2 = 1536 / bays;
+    for (let k = 0; k < bays; k++) {
+      const x0 = k * B2, office = k === bays - 1, dx = x0 + (office ? B2 * .55 : B2 * .36);
+      c2.fillStyle = "#d3cba3"; c2.fillRect(x0 + B2 * .08, 26, B2 * .84, 22);                           // louvre strip
+      c2.strokeStyle = "rgba(40,36,30,.45)"; c2.lineWidth = 1.5; for (let y = 30; y < 48; y += 4) { c2.beginPath(); c2.moveTo(x0 + B2 * .08, y); c2.lineTo(x0 + B2 * .92, y); c2.stroke(); }
+      c2.fillStyle = "#e9dfb5"; c2.fillRect(dx, 64, B2 * .28, 128); c2.strokeStyle = "#8a7a55"; c2.lineWidth = 3; c2.strokeRect(dx, 64, B2 * .28, 128);
+      for (const [py, ph] of [[74, 46], [128, 54]]) for (const px of [.04, .15]) c2.strokeRect(dx + B2 * px, py, B2 * .09, ph);
+      if (office) { c2.fillStyle = "#5c3220"; c2.fillRect(x0 + B2 * .12, 70, B2 * .34, 74); c2.strokeStyle = "#e7dc9e"; c2.lineWidth = 3; for (let x = x0 + B2 * .12 + 10; x < x0 + B2 * .46; x += 10) { c2.beginPath(); c2.moveTo(x, 70); c2.lineTo(x, 144); c2.stroke(); } }
+      else { c2.fillStyle = "#5c3220"; c2.fillRect(x0 + B2 * .7, 76, B2 * .2, 62); }
+      c2.fillStyle = "#3a2c22"; c2.font = `700 17px "Hind Siliguri", sans-serif`; c2.textAlign = "center"; c2.textBaseline = "middle"; c2.fillText(NAMES[k], dx + B2 * .14, 56);
+    }
+  });
+  plane(W, WH, lam({ map: fT }), 0, PL + WH / 2, F - VD + .01);
+  const winT = canvasTex(64, 96, (c2) => { c2.fillStyle = "#d3cba3"; c2.fillRect(0, 0, 64, 20); c2.fillStyle = "#5c3220"; c2.fillRect(6, 28, 52, 62); c2.strokeStyle = "#efe2a2"; c2.lineWidth = 2; for (let x = 12; x < 58; x += 8) { c2.beginPath(); c2.moveTo(x, 28); c2.lineTo(x, 90); c2.stroke(); } });
+  const winM = lam({ map: winT });
+  for (let k = 0; k < 5; k++) plane(1.3, 1.95, winM, -hw + (k + .5) * bw * 1.2, PL + 1.7, -F - .01, Math.PI);   // back windows
+  for (const s of [-1, 1]) plane(1.3, 1.95, winM, s * (hw + .01), PL + 1.7, -VD / 2 - 1, s * Math.PI / 2);  // and one in each end
+  // the blue name board on the band
+  plane(7.2, 1.0, lam({ map: signTex(["কতোয়ালপুর সরকারি প্রাথমিক বিদ্যালয়", "স্থাপিত: ২০১৬ খ্রিঃ · গোলাপগঞ্জ, সিলেট"], "#2b3a8c", "#f3f1ea", 1024, 144, 50) }), 1.5, TOP + .58, F + .01);
+  // the raised brick block over the office end, its weathered name plate, the cream stair room on top
+  box(5, 1.5, D, hw - 2.5, TOP + 1.15 + .75, 0, brickT(120, 5 / 2.2, 1.4));
+  plane(3, 1.0, lam({ map: canvasTex(128, 48, (c2) => { c2.fillStyle = "#9c968a"; c2.fillRect(0, 0, 128, 48); const R = rng32(7); for (let k = 0; k < 40; k++) { c2.fillStyle = `rgba(40,36,30,${.1 + R() * .2})`; c2.fillRect(R() * 128, R() * 48, 4 + R() * 12, 2 + R() * 3); } }) }), hw - 2.5, TOP + 1.9, F + .01);
+  box(2.6, 1.8, 2.6, hw - 2.5, TOP + 2.65 + .9, -1.2, cream); box(2.9, .12, 2.9, hw - 2.5, TOP + 2.65 + 1.86, -1.2, slab);
+  // the flag, the field wall and the haystacks
+  const [fx, fy] = SCHOOL.flag, pole = new THREE.Mesh(new THREE.CylinderGeometry(.05, .07, 7.8, 8), lam({ color: "#e2e2de" }));
+  pole.position.set(fx, 3.9, fy); pole.castShadow = true; scene.add(pole);
+  const bdT = canvasTex(100, 60, (c2) => { c2.fillStyle = "#006a4e"; c2.fillRect(0, 0, 100, 60); c2.fillStyle = "#f42a41"; c2.beginPath(); c2.arc(45, 30, 20, 0, Math.PI * 2); c2.fill(); });
+  const fg = new THREE.PlaneGeometry(2.2, 1.32, 8, 1); fg.translate(1.1, 0, 0);
+  schoolFlag = new THREE.Mesh(fg, lam({ map: bdT, side: THREE.DoubleSide })); schoolFlag.position.set(fx, 7.1, fy); schoolFlag.castShadow = true; scene.add(schoolFlag);
+  const white = lam({ color: "#e4e1d6" }), coping2 = lam({ color: "#f6f4ec" });
+  SCHOOL.yard.forEach((p0, i) => {
+    if (i === SCHOOL.gate) return;
+    const p1 = SCHOOL.yard[(i + 1) % SCHOOL.yard.length], len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), ry = -Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
+    for (const [hh, dd, y, m] of [[1.3, .2, .65, white], [.08, .3, 1.34, coping2]]) { const w = new THREE.Mesh(new THREE.BoxGeometry(len + .1, hh, dd), m); w.position.set((p0[0] + p1[0]) / 2, y, (p0[1] + p1[1]) / 2); w.rotation.y = ry; w.castShadow = w.receiveShadow = true; scene.add(w); }
+  });
+  const straw = lam({ color: "#c4a352" });
+  for (const [x, y] of SCHOOL.hay) { const h = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.5, 12), straw); h.position.set(x, 1.25, y); h.castShadow = h.receiveShadow = true; scene.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .8, 5), lam({ color: "#6b4a2b" })); t.position.set(x, 2.7, y); scene.add(t); }
+}
+// little roadside shops (MAP.looks `shop`): the open front toward the road, hung with chips over a white counter
+{
+  const shopT = canvasTex(128, 96, (c2) => {
+    c2.fillStyle = "#2b2520"; c2.fillRect(0, 0, 128, 96); const cols = ["#e0301e", "#f5c518", "#2f8a4f", "#f08a24", "#3b6fd1", "#f6efe1"];
+    for (let r = 0; r < 4; r++) for (let k = 0; k < 12; k++) { c2.fillStyle = cols[(k * 5 + r) % 6]; c2.fillRect(6 + k * 10, 6 + r * 14, 7, 11); }
+    c2.fillStyle = "#efece0"; c2.fillRect(0, 64, 128, 32); c2.fillStyle = "#cfcabb"; c2.fillRect(0, 64, 128, 3);
+  });
+  for (const b of buildings) {
+    if (!b.look || !b.look.shop) continue;
+    const nr = nearestRoad(b.cx, b.cy), ux = nr.x - b.cx, uy = nr.y - b.cy;
+    let best = null; b.p.forEach((q, i) => { const n = b.p[(i + 1) % b.p.length], mx = (q[0] + n[0]) / 2, my = (q[1] + n[1]) / 2, d = (mx - b.cx) * ux + (my - b.cy) * uy; if (!best || d > best.d) best = { d, q, n, mx, my }; });
+    const L = Math.hypot(best.n[0] - best.q[0], best.n[1] - best.q[1]), ox = best.mx - b.cx, oy = best.my - b.cy, oL = Math.hypot(ox, oy) || 1;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(L * .78, 1.9), lam({ map: shopT }));
+    m.position.set(best.mx + ox / oL * .03, 1.15, best.my + oy / oL * .03); m.rotation.y = Math.atan2(ox, oy); scene.add(m);
+    const step = new THREE.Mesh(new THREE.BoxGeometry(L + .2, .2, .7), lam({ color: "#b9b4a6" })); step.position.set(best.mx + ox / oL * .35, .1, best.my + oy / oL * .35); step.rotation.y = Math.atan2(ox, oy); step.receiveShadow = true; scene.add(step);
+  }
+}
+// fences, benches, gate posts, wells and bare earth (MAP.props)
+{
+  const at = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; scene.add(m); return m; };
+  const bamboo = lam({ color: "#a08a55" }), conc = lam({ color: "#a9a59a" }), wood = lam({ color: "#a89478" });
+  for (const pr of MAP.props || []) {
+    if (pr.k === "fence") for (let i = 1; i < pr.p.length; i++) {
+      const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax);
+      for (const h of [.45, .95]) at(new THREE.Mesh(new THREE.BoxGeometry(L, .05, .05), bamboo), (ax + bx) / 2, h, (ay + by) / 2, ry);
+      for (let d = 0; d <= L; d += 1) at(new THREE.Mesh(new THREE.CylinderGeometry(.04, .05, 1.2, 5), bamboo), ax + (bx - ax) * d / L, .6, ay + (by - ay) * d / L);
+    } else if (pr.k === "bench") {
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax);
+      at(new THREE.Mesh(new THREE.BoxGeometry(L, .08, .45), wood), (ax + bx) / 2, .45, (ay + by) / 2, ry);
+      for (const f of [.05, .95]) at(new THREE.Mesh(new THREE.BoxGeometry(.08, .42, .4), wood), ax + (bx - ax) * f, .21, ay + (by - ay) * f, ry);
+    } else if (pr.k === "posts") {
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax);
+      for (const [x, y] of pr.p) at(new THREE.Mesh(new THREE.BoxGeometry(.36, 3.0, .36), conc), x, 1.5, y);
+      at(new THREE.Mesh(new THREE.BoxGeometry(L + .5, .3, .3), conc), (ax + bx) / 2, 2.95, (ay + by) / 2, ry);
+    } else if (pr.k === "well") {
+      const [x, y] = pr.at, ring = at(new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.25, .8, 18, 1, true), lam({ color: "#8a4a32", side: THREE.DoubleSide })), x, .4, y);
+      at(new THREE.Mesh(new THREE.CircleGeometry(1.15, 18), lam({ color: "#3d3a2a" })), x, .5, y).rotation.x = -Math.PI / 2;
+      at(new THREE.Mesh(new THREE.SphereGeometry(.5, 8, 6), lam({ color: "#6f8f3a" })), x - .5, .75, y + .3);
+    } else if (pr.k === "dirt") {
+      const B = Builder(), c = rgb("#c08a5a"), tris = THREE.ShapeUtils.triangulateShape(pr.p.map(([x, z]) => new THREE.Vector2(x, z)), []), ids = pr.p.map(([x, z]) => B.v(x, .04, z, UP, 0, 0, c));
+      for (const [a, b2, c2] of tris) B.tri(ids[a], ids[b2], ids[c2], UP);
+      const m = new THREE.Mesh(B.build(), lam({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); m.receiveShadow = true; scene.add(m);
     }
   }
 }
@@ -1967,7 +2114,7 @@ function newGame() {
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
   drvTag = mkEl("tag drv", ""); drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${rideLabel()}`;
-  placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")], [mamu, mkEl("tag", "রিয়েল মামুর দোকান 🍟")]].filter(([b]) => b);
+  placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")], [mamu, mkEl("tag", "রিয়েল মামুর দোকান 🍟")], [school, mkEl("tag", "কতোয়ালপুর সরকারি প্রাথমিক বিদ্যালয় 🏫")]].filter(([b]) => b);
   for (const sh of SHOPS) { // a dashed ring on the road where to stop
     const g = new THREE.Group();
     for (let k = 0; k < 16; k++) { const a = new THREE.Mesh(new THREE.RingGeometry(STOP_R - .35, STOP_R, 8, 1, k / 16 * Math.PI * 2, Math.PI / 16), new THREE.MeshBasicMaterial({ color: "#8a5a2b", side: THREE.DoubleSide })); a.rotation.x = -Math.PI / 2; g.add(a); }
@@ -2359,6 +2506,7 @@ function render(t, dt) {
   const carrying = P && P.riders && P.riders.length;
   dropRing.material.opacity = (carrying ? .8 : .45) + Math.sin(t * 4) * .15; dropDisc.material.opacity = carrying ? .22 : .1;
   officeFlag.rotation.y = Math.sin(t * 2) * .25;
+  if (schoolFlag) schoolFlag.rotation.y = Math.sin(t * 2 + 1) * .3;
   for (const f of buntFlags) f.rotation.x = Math.sin(t * 3 + f.userData.ph) * .25;
   // rain streaks
   rain.visible = rainLevel > .02;
@@ -2618,7 +2766,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
   get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
-  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
+  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };

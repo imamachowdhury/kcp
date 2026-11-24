@@ -470,7 +470,7 @@ function rng32(seed) {
 }
 
 // roads
-const HW = { tertiary: 6, unclassified: 4.5, residential: 4 };
+const HW = { tertiary: 6, unclassified: 4.5, residential: 4, track: 2 };
 const roads = MAP.roads.map(r => ({ hw: HW[r.k] || 3.5, p: r.p, k: r.k }));
 const roadSegs = [];
 for (const r of roads) for (let i = 1; i < r.p.length; i++) {
@@ -580,6 +580,10 @@ const mamuHouse = mamuAt(7.5, 10.8), mamuBack = mamuAt(-2.1, 17.5); // and the l
 const nearB = (x, y) => buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b;
 const mosque = nearB(259.6, 122.2), mosqueShed = nearB(275.9, 130.1);
 const MOSQUE_YARD = [[249.5, 104], [257.9, 104.6], [261.3, 104.85], [271, 105.5], [281, 114], [283.5, 135], [249.5, 135]]; // the gate is the 2nd edge
+// Kotalpur Government Primary School, after the photos: a long storey of classrooms behind a veranda of red brick pillars
+// under a deep red brick band, the office and a raised brick block at the north end, the flag out front and a white wall
+// round the playing field (MAP.school, from kotalpur-extra.js)
+const SCHOOL = MAP.school, school = SCHOOL ? nearB(SCHOOL.at[0], SCHOOL.at[1]) : null;
 const officeU = (() => { const dx = office.cx - door.x, dy = office.cy - door.y, L = Math.hypot(dx, dy) || 1; return { x: dx / L, y: dy / L }; })();
 const officeV = { x: -officeU.y, y: officeU.x };
 const DROP_R = 18;
@@ -657,6 +661,10 @@ const trees = [];
     }
   }
   for (let i = trees.length; i--;) if (pip(trees[i].x, trees[i].y, MOSQUE_YARD)) trees.splice(i, 1); // keep the mosque yard clear
+  { // and the paddy, the school field, and round the flag pole and the haystacks
+    const open = [...(MAP.fields || []), ...(MAP.open || []), ...(SCHOOL ? [SCHOOL.yard] : [])], posts = SCHOOL ? [SCHOOL.flag, ...SCHOOL.hay] : [];
+    for (let i = trees.length; i--;) { const t = trees[i]; if (open.some(p => pip(t.x, t.y, p)) || posts.some(([x, y]) => Math.hypot(t.x - x, t.y - y) < 3.5)) trees.splice(i, 1); }
+  }
 }
 
 /* ================= 2.5D: heights, wall colours and lit faces ================= */
@@ -688,7 +696,7 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
       if (R() < .4) b.cloth = [ctr(.6, 1), ctr(.6, 3), R() * 6];
       if (R() < .3) b.dish = ctr(.55, b.p.length - 1);
     }
-    const wall = hexRgb(b === office ? "#86d6bf" : b === dukan ? "#ece8de" : b === palace ? "#efe3b0" : b === brick ? "#b8603f" : b === mamu ? "#d9d2c2" : b === mamuHouse ? (R(), "#efe3b8") : b === mosque ? (R(), "#f1e6c6") : b === mosqueShed ? (R(), "#9a6446") : WALLS[(R() * WALLS.length) | 0]);
+    const wall = hexRgb(b === office ? "#86d6bf" : b === dukan ? "#ece8de" : b === palace ? "#efe3b0" : b === brick ? "#b8603f" : b === mamu ? "#d9d2c2" : b === mamuHouse ? (R(), "#efe3b8") : b === mosque ? (R(), "#f1e6c6") : b === mosqueShed ? (R(), "#9a6446") : b === school ? (R(), "#efe2a2") : WALLS[(R() * WALLS.length) | 0]);
     b.edges = b.p.map((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dy = n[1] - q[1], L = Math.hypot(dx, dy) || 1;
       const nx = dy / L * b.sgn, ny = -dx / L * b.sgn;          // outward normal
@@ -702,6 +710,18 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     const b = buildings.find(b => pip(lk.at[0], lk.at[1], b.p)); if (!b) continue;
     b.h = lk.h; b.floors = Math.max(1, Math.round(lk.h / 3.2)); b.tin = lk.tin; b.roof = lk.roof;
     if (lk.tin) b.tank = b.stair = b.cloth = b.dish = null;
+    else if (lk.tank || lk.stair) { // as on the photo: the tank and stair room where they really are, nothing else up there
+      b.tank = lk.tank || null; b.cloth = b.dish = null;
+      const ca = Math.cos(b.ang), sa = Math.sin(b.ang), w = 1.4;
+      b.stair = lk.stair ? [[-w, -w], [w, -w], [w, w], [-w, w]].map(([x, y]) => [lk.stair[0] + x * ca - y * sa, lk.stair[1] + x * sa + y * ca]) : null;
+    }
+    if (lk.wall) { const wall = hexRgb(lk.wall); for (const e of b.edges) { const lit = -(e.nx * SUN.x + e.ny * SUN.y); e.col = shade(wall, lit > 0 ? .98 + lit * .06 : .8 + lit * .12); } }
+    b.trim = lk.trim || null;
+    if (lk.shop) { // open toward the nearest road
+      const nr = nearestRoad(b.cx, b.cy), ux = b.cx - nr.x, uy = b.cy - nr.y;
+      b.shop = true; b.ips = true; b.front = b.edges.reduce((m, e, i) => (e.nx * ux + e.ny * uy) < m.d ? { i, d: e.nx * ux + e.ny * uy } : m, { i: 0, d: 1e9 }).i;
+      b.edges[b.front].win = 0;
+    }
   }
   // Sufan Bikash Ghor, after the real building: the face toward the road, a deep roof overhang, a stair room
   const fr = office.edges.reduce((m, e, i) => (e.nx * officeU.x + e.ny * officeU.y) < m.d ? { i, d: e.nx * officeU.x + e.ny * officeU.y } : m, { i: 0, d: 2 });
@@ -753,6 +773,16 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     m.gate = [MOSQUE_YARD[1], MOSQUE_YARD[2]]; m.speaker = [264, 106.6];
     const s = mosqueShed; if (s) { s.h = 3.0; s.floors = 1; s.tin = true; s.roof = "#9c5a3c"; s.tank = s.stair = s.cloth = s.dish = null; s.ips = false; for (const e of s.edges) e.win = 0; }
   }
+  if (school) { // one storey with a flat roof; the veranda faces the field to the east
+    const s = school; s.h = 4.2; s.floors = 1; s.tin = false; s.roof = "#bcb6a6"; s.tank = s.stair = s.cloth = s.dish = null; s.ips = false;
+    s.front = s.edges.reduce((a, e, i) => e.nx > a.d ? { i, d: e.nx } : a, { i: 0, d: -2 }).i;
+    const ne = s.edges[s.edges.reduce((a, e, i) => -e.ny > a.d ? { i, d: -e.ny } : a, { i: 0, d: -2 }).i]; // the north end
+    const inn = ([x, y], d) => [x - ne.nx * d, y - ne.ny * d], ins = ([x, y]) => [x + (s.cx - x) * .03, y + (s.cy - y) * .03];
+    s.block = [ne.a, ne.b, inn(ne.b, 5), inn(ne.a, 5)].map(ins);                          // raised brick block over the office
+    const bc = [s.block.reduce((t, q) => t + q[0], 0) / 4 - 1.2, s.block.reduce((t, q) => t + q[1], 0) / 4];
+    s.box = [[-1.3, -1.3], [1.3, -1.3], [1.3, 1.3], [-1.3, 1.3]].map(([x, y]) => [bc[0] + x, bc[1] + y]); // the cream stair room on it
+    s.yard = SCHOOL.yard.map((q, i) => [q, SCHOOL.yard[(i + 1) % SCHOOL.yard.length]]).filter((_, i) => i !== SCHOOL.gate);
+  }
   if (dukan) { // one long storey under grey tin, open to the road
     dukan.h = 3.2; dukan.floors = 1; dukan.tin = true; dukan.roof = "#9aa3a8"; dukan.tank = dukan.stair = dukan.cloth = dukan.dish = null; dukan.ips = true;
     const nr = nearestRoad(dukan.cx, dukan.cy), ux = dukan.cx - nr.x, uy = dukan.cy - nr.y, uL = Math.hypot(ux, uy) || 1;
@@ -774,6 +804,17 @@ const PATH = {};
   PATH.rivers = rivers.map(r => { const p = new Path2D(); p.moveTo(r.p[0][0], r.p[0][1]); for (const q of r.p) p.lineTo(q[0], q[1]); return { hw: r.hw, p }; });
   const polyPath = (list) => { const p = new Path2D(); for (const b of list) { p.moveTo(b.p[0][0], b.p[0][1]); for (const q of b.p) p.lineTo(q[0], q[1]); p.closePath(); } return p; };
   PATH.ponds = polyPath(ponds);
+  if (MAP.fields) { // paddy, with its bunds every 14 m
+    PATH.fields = polyPath(MAP.fields.map(p => ({ p }))); PATH.bunds = new Path2D(); PATH.rows = new Path2D();
+    for (const f of MAP.fields) {
+      const xs = f.map(q => q[0]), ys = f.map(q => q[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+      for (let x = x0 + 14; x < x1; x += 14) { PATH.bunds.moveTo(x, y0); PATH.bunds.lineTo(x, y1); }
+      for (let y = y0 + 12; y < y1; y += 12) { PATH.bunds.moveTo(x0, y); PATH.bunds.lineTo(x1, y); }
+      for (let y = y0 + .8; y < y1; y += 1.6) { PATH.rows.moveTo(x0, y); PATH.rows.lineTo(x1, y); }
+    }
+  }
+  if (MAP.school) PATH.yard = polyPath([{ p: MAP.school.yard }]);
+  PATH.dirt = polyPath((MAP.props || []).filter(q => q.k === "dirt"));
   const homes = buildings.filter(b => b !== office);
   PATH.blds = polyPath(homes);
 }
@@ -1653,6 +1694,15 @@ function drawWorld(t) {
     ctx.strokeStyle = C.water2; ctx.lineWidth = r.hw * .5; ctx.setLineDash([3, 5]); ctx.lineDashOffset = -t * 4; ctx.stroke(r.p); ctx.setLineDash([]);
   }
   ctx.fillStyle = C.water; ctx.fill(PATH.ponds); ctx.strokeStyle = C.ink; ctx.lineWidth = .5; ctx.stroke(PATH.ponds);
+  if (PATH.fields) { // golden paddy in rows, green bunds between the plots
+    ctx.fillStyle = "#dccd7f"; ctx.fill(PATH.fields);
+    ctx.save(); ctx.clip(PATH.fields);
+    ctx.strokeStyle = "rgba(140,118,48,.22)"; ctx.lineWidth = .35; ctx.stroke(PATH.rows);
+    ctx.strokeStyle = "#b5c27c"; ctx.lineWidth = .9; ctx.stroke(PATH.bunds);
+    ctx.restore(); ctx.strokeStyle = "#b5c27c"; ctx.lineWidth = 1.2; ctx.stroke(PATH.fields);
+  }
+  if (PATH.yard) { ctx.fillStyle = "#cbd79d"; ctx.fill(PATH.yard); } // the school field, trodden a little paler
+  ctx.fillStyle = "#c08a5a"; ctx.fill(PATH.dirt);                          // bare red earth
 
   // roads: all outlines first so junctions merge
   ctx.strokeStyle = C.ink;
@@ -1812,6 +1862,17 @@ function drawCity(t) {
     ctx.fillStyle = "#5d8f2e"; ctx.strokeStyle = C.ink; ctx.lineWidth = .06;   // green coconuts
     for (const [u, o] of [[.82, .45], [.9, .6], [.76, .65], [.88, .35]]) { const [x, y] = at(u, o, .15); ctx.beginPath(); ctx.arc(x, y, .18, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
   }
+  // a little roadside shop (MAP.looks `shop`): white posts either side of the open front, packets of chips hanging in it,
+  // a low white counter and a concrete step
+  function shopFront(b) {
+    const { at, quad, wall } = faceOf(b.edges[b.front]), cols = ["#e0301e", "#f5c518", "#2f8a4f", "#f08a24", "#3b6fd1", "#f6efe1"];
+    quad(-.05, 1.05, 0, .7, .2, .2, "#b9b4a6", .1);                           // step
+    wall(.12, .88, .2, 2.1, "#2b2520", .12);                                   // the open front
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 11; k++) wall(.16 + k * .063, .2 + k * .063, 1.0 + r * .36, 1.3 + r * .36, cols[(k * 5 + r) % 6]);
+    wall(.12, .88, .2, .95, "#efece0", .1);                                   // counter
+    wall(.03, .12, .2, 2.4, "#f3efe6", .08); wall(.88, .97, .2, 2.4, "#f3efe6", .08); // posts
+    const [x, y] = at(.2, .35, .3); ctx.fillStyle = "#2b2b2b"; ctx.beginPath(); ctx.arc(x, y, .18, 0, Math.PI * 2); ctx.fill(); // a bucket
+  }
   // the mosque gate, after the photo: green-tiled pillars, a blue-and-white tiled arch over the steel gate, a green dome on top,
   // and the loudspeakers on their pole beside it
   function mosqueGate(m) {
@@ -1926,6 +1987,74 @@ function drawCity(t) {
     ctx.beginPath(); [P2(0, .8), P2(1, .8), P2(1, 1), P2(0, 1)].forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
     ctx.fillStyle = "#7a4a30"; ctx.fill(); ctx.strokeStyle = "rgba(29,26,23,.5)"; ctx.lineWidth = .1; ctx.stroke();
   }
+  // the school's walls: cream under a deep red brick band. On the veranda side, red brick pillars in front of the shaded
+  // classrooms (doors, louvre strips, the office's grilled window at the north end), steel railings and the blue name board
+  function schoolFace(b, e, i, ta, tb) {
+    const P2 = (u, v) => { const bx = e.a[0] + (e.b[0] - e.a[0]) * u, by = e.a[1] + (e.b[1] - e.a[1]) * u, tx = ta[0] + (tb[0] - ta[0]) * u, ty = ta[1] + (tb[1] - ta[1]) * u; return [bx + (tx - bx) * v, by + (ty - by) * v]; };
+    const q = (u0, u1, v0, v1) => { [P2(u0, v0), P2(u1, v0), P2(u1, v1), P2(u0, v1)].forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); };
+    const fill = (c, f) => { ctx.beginPath(); f(); ctx.fillStyle = c; ctx.fill(); };
+    const BR = "#a8432e", band = 3 / b.h, front = i === b.front, pw = .62 / e.len;
+    const nU = u => e.a[1] < e.b[1] ? u : 1 - u;                                  // u counted from the north end
+    const mortar = (u0, u1, v0, v1, n) => { ctx.strokeStyle = "rgba(60,20,12,.35)"; ctx.lineWidth = .05; ctx.beginPath(); for (let k = 1; k < n; k++) { const v = v0 + (v1 - v0) * k / n, a = P2(u0, v), c = P2(u1, v); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); } ctx.stroke(); };
+    if (front) {
+      const bays = 6, bw = 1 / bays;
+      fill("rgba(70,58,30,.3)", () => q(0, 1, .02, band));                       // the veranda's shade
+      for (let k = 0; k < bays; k++) {
+        const u0 = nU(k * bw), u1 = nU((k + 1) * bw), a = Math.min(u0, u1), w = Math.abs(u1 - u0);
+        if (k === 0) fill("#6b3a25", () => q(a + w * .2, a + w * .55, .22, .58));   // the office's grilled window
+        fill("#e6dbad", () => { q(a + w * (k === 0 ? .62 : .38), a + w * (k === 0 ? .86 : .62), .03, .56); });  // a cream panelled door
+        fill("#d3cba3", () => q(a + w * .1, a + w * .9, .6, .68));                // louvre strip over it
+        ctx.strokeStyle = "rgba(29,26,23,.35)"; ctx.lineWidth = .04; ctx.beginPath(); for (let r = 1; r < 4; r++) { const v = .6 + r * .02, c0 = P2(a + w * .1, v), c1 = P2(a + w * .9, v); ctx.moveTo(c0[0], c0[1]); ctx.lineTo(c1[0], c1[1]); } ctx.stroke();
+        ctx.strokeStyle = "#c9ced1"; ctx.lineWidth = .07; ctx.beginPath();        // steel railing between the pillars
+        for (const v of [.1, .24]) { const c0 = P2(a + pw, v), c1 = P2(a + w - pw, v); ctx.moveTo(c0[0], c0[1]); ctx.lineTo(c1[0], c1[1]); }
+        for (let r = 1; r < 9; r++) { const u = a + pw + (w - 2 * pw) * r / 9, c0 = P2(u, .1), c1 = P2(u, .24); ctx.moveTo(c0[0], c0[1]); ctx.lineTo(c1[0], c1[1]); }
+        ctx.stroke();
+      }
+      for (let k = 0; k <= bays; k++) { const u = Math.min(1 - pw, Math.max(0, k * bw - pw / 2)); fill(BR, () => q(u, u + pw, 0, band)); mortar(u, u + pw, 0, band, 12); }
+    } else {
+      const n = Math.max(1, Math.floor(e.len / 4));
+      for (let k = 0; k < n; k++) { const u0 = (k + .3) / n, u1 = (k + .7) / n; fill("#6b3a25", () => q(u0, u1, .25, .55)); fill("#d3cba3", () => q(u0, u1, .58, .66)); }
+      fill(BR, () => { q(0, pw, 0, band); q(1 - pw, 1, 0, band); });               // brick at the corners
+    }
+    fill(BR, () => q(0, 1, band, 1)); mortar(0, 1, band, 1, 6);                   // the red brick band all round the top
+    if (front) {
+      const a = nU(.38), c = nU(.66);
+      fill("#2b3a8c", () => q(Math.min(a, c), Math.max(a, c), band + .05, .95));  // কতোয়ালপুর সরকারি প্রাথমিক বিদ্যালয়
+      fill("#f3f1ea", () => q(Math.min(a, c) + .02, Math.max(a, c) - .02, band + .13, band + .17));
+      const { quad } = faceOf(e);                                                   // plinth with steps in the middle
+      quad(-.01, 1.01, 0, 1.3, .45, .45, "#c9c2b2", .1);
+      quad(.46, .56, 1.3, 1.75, .3, .3, "#bdb6a5", .08); quad(.46, .56, 1.75, 2.2, .15, .15, "#b3ac9b", .08);
+    }
+  }
+  // the national flag on its pole in front of the school: green, the red disc toward the pole, flying in the breeze
+  function schoolFlag(t) {
+    const [fx, fy] = SCHOOL.flag, g0 = lift(fx, fy, 0), top = lift(fx, fy, 7.6), k = 1 + kOf(7.6);
+    ctx.strokeStyle = "#e2e2de"; ctx.lineWidth = .16; ctx.beginPath(); ctx.moveTo(g0[0], g0[1]); ctx.lineTo(top[0], top[1]); ctx.stroke();
+    const W = 2.2 * k, Hf = 1.32 * k, wave = x => Math.sin(t * 5 - x * 2.2) * .18 * k * (x / W);
+    ctx.beginPath(); ctx.moveTo(top[0], top[1]);
+    for (let x = 0; x <= W; x += W / 10) ctx.lineTo(top[0] + x, top[1] + wave(x));
+    for (let x = W; x >= 0; x -= W / 10) ctx.lineTo(top[0] + x, top[1] + Hf + wave(x));
+    ctx.closePath(); ctx.fillStyle = "#006a4e"; ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .08; ctx.stroke();
+    const dx = W * .45; ctx.fillStyle = "#f42a41"; ctx.beginPath(); ctx.arc(top[0] + dx, top[1] + Hf / 2 + wave(dx), Hf * .3, 0, Math.PI * 2); ctx.fill();
+  }
+  // on the roof: the brick parapet, then the raised brick block over the office with its weathered name plate, and the cream
+  // stair room on top of that
+  function schoolTop(b, top) {
+    const rim = () => { ctx.beginPath(); top.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); };
+    ctx.save(); rim(); ctx.clip();
+    const R = rng32(93); ctx.fillStyle = "rgba(90,80,60,.08)";
+    for (let k = 0; k < 14; k++) { const [x, y] = lift(b.cx + (R() - .5) * 9, b.cy + (R() - .5) * 20, b.h); ctx.beginPath(); ctx.arc(x, y, .4 + R() * .9, 0, Math.PI * 2); ctx.fill(); }
+    rim(); ctx.strokeStyle = "#a8432e"; ctx.lineWidth = 1.4; ctx.stroke(); ctx.restore();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .45; ctx.stroke();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .3;
+    prism(b.block, b.h, b.h + 1.5, "#a8432e", "#b8b1a0");
+    const fe = b.edges[b.front], hi = b.block.map(([x, y]) => [x, y]).sort((p, q) => (q[0] * fe.nx + q[1] * fe.ny) - (p[0] * fe.nx + p[1] * fe.ny)).slice(0, 2);
+    if (fe.nx * (cx - b.cx) + fe.ny * (cy - b.cy) > 0) { // the name plate, if its face is toward the drone
+      const P = (u, h) => lift(hi[0][0] + (hi[1][0] - hi[0][0]) * u + fe.nx * .02, hi[0][1] + (hi[1][1] - hi[0][1]) * u + fe.ny * .02, h);
+      ctx.fillStyle = "#9c968a"; ctx.beginPath(); [P(.2, b.h + .25), P(.8, b.h + .25), P(.8, b.h + 1.25), P(.2, b.h + 1.25)].forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fill(); ctx.lineWidth = .08; ctx.stroke();
+    }
+    ctx.lineWidth = .3; prism(b.box, b.h + 1.5, b.h + 3.3, "#efe2a2", "#d6d0be");
+  }
   function roofBits(b, t) {
     if (b.tin) { // corrugated sheets with a ridge down the middle
       atH(b.h);
@@ -1999,6 +2128,48 @@ function drawCity(t) {
       ctx.stroke(); ctx.strokeStyle = "#d98a64"; ctx.lineWidth = .4; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); ctx.restore();
     }
   }
+  if (school && Math.abs(school.cx + 20 - cx) < hw + 60 && Math.abs(school.cy - cy) < hh + 50) { // the school field's white wall, haystacks by the paddy
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .2;
+    for (const [a, c] of school.yard) {
+      const A = lift(a[0], a[1], 1.3), B = lift(c[0], c[1], 1.3);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(B[0], B[1]); ctx.lineTo(A[0], A[1]); ctx.closePath(); ctx.fillStyle = "#dedbd0"; ctx.fill(); ctx.stroke();
+      ctx.save(); ctx.strokeStyle = "#f6f4ec"; ctx.lineWidth = .35; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); ctx.restore();
+    }
+    for (const [x, y] of SCHOOL.hay) for (let k = 0; k < 6; k++) { // a straw mound, built up in rings
+      const [hx, hy] = lift(x, y, k * .38), r = 1.5 * (1 - k / 6.5) * (1 + kOf(k * .38));
+      ctx.fillStyle = k % 2 ? "#c9a95a" : "#b99848"; ctx.beginPath(); ctx.arc(hx, hy, r, 0, Math.PI * 2); ctx.fill(); if (!k) { ctx.lineWidth = .1; ctx.stroke(); }
+    }
+  }
+  for (const pr of MAP.props || []) { // fences, benches, gate posts and wells (MAP.props)
+    const [px, py] = pr.at || pr.p[0]; if (Math.abs(px - cx) > hw + 40 || Math.abs(py - cy) > hh + 40) continue;
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .12;
+    if (pr.k === "fence") { // split bamboo, a post every metre and two rails
+      ctx.strokeStyle = "#86703f"; ctx.lineWidth = .17; ctx.beginPath();
+      for (let i = 1; i < pr.p.length; i++) {
+        const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay);
+        for (let d = 0; d <= L; d += 1) { const x = ax + (bx - ax) * d / L, y = ay + (by - ay) * d / L, lo = lift(x, y, 0), hi = lift(x, y, 1.15); ctx.moveTo(lo[0], lo[1]); ctx.lineTo(hi[0], hi[1]); }
+        for (const h of [.45, .95]) { const A = lift(ax, ay, h), B = lift(bx, by, h); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); }
+      }
+      ctx.stroke();
+    } else if (pr.k === "bench") { // a plank on four legs
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), nx = -(by - ay) / L * .22, ny = (bx - ax) / L * .22;
+      ctx.strokeStyle = "#7a6a52"; ctx.lineWidth = .1; ctx.beginPath();
+      for (const [x, y] of [[ax + nx, ay + ny], [ax - nx, ay - ny], [bx + nx, by + ny], [bx - nx, by - ny]]) { const lo = lift(x, y, 0), hi = lift(x, y, .45); ctx.moveTo(lo[0], lo[1]); ctx.lineTo(hi[0], hi[1]); }
+      ctx.stroke(); ctx.strokeStyle = C.ink;
+      prism([[ax + nx, ay + ny], [bx + nx, by + ny], [bx - nx, by - ny], [ax - nx, ay - ny]], .4, .5, "#a89478", "#bba98c");
+    } else if (pr.k === "posts") { // two concrete posts and the beam across them: a gate that lost its gate
+      const [[ax, ay], [bx, by]] = pr.p, sq = (x, y, r) => [[x - r, y - r], [x + r, y - r], [x + r, y + r], [x - r, y + r]];
+      prism(sq(ax, ay, .18), 0, 3.0, "#a9a59a", "#bdb9ae"); prism(sq(bx, by, .18), 0, 3.0, "#a9a59a", "#bdb9ae");
+      prism([[ax - .25, ay - .15], [bx + .25, by - .15], [bx + .25, by + .15], [ax - .25, ay + .15]], 2.8, 3.1, "#a9a59a", "#c4c0b4");
+    } else if (pr.k === "well") { // an old brick ring well, grown over
+      const [x, y] = pr.at, top = lift(x, y, .8), r = 1.2 * (1 + kOf(.8));
+      ctx.fillStyle = "#7d4430"; ctx.beginPath(); ctx.arc(x, y, 1.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x - 1.2, y); ctx.lineTo(top[0] - r, top[1]); ctx.lineTo(top[0] + r, top[1]); ctx.lineTo(x + 1.2, y); ctx.fill();
+      ctx.fillStyle = "#9a5a3e"; ctx.beginPath(); ctx.arc(top[0], top[1], r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#3d3a2a"; ctx.beginPath(); ctx.arc(top[0], top[1], r * .62, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#6f8f3a"; ctx.beginPath(); ctx.arc(top[0] - r * .3, top[1] - r * .2, r * .35, 0, Math.PI * 2); ctx.fill();
+    }
+  }
   // buildings, far ones first so the nearer ones overlap them
   vb.sort((a, b) => Math.hypot(b.cx - cx, b.cy - cy) - Math.hypot(a.cx - cx, a.cy - cy));
   ctx.lineJoin = "round";
@@ -2008,6 +2179,8 @@ function drawCity(t) {
     if (b === office && !frontSeen) officeFront(b, false); // balcony behind the building: draw it first
     const gateNear = b === mosque && cy < (b.gate[0][1] + b.gate[1][1]) / 2;   // drone on the lane side: the gate is in front
     if (b === mosque && !gateNear) mosqueGate(b);
+    const flagNear = b === school && cx > b.cx;                                    // drone east of the school: the flag is in front
+    if (b === school && !flagNear) schoolFlag(t);
     if (b === brick) { // bricks and sand waiting by the road
       ctx.strokeStyle = C.ink; ctx.lineWidth = .12; prism(b.heap, 0, .55, "#b8603f", "#c96f4b");
       const [sx0, sy0] = b.sand, tp = lift(sx0, sy0, .6);
@@ -2023,6 +2196,7 @@ function drawCity(t) {
       ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .35; ctx.stroke();
       if (b === brick) { brickFace(b, e, i, ta, tb); return; }
       if (b === mosque) { mosqueFace(b, e, i, ta, tb); return; }
+      if (b === school) { schoolFace(b, e, i, ta, tb); return; }
       if (b === mosqueShed) { // corrugated tin walls
         ctx.save(); ctx.strokeStyle = "rgba(60,30,18,.35)"; ctx.lineWidth = .08; ctx.beginPath();
         for (let u = .03; u < 1; u += .4 / e.len) { const x0 = e.a[0] + (e.b[0] - e.a[0]) * u, y0 = e.a[1] + (e.b[1] - e.a[1]) * u, x1 = ta[0] + (tb[0] - ta[0]) * u, y1 = ta[1] + (tb[1] - ta[1]) * u; ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); }
@@ -2041,10 +2215,17 @@ function drawCity(t) {
         }
       }
       ctx.fill();
+      if (b.trim) { // red sunshades over the windows and a red band along the roof
+        const q = (u0, u1, v0, v1) => { const a = P2(u0, v0), c = P2(u1, v0), d = P2(u1, v1), g = P2(u0, v1); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); ctx.lineTo(g[0], g[1]); ctx.closePath(); };
+        ctx.fillStyle = b.trim; ctx.beginPath();
+        for (let f = 0; f < b.floors; f++) for (let k = 0; k < e.win; k++) q((k + .22) / e.win, (k + .78) / e.win, (f + .79) / b.floors, (f + .87) / b.floors);
+        q(0, 1, .94, 1); ctx.fill();
+      }
     });
     if (frontSeen) officeFront(b, true);
     if (b === dukan) { const e = b.edges[b.front], mx = (e.a[0] + e.b[0]) / 2, my = (e.a[1] + e.b[1]) / 2; if (e.nx * (cx - mx) + e.ny * (cy - my) > 0) dukanFront(b); }
     if (b === mamu) { const e = b.edges[b.front], mx = (e.a[0] + e.b[0]) / 2, my = (e.a[1] + e.b[1]) / 2; if (e.nx * (cx - mx) + e.ny * (cy - my) > 0) mamuFront(b); }
+    if (b.shop) { const e = b.edges[b.front], mx = (e.a[0] + e.b[0]) / 2, my = (e.a[1] + e.b[1]) / 2; if (e.nx * (cx - mx) + e.ny * (cy - my) > 0) shopFront(b); }
     if (b === office) { officeRoof(b); continue; }
     // flat roof with a parapet line
     ctx.beginPath(); ctx.moveTo(top[0][0], top[0][1]); for (const q of top) ctx.lineTo(q[0], q[1]); ctx.closePath();
@@ -2055,9 +2236,11 @@ function drawCity(t) {
       for (let k = 0; k < 14; k++) { const [x, y] = lift(b.cx + (R() - .5) * 10, b.cy + (R() - .5) * 17, b.h); ctx.beginPath(); ctx.arc(x, y, .4 + R() * .9, 0, Math.PI * 2); ctx.fill(); }
       ctx.beginPath(); top.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
       ctx.strokeStyle = "#7a4a30"; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore(); ctx.strokeStyle = C.ink; ctx.lineWidth = .45; ctx.stroke();
-    } else if (b !== brick) { ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = .9; ctx.stroke(); ctx.restore(); }
+    } else if (b === school) schoolTop(b, top);
+    else if (b !== brick) { ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = .9; ctx.stroke(); ctx.restore(); }
     roofBits(b, t);
     if (gateNear) mosqueGate(b);
+    if (flagNear) schoolFlag(t);
     if (b === mamuHouse) { // the black water tank on its stand by the west end, like the 3D house
       const e = b.edges.reduce((m, e2) => e2.nx < m.nx ? e2 : m, b.edges[0]), x = (e.a[0] + e.b[0]) / 2 + e.nx * 1.0, y = (e.a[1] + e.b[1]) / 2 + e.ny * 1.0;
       prism([[x - .6, y - .6], [x + .6, y - .6], [x + .6, y + .6], [x - .6, y + .6]], 0, 2.6, "#cfc6ae", "#bdb49c");
@@ -2416,6 +2599,7 @@ function drawActors(t) {
   { const x = sx(palace.tag[0]), y = sy(palace.tag[1]); if (onScreen(x, y, 120)) label("সুফান প্যালেস 🏠", x, y, "#a6e0dd", C.ink, 11); }
   if (dukan) { const x = sx(dukan.tag[0]), y = sy(dukan.tag[1]); if (onScreen(x, y, 120)) label("ভাইয়ার দোকান ☕", x, y, C.yellow, C.ink, 11); }
   { const x = sx(mamu.tag[0]), y = sy(mamu.tag[1]); if (onScreen(x, y, 120)) label("রিয়েল মামুর দোকান 🍟", x, y, "#f6edca", C.ink, 11); }
+  if (school) { const x = sx(school.cx), y = sy(school.cy); if (onScreen(x, y, 160)) label("🏫 কতোয়ালপুর সরকারি প্রাথমিক বিদ্যালয়", x, y, "#d6e2ff", C.ink, 10); }
   // where to stop for tea and chips
   for (const s of SHOPS) {
     if (P[s.item] >= 3) continue;
