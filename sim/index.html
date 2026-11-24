@@ -117,11 +117,36 @@
   .awards { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 0 0 12px; }
   .awards span { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 700; }
 
+  .money { position: fixed; left: 10px; top: calc(max(10px, env(safe-area-inset-top)) + 64px); z-index: 2; pointer-events: none;
+    font-size: 18px; font-weight: 700; line-height: 1.05; background: #dff3e4; }
+  .money small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
+  .money.minus { background: #ffd2c8; }
+  .money[hidden] { display: none; }
+  .wallet { display: inline-block; background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 999px; padding: 3px 14px; font-weight: 700; font-size: 16px; margin: 0 0 12px; }
+  .earn { background: #dff3e4; border: 2.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; font-weight: 600; margin: 0 0 10px; font-size: 15px; line-height: 1.55; }
+  .earn b { font-size: 18px; }
+  .shop-sec { text-align: left; font-weight: 700; margin: 12px 2px 6px; font-size: 15px; }
+  .shop-grid { display: grid; gap: 8px; }
+  .item { display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center; text-align: left;
+    background: var(--paper-2); border: 2px solid var(--ink); border-radius: 12px; padding: 8px 10px; }
+  .item.on { background: #fff3c2; }
+  .item .ic { font-size: 26px; text-align: center; }
+  .item b { display: block; font-size: 15px; line-height: 1.3; }
+  .item small { display: block; font-size: 12.5px; color: var(--ink-soft); line-height: 1.35; }
+  .item .act { display: flex; flex-direction: column; gap: 5px; }
+  .mini-btn { font: 700 13px var(--font-body); border: 2px solid var(--ink); border-radius: 9px; padding: 5px 10px; background: var(--red);
+    color: var(--paper); cursor: pointer; box-shadow: 2px 2px 0 var(--ink); white-space: nowrap; }
+  .mini-btn.ok { background: #2f8a4f; }
+  .mini-btn.ghost { background: var(--paper); color: var(--ink); }
+  .mini-btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  .mini-btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
+
   @media (max-width: 560px) {
     .clock { font-size: 21px; min-width: 76px; }
     .count { font-size: 18px; }
     .card { padding: 4px 9px 5px; }
     #mini { width: 112px; height: 98px; top: calc(max(10px, env(safe-area-inset-top)) + 52px); }
+    .money { top: calc(max(10px, env(safe-area-inset-top)) + 56px); font-size: 16px; }
     .panel h1 { font-size: 44px; }
     .icon-btn { width: 38px; height: 38px; font-size: 17px; }
   }
@@ -138,6 +163,7 @@
   <button class="icon-btn" id="mute" aria-label="শব্দ বন্ধ/চালু">🔊</button>
   <a class="icon-btn" href="../" aria-label="KCP হোমপেজে ফিরে যান">🏠</a>
 </div>
+<div class="card money" id="money" hidden>৳০<small>আজকের ভাড়া</small></div>
 <canvas id="mini" hidden></canvas>
 <button id="horn" hidden>প্যাঁ-পোঁ!<small id="hornKey">Space</small></button>
 <div class="attrib">ম্যাপ © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
@@ -155,11 +181,14 @@
       <li><span>🥟</span><span>সিঙ্গারার দোকানে ঢুকলে কিছুক্ষণ ডাবল স্পিড।</span></li>
       <li><span>⚠️</span><span><b>সামনে সাম ভাই!</b> রাস্তায় হাঁটছেন। গায়ে সিএনজি তুললে সাথে সাথে গেম ওভার। হর্ন দিলে সাইড দিবেন।</span></li>
       <li><span>🗳️</span><span>ভোটের মৌসুম! রাস্তায় পোস্টার আর <b>মিছিল</b>। মিছিলে আটকালে হর্ন দাও, সাইড দিবে।</span></li>
+      <li><span>💰</span><span>প্রতি কমরেডের <b>ভাড়া</b> পাবে, গরু-দেয়ালে ধাক্কায় <b>জরিমানা</b>। টাকা জমিয়ে <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।</span></li>
       <li><span>⚡</span><span>সাবধান: মাঝপথে <b>লোডশেডিং</b> আর <b>ঝুম বৃষ্টি</b>! একসাথে ৩ জন নামালে <b>হ্যাটট্রিক</b>।</span></li>
     </ul>
     <p class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> বা <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> দিয়ে চালাও · <kbd>Space</kbd> = হর্ন<br>মোবাইলে: স্ক্রিনে আঙুল রেখে যেদিকে যেতে চাও সেদিকে টানো</p>
+    <div class="wallet" id="startWallet">পকেটে: ৳০</div>
     <div class="btns">
       <button class="btn" id="play" disabled>সিএনজি স্টার্ট দাও</button>
+      <button class="btn alt" id="shopFromStart">দোকান 🛒</button>
       <a class="btn ghost" href="../">KCP তে ফিরে যান</a>
     </div>
     <p class="loading" id="loading">ম্যাপ লোড হচ্ছে...</p>
@@ -174,13 +203,25 @@
     <p class="verdict" id="endVerdict"></p>
     <div class="faces" id="endFaces"></div>
     <div class="awards" id="endAwards"></div>
+    <p class="earn" id="endEarn"></p>
     <p class="bill" id="endBill"></p>
     <p class="best" id="endBest"></p>
     <div class="btns">
       <button class="btn" id="again">আবার খেলো</button>
-      <button class="btn alt" id="share">শেয়ার করো</button>
+      <button class="btn alt" id="shopFromEnd">দোকান 🛒</button>
+      <button class="btn ghost" id="share">শেয়ার করো</button>
       <a class="btn ghost" href="../">KCP</a>
     </div>
+  </div>
+</div>
+
+<div class="screen hidden" id="shop">
+  <div class="panel">
+    <p class="kicker">পংক ভাইয়ের গ্যারেজ</p>
+    <h2>দোকান</h2>
+    <div class="wallet" id="shopWallet">পকেটে: ৳০</div>
+    <div id="shopList"></div>
+    <div class="btns" style="margin-top:14px"><button class="btn" id="shopBack">ফিরে যাও</button></div>
   </div>
 </div>
 
@@ -518,10 +559,47 @@ function tone(f, t0, dur, type, vol, f2) {
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0 + dur + 0.05);
 }
+/* ================= wallet & shop ================= */
+const SHOP = [
+  { id: "horn-papo", cat: "horn", ic: "📯", n: "প্যাঁ-পোঁ হর্ন", d: "আসল সিএনজির হর্ন। আওয়াজ যায় ৪২ মিটার।", price: 0 },
+  { id: "horn-bashi", cat: "horn", ic: "🎶", n: "বাঁশি হর্ন", d: "ফুরুৎ! আওয়াজ যায় ৫২ মিটার।", price: 150 },
+  { id: "horn-bus", cat: "horn", ic: "🚌", n: "বাস হর্ন", d: "পুরো পাড়া কাঁপে। ৬০ মিটার, গরুও দূর থেকে সরে।", price: 350 },
+  { id: "horn-gaan", cat: "horn", ic: "🎵", n: "গানের হর্ন", d: "এক হর্নে দুইবারের ঘুম ভাঙে। ৫৫ মিটার।", price: 600 },
+  { id: "paint-green", cat: "paint", ic: "🟩", n: "সবুজ (আসল)", d: "সব সিএনজি যেমন।", price: 0, col: "#2f8a4f" },
+  { id: "paint-red", cat: "paint", ic: "🟥", n: "কেসিপি লাল", d: "পার্টির রঙে সিএনজি।", price: 200, col: "#c8102e" },
+  { id: "paint-sticker", cat: "paint", ic: "🗳️", n: "ভোটের স্টিকার", d: "গায়ে পোস্টার মারা। ভোটের মৌসুম তো!", price: 250, col: "#2f8a4f" },
+  { id: "paint-gold", cat: "paint", ic: "✨", n: "সোনালি সিএনজি", d: "কতোয়ালপুরে একটাই। চকচক করে।", price: 700, col: "#d9a520" },
+  { id: "up-umbrella", cat: "up", ic: "☂️", n: "ছাতা হুড", d: "বৃষ্টিতে আর স্লো হবে না।", price: 120 },
+  { id: "up-led", cat: "up", ic: "🔦", n: "LED হেডলাইট", d: "লোডশেডিংয়ে অনেক দূর পর্যন্ত দেখা যায়।", price: 150 },
+  { id: "up-bumper", cat: "up", ic: "🐄", n: "গরু-বাম্পার", d: "গরুর ধাক্কায় প্রায় থামবে না, জরিমানা অর্ধেক।", price: 250 },
+  { id: "up-engine", cat: "up", ic: "⚙️", n: "নতুন ইঞ্জিন", d: "টপ স্পিড ১২% বেশি।", price: 400 },
+  { id: "up-seat4", cat: "up", ic: "💺", n: "চতুর্থ সিট", d: "একসাথে ৪ জন কমরেড তোলা যাবে।", price: 500 },
+];
+let shop = { wallet: 0, owned: ["horn-papo", "paint-green"], horn: "horn-papo", paint: "paint-green" };
+try {
+  const saved = JSON.parse(localStorage.getItem("kcp-sim-shop") || "null");
+  if (saved && typeof saved.wallet === "number" && Array.isArray(saved.owned)) shop = { ...shop, ...saved };
+} catch (e) {}
+const saveShop = () => { try { localStorage.setItem("kcp-sim-shop", JSON.stringify(shop)); } catch (e) {} };
+const has = id => shop.owned.includes(id);
+const seatCount = () => has("up-seat4") ? 4 : 3;
+const hornRange = () => ({ "horn-bashi": 52, "horn-bus": 60, "horn-gaan": 55 })[shop.horn] || 42;
+const paintItem = () => SHOP.find(i => i.id === shop.paint) || SHOP[4];
+let run = { fare: 0, bonus: 0, fine: 0 };
+const runTotal = () => run.fare + run.bonus - run.fine;
+function earn(kind, amt, x, y, label) {
+  run[kind] += amt;
+  floaty(x, y, `${kind === "fine" ? "−" : "+"}৳${bn(amt)}${label ? " " + label : ""}`, kind === "fine" ? C.red : "#2f8a4f");
+  if (kind !== "fine") sfx.cash();
+}
+
 const sfx = {
   play(fn) { if (!ac || muted) return; try { fn(ac.currentTime); } catch (e) { console.warn("sfx", e); } },
   horn() {
     this.play(t => {
+      if (shop.horn === "horn-bashi") { wobble(t, 1300, 2000, .32, .13, 22, 140); wobble(t + .3, 2000, 1250, .38, .13, 22, 140); return; }
+      if (shop.horn === "horn-bus") { brass(t, [233, 294, 349], .28, .14, 1500); brass(t + .32, [233, 294, 349], .55, .15, 1500); return; }
+      if (shop.horn === "horn-gaan") { [659, 784, 880, 784, 659, 988].forEach((f, i) => { tone(f, t + i * .085, .09, "square", .055); tone(f / 2, t + i * .085, .09, "triangle", .05); }); return; }
       if (hornBuf) { // real recording; tiny pitch wobble so repeated honks don't sound identical
         const src = ac.createBufferSource(), g = ac.createGain();
         src.buffer = hornBuf; src.playbackRate.value = .96 + Math.random() * .08; g.gain.value = .8;
@@ -552,6 +630,7 @@ const sfx = {
   powerUp() { this.play(t => { tone(60, t, .55, "sawtooth", .07, 900); tone(1568, t + .55, .4, "sine", .09); }); },
   thunder() { this.play(t => { noiseHit(t, .12, .5, "highpass", 1800); noiseHit(t + .05, 2.2, .7, "lowpass", 420, 60); }); },
   megaphone() { this.play(t => { [392, 440, 392, 349, 392].forEach((f, i) => { tone(f, t + i * .11, .1, "square", .045); tone(f * 2.01, t + i * .11, .1, "sawtooth", .02); }); noiseHit(t, .6, .03, "bandpass", 1800); }); },
+  cash() { this.play(t => { tone(1318, t, .07, "square", .045); tone(1760, t + .06, .22, "square", .045); noiseHit(t, .05, .12, "highpass", 5000); }); },
   welcome() { this.play(t => [784, 988, 1175].forEach((f, i) => tone(f, t + i * .08, .25, "sine", .08))); },
 };
 
@@ -644,7 +723,6 @@ for (const c of [...COMRADES, SUFAN]) {
 
 /* ================= game state ================= */
 const GAME_LEN = 210;          // real seconds = 35 game minutes (4:25 → 5:00)
-const SEATS = 3;
 let state = "menu", rand = Math.random;
 let P = null, comrades = [], cows = [], stalls = [], delivered = [], bubbles = [], floaties = [], rings = [], dust = [];
 let time = 0, lastTick = -1, shake = 0, sufanCd = 0, cam = null;
@@ -770,7 +848,7 @@ function newGame() {
   }
   comrades = COMRADES.map((d, i) => {
     const s = picks[i % picks.length], need = 1 + ((rand() * 3) | 0);
-    return { ...d, x: s.x, y: s.y, home: s.b, state: "sleep", need, needMax: need, fled: false, phase: rand() * 6, cd: 0, shake: 0 };
+    return { ...d, x: s.x, y: s.y, hx: s.x, hy: s.y, home: s.b, state: "sleep", need, needMax: need, fled: false, phase: rand() * 6, cd: 0, shake: 0 };
   });
 
   cows = [];
@@ -826,6 +904,7 @@ function newGame() {
   if (!onRoad(P.x, P.y)) { P.x = door.x; P.y = door.y; }
   delivered = []; bubbles = []; floaties = []; rings = []; dust = [];
   time = 0; lastTick = -1; shake = 0; sufanCd = 3;
+  run = { fare: 0, bonus: 0, fine: 0 };
   stats = { cows: 0, honks: 0, singara: 0, caught: 0, hattricks: 0, walls: 0, posters: 0, michil: 0 };
   const shedAt = 50 + rand() * 55; // load-shedding first, rain later, never overlapping
   events = { shed: { at: shedAt, dur: 9 }, rain: { at: Math.min(GAME_LEN - 40, shedAt + 40 + rand() * 30), dur: 16 } };
@@ -854,13 +933,13 @@ function horn() {
   if (sam && dist(sam, P) < 40 && sam.scare <= 0) { sam.scare = 2.5; sam.dir = -sam.dir; say(sam, "হর্ন শুনছি, সরলাম!", 1.6); }
   for (const m of michils) if (dist(m, P) < 40 && m.scare <= 0) { m.scare = 3; m.dir = -m.dir; say(m, "আচ্ছা আচ্ছা, সাইড দিলাম! জিন্দাবাদ!", 1.8); }
   for (const c of comrades) {
-    if (c.state !== "sleep" || dist(c, P) > 42) continue;
-    c.need--; c.shake = .45;
+    if (c.state !== "sleep" || dist(c, P) > hornRange()) continue;
+    c.need -= shop.horn === "horn-gaan" ? 2 : 1; c.shake = .45;
     if (c.need <= 0) wake(c);
     else if (c.cd <= 0) { say(c, SNORES[(rand() * SNORES.length) | 0], 1.6); c.cd = 1.2; }
   }
   for (const w of cows) {
-    if (dist(w, P) > 34) continue;
+    if (dist(w, P) > hornRange() * .8) continue;
     w.scare = 2.6;
     const [ax, ay] = w.r.p[w.i], [bx, by] = w.r.p[w.i + 1];
     const along = (bx - ax) * (w.x - P.x) + (by - ay) * (w.y - P.y);
@@ -929,12 +1008,12 @@ function update(dt) {
   // ---- CNG
   const inp = readInput();
   const road = onRoad(P.x, P.y);
-  const maxV = 18 * (road ? 1 : .42) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - .22 * rainLevel);
+  const maxV = 18 * (road ? 1 : .42) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - (has("up-umbrella") ? 0 : .22) * rainLevel) * (has("up-engine") ? 1.12 : 1);
   P.hornCd -= dt; P.boost -= dt;
   if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
   else if (inp.m > .12) {
     const da = wrapAng(Math.atan2(inp.iy, inp.ix) - P.a);
-    const tr = (P.v < 3 ? 6 : 4.2) * (1 - .35 * rainLevel) * dt;
+    const tr = (P.v < 3 ? 6 : 4.2) * (1 - (has("up-umbrella") ? 0 : .35) * rainLevel) * dt;
     if (P.v > 10 && Math.abs(da) > 1.1) skids.push({ x: P.x, y: P.y, a: P.a, t: 0 });
     P.a = wrapAng(P.a + clamp(da, -tr, tr));
     const tv = maxV * inp.m * Math.max(.12, Math.cos(da));
@@ -944,7 +1023,7 @@ function update(dt) {
   P.x += Math.cos(P.a) * P.v * dt; P.y += Math.sin(P.a) * P.v * dt;
   const bump = pushOut(P, 2) | riverBlock(P, 2);
   if (bump) { P.v *= Math.pow(.15, dt); P.scrape += dt; } else P.scrape = Math.min(0, P.scrape + dt);
-  if (P.scrape > 1.4) { say(P, "এই গলিতে সিএনজি ঢুকে না মামা!", 1.8); P.scrape = -4; stats.walls++; sfx.bonk(); }
+  if (P.scrape > 1.4) { say(P, "এই গলিতে সিএনজি ঢুকে না মামা!", 1.8); P.scrape = -4; stats.walls++; sfx.bonk(); earn("fine", 5, P.x, P.y, "জরিমানা"); }
   P.x = clamp(P.x, X0 + 4, X1 - 4); P.y = clamp(P.y, Y0 + 4, Y1 - 4);
   if (!road && P.v > 3 && rand() < dt * 18) dust.push({ x: P.x - Math.cos(P.a) * 2.5, y: P.y - Math.sin(P.a) * 2.5, t: 0 });
   for (const r of P.riders) { r.x = P.x; r.y = P.y; }
@@ -959,7 +1038,8 @@ function update(dt) {
     w.scare -= dt; w.hitCd -= dt;
     walkRoad(w, (w.scare > 0 ? 7 : w.sp) * dt);
     if (w.hitCd <= 0 && P.stun <= 0 && dist(w, P) < 4.3) {
-      w.hitCd = 2.2; P.stun = 1; shake = .35;
+      w.hitCd = 2.2; P.stun = has("up-bumper") ? .3 : 1; shake = has("up-bumper") ? .15 : .35;
+      earn("fine", has("up-bumper") ? 5 : 10, P.x, P.y, "জরিমানা");
       P.x -= Math.cos(P.a) * 2.5; P.y -= Math.sin(P.a) * 2.5; P.v = 0; pushOut(P, 2);
       say(w, "হাম্বা!", 1.4); sfx.bonk(); setTimeout(() => sfx.moo(), 140);
       if (++stats.cows === 3) say(P, "গরু সমিতি মামলা করবে! 🐄⚖️", 2.4);
@@ -1002,7 +1082,7 @@ function update(dt) {
   // ---- singara stalls
   for (const s of stalls) {
     s.cd -= dt;
-    if (s.cd <= 0 && dist(s, P) < 8) { s.cd = 25; P.boost = 6; say(P, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড ×২"); sfx.boost(); sfx.slide(); stats.singara++; }
+    if (s.cd <= 0 && dist(s, P) < 8) { s.cd = 25; P.boost = 6; say(P, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড ×২"); sfx.boost(); sfx.slide(); stats.singara++; earn("fine", 5, s.x, s.y - 8, "সিঙ্গারা"); }
   }
 
   // ---- comrades
@@ -1015,12 +1095,12 @@ function update(dt) {
       else { c.x += dx / L * 3.6 * dt; c.y += dy / L * 3.6 * dt; pushOut(c, 1); riverBlock(c, 1); }
     }
     if ((c.state === "awake" || c.state === "flee") && dist(c, P) < 9) {
-      if (P.riders.length < SEATS) {
+      if (P.riders.length < seatCount()) {
         const caught = c.state === "flee";
         c.state = "ride"; P.riders.push(c);
         say(P, caught ? `${c.n}: ধরা খাইলাম! 😅` : `${c.n}: ${c.b}`, 2.8);
         floaty(c.x, c.y, caught ? "ধরা!" : "উঠলো!", C.ink);
-        if (caught) { stats.caught++; sfx.vineBoom(); shake = .25; } else sfx.boing();
+        if (caught) { stats.caught++; sfx.vineBoom(); shake = .25; earn("bonus", 10, c.x, c.y - 8, "ধরার বোনাস"); } else sfx.boing();
       } else if (c.cd <= 0) { say(c, "সিএনজি ফুল মামা! আগে এদের অফিসে নামাও।", 2.2); c.cd = 5; }
     }
   }
@@ -1033,9 +1113,11 @@ function update(dt) {
       say(c, c.q, 3, k * 1.1);
     });
     floaty(door.x, door.y, `+${bn(P.riders.length)} কমরেড`);
+    const fare = P.riders.reduce((sum, c) => sum + 20 + Math.round(Math.hypot(c.hx - door.x, c.hy - door.y) / 25), 0);
+    earn("fare", fare, door.x, door.y + 8, "ভাড়া");
     const n = P.riders.length;
     P.riders = []; sfx.chime(); burst(door.x, door.y, 14 * n);
-    if (n >= SEATS) { stats.hattricks++; showBanner("হ্যাটট্রিক!", "একসাথে ৩ জন সভায়!", C.yellow, 1.8); setTimeout(() => sfx.airhorn(), 250); shake = .4; burst(door.x, door.y, 50); }
+    if (n >= 3) { stats.hattricks++; earn("bonus", 50, door.x, door.y - 12, "হ্যাটট্রিক"); showBanner(n > 3 ? "সুপার হ্যাটট্রিক!" : "হ্যাটট্রিক!", `একসাথে ${bn(n)} জন সভায়!`, C.yellow, 1.8); setTimeout(() => sfx.airhorn(), 250); shake = .4; burst(door.x, door.y, 50); }
     if (delivered.length === comrades.length) { state = "ending"; setTimeout(() => endGame(true), 1800); }
   }
 
@@ -1138,7 +1220,7 @@ function drawWorld(t) {
   // horn rings
   for (const r of rings) {
     ctx.globalAlpha = 1 - r.t / .5; ctx.strokeStyle = C.yellow; ctx.lineWidth = 1.4;
-    ctx.beginPath(); ctx.arc(r.x, r.y, 4 + r.t / .5 * 38, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(r.x, r.y, 4 + r.t / .5 * (hornRange() - 4), 0, Math.PI * 2); ctx.stroke();
   }
   ctx.globalAlpha = 1;
 }
@@ -1213,11 +1295,11 @@ function drawSky(t) {
     dctx.globalCompositeOperation = "source-over"; dctx.clearRect(0, 0, W, H);
     dctx.fillStyle = `rgba(8,10,28,${.86 * shedLevel})`; dctx.fillRect(0, 0, W, H);
     dctx.globalCompositeOperation = "destination-out";
-    const px = sx(P.x), py = sy(P.y), R = 30 * cam.z;
+    const led = has("up-led") ? 1.5 : 1, px = sx(P.x), py = sy(P.y), R = 30 * cam.z * led;
     let g = dctx.createRadialGradient(px, py, R * .2, px, py, R);
     g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(1, "rgba(0,0,0,0)");
     dctx.fillStyle = g; dctx.fillRect(px - R, py - R, R * 2, R * 2);
-    const L = 75 * cam.z, cx = px + Math.cos(P.a) * L, cy = py + Math.sin(P.a) * L;
+    const L = 75 * cam.z * led, cx = px + Math.cos(P.a) * L, cy = py + Math.sin(P.a) * L;
     g = dctx.createRadialGradient(px, py, 0, px, py, L * 1.1);
     g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(.7, "rgba(0,0,0,.8)"); g.addColorStop(1, "rgba(0,0,0,0)");
     dctx.fillStyle = g; dctx.beginPath(); dctx.moveTo(px, py);
@@ -1283,7 +1365,8 @@ function drawCNG(t) {
   ctx.fillStyle = C.ink;
   ctx.fillRect(-2.1, -1.85, 1.3, .45); ctx.fillRect(-2.1, 1.4, 1.3, .45); ctx.fillRect(2.35, -.22, 1.1, .44);
   // body: wide passenger cabin tapering to the driver's nose
-  ctx.fillStyle = "#2f8a4f";
+  const paint = paintItem();
+  ctx.fillStyle = paint.col;
   ctx.beginPath();
   ctx.moveTo(-2.7, -1.45); ctx.lineTo(1.0, -1.45); ctx.quadraticCurveTo(2.2, -1.3, 2.95, -.55);
   ctx.lineTo(2.95, .55); ctx.quadraticCurveTo(2.2, 1.3, 1.0, 1.45); ctx.lineTo(-2.7, 1.45); ctx.closePath();
@@ -1295,6 +1378,15 @@ function drawCNG(t) {
   ctx.fillStyle = "#1e2a22"; rr(ctx, -2.85, -1.55, 3.85, 3.1, .55); ctx.fill(); ctx.stroke();
   ctx.strokeStyle = "rgba(246,239,225,.18)"; ctx.lineWidth = .12;
   for (const x of [-1.9, -.9, .1]) { ctx.beginPath(); ctx.moveTo(x, -1.45); ctx.lineTo(x, 1.45); ctx.stroke(); }
+  if (paint.id === "paint-sticker") { // campaign posters stuck on the canopy
+    const pa = posterFor(0), pb = posterFor(1);
+    if (pa) ctx.drawImage(pa.img, -2.55, -1.3, 1.1, 1.1);
+    if (pb) ctx.drawImage(pb.img, -2.55, .2, 1.1, 1.1);
+  }
+  if (paint.id === "paint-gold") { // glints
+    ctx.fillStyle = `rgba(255,250,210,${.5 + .5 * Math.sin(t * 5)})`;
+    for (const [gx, gy] of [[1.6, -1.25], [2.4, .7], [1.2, 1.2]]) { ctx.beginPath(); ctx.arc(gx, gy, .16, 0, 7); ctx.fill(); }
+  }
   // yellow + white stripe across the back, like the real ones
   ctx.strokeStyle = C.ink; ctx.lineWidth = .2;
   ctx.fillStyle = C.yellow; ctx.fillRect(-3.05, -1.5, .38, 3); ctx.strokeRect(-3.05, -1.5, .38, 3);
@@ -1546,7 +1638,7 @@ function drawMarkers() {
     ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI * 2); ctx.fillStyle = C.red; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink; ctx.stroke();
     ctx.font = `15px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🏠", x, y + 1);
   }, C.red);
-  if (P.riders.length < SEATS) {
+  if (P.riders.length < seatCount()) {
     const left = comrades.filter(c => c.state !== "ride" && c.state !== "done")
       .sort((a, b) => dist(a, P) - dist(b, P)).slice(0, P.riders.length ? 2 : 3);
     for (const c of left) edgeMarker(c.x, c.y, (x, y) => face(c, x, y, 13, c.state === "sleep"),
@@ -1603,18 +1695,21 @@ function drawMini() {
 
 /* ================= HUD ================= */
 const el = id => document.getElementById(id);
-const hud = { clock: el("clock"), count: el("count"), seats: el("seats") };
+const hud = { clock: el("clock"), count: el("count"), seats: el("seats"), money: el("money") };
 let hudCache = "";
 function gameClock() { const total = 25 + Math.min(35, Math.floor(time / GAME_LEN * 35)); return [4 + Math.floor(total / 60), total % 60]; }
 function drawHud() {
   const [hh, mm] = gameClock(), late = GAME_LEN - time < 30;
-  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}`;
+  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}|${runTotal()}`;
   if (key === hudCache) return;
   hudCache = key;
   hud.clock.innerHTML = `${bn(hh)}:${bn(String(mm).padStart(2, "0"))}<small>${late ? "তাড়াতাড়ি!" : "সভা ৫:০০ টায়"}</small>`;
   hud.clock.classList.toggle("late", late);
   hud.count.textContent = `${bn(delivered.length)}/${bn(comrades.length)}`;
   [...hud.seats.children].forEach((s, i) => s.classList.toggle("on", i < P.riders.length));
+  const m = runTotal();
+  hud.money.innerHTML = `${m < 0 ? "−" : ""}৳${bn(Math.abs(m))}<small>আজকের ভাড়া</small>`;
+  hud.money.classList.toggle("minus", m < 0);
 }
 
 /* ================= loop ================= */
@@ -1646,11 +1741,61 @@ function startGame() {
   } catch (e) {}
   loadHorn();
   el("start").classList.add("hidden"); el("end").classList.add("hidden");
-  ["hud", "mini", "horn"].forEach(id => el(id).hidden = false);
+  ["hud", "mini", "horn", "money"].forEach(id => el(id).hidden = false);
+  el("shop").classList.add("hidden");
+  hud.seats.innerHTML = "<i></i>".repeat(seatCount());
   resize();
   newGame(); hudCache = "";
   state = "play";
 }
+/* ================= shop screen ================= */
+let shopFrom = "start";
+function ensureAudio() {
+  try {
+    if (!ac) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ac = new AC(); }
+    if (ac && ac.state === "suspended") ac.resume();
+  } catch (e) {}
+  loadHorn();
+}
+function syncWallet() {
+  el("startWallet").textContent = `পকেটে: ৳${bn(shop.wallet)}`;
+  el("shopWallet").textContent = `পকেটে: ৳${bn(shop.wallet)}`;
+}
+function renderShop() {
+  syncWallet();
+  const secs = [["horn", "📯 হর্ন"], ["paint", "🎨 রং"], ["up", "🔧 আপগ্রেড"]];
+  el("shopList").innerHTML = secs.map(([cat, title]) => `<p class="shop-sec">${title}</p><div class="shop-grid">` +
+    SHOP.filter(i => i.cat === cat).map(i => {
+      const own = has(i.id), on = shop[cat] === i.id, btns = [];
+      if (!own) btns.push(`<button class="mini-btn" data-buy="${i.id}" ${shop.wallet < i.price ? "disabled" : ""}>৳${bn(i.price)} কিনো</button>`);
+      else if (cat === "up") btns.push(`<button class="mini-btn ok" disabled>কেনা ✓</button>`);
+      else if (on) btns.push(`<button class="mini-btn ok" disabled>চলছে ✓</button>`);
+      else btns.push(`<button class="mini-btn ghost" data-use="${i.id}">ব্যবহার করো</button>`);
+      if (cat === "horn") btns.push(`<button class="mini-btn ghost" data-try="${i.id}">🔊 শোনো</button>`);
+      return `<div class="item${on ? " on" : ""}"><span class="ic">${i.ic}</span><span><b>${i.n}</b><small>${i.d}</small></span><span class="act">${btns.join("")}</span></div>`;
+    }).join("") + `</div>`).join("");
+}
+function openShop(from) {
+  shopFrom = from; renderShop();
+  el(from).classList.add("hidden"); el("shop").classList.remove("hidden"); el("shop").scrollTop = 0;
+}
+el("shopFromStart").addEventListener("click", () => openShop("start"));
+el("shopFromEnd").addEventListener("click", () => openShop("end"));
+el("shopBack").addEventListener("click", () => { el("shop").classList.add("hidden"); syncWallet(); el(shopFrom).classList.remove("hidden"); });
+el("shopList").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  ensureAudio();
+  const id = b.dataset.buy || b.dataset.use || b.dataset.try, item = SHOP.find(i => i.id === id); if (!item) return;
+  if (b.dataset.try) { const prev = shop.horn; shop.horn = id; sfx.horn(); shop.horn = prev; return; }
+  if (b.dataset.buy) {
+    if (shop.wallet < item.price || has(id)) return;
+    shop.wallet -= item.price; shop.owned.push(id); sfx.cash();
+  }
+  if (item.cat !== "up") { shop[item.cat] = id; if (item.cat === "horn") setTimeout(() => sfx.horn(), 250); }
+  saveShop(); renderShop();
+});
+syncWallet();
+
 el("play").addEventListener("click", startGame);
 el("again").addEventListener("click", startGame);
 
@@ -1710,8 +1855,14 @@ function endGame(all, reason) {
   else if (all) { sfx.fanfare(); setTimeout(() => sfx.airhorn(), 700); burst(P.x, P.y, 80); }
   else if (n >= 8) sfx.fanfare();
   else sfx.sadTrombone();
+  // pay day
+  let total = Math.max(0, runTotal()), earnText;
+  if (reason === "sam") { total = 0; earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} · <b>সাম ভাইয়ের চিকিৎসা খরচে সব শেষ!</b>`; }
+  else earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} − জরিমানা ৳${bn(run.fine)} = <b>৳${bn(total)}</b>`;
+  shop.wallet += total; saveShop();
+  el("endEarn").innerHTML = `💰 ${earnText}<br>পকেটে মোট: <b>৳${bn(shop.wallet)}</b>`;
   lastResult = n;
-  el("horn").hidden = true;
+  el("horn").hidden = true; el("money").hidden = true;
   setTimeout(() => el("end").classList.remove("hidden"), all ? 0 : 400);
 }
 
