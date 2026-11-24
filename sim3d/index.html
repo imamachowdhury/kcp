@@ -308,8 +308,12 @@ function poly(pts) {
   return { p: pts, x0, y0, x1, y1, cx: cx / pts.length, cy: cy / pts.length };
 }
 const PALACE_POLY = [[124, 36], [131, 36], [131, 46], [124, 46]]; // Sufan Palace's house, missing from OpenStreetMap
-const buildings = [...MAP.buildings, PALACE_POLY].map(poly), ponds = MAP.water.map(poly);
-const palace = buildings[buildings.length - 1];
+// Sufan Bikash Ghor (24.835843, 91.952955) stands on the WEST side of the lane, facing east; OpenStreetMap has no building there.
+// Next to it, south along the lane, an unfinished bare-brick house.
+const OFFICE_POLY = [[24.3, 79.8], [22.6, 86.1], [17.8, 84.9], [19.5, 78.5]];
+const BRICK_POLY = [[22.4, 86.8], [20.9, 92.6], [15.1, 91.1], [16.6, 85.3]];
+const buildings = [...MAP.buildings, PALACE_POLY, OFFICE_POLY, BRICK_POLY].map(poly), ponds = MAP.water.map(poly);
+const palace = buildings[buildings.length - 3], brick = buildings[buildings.length - 1];
 for (const b of [...buildings, ...ponds]) addBox(G.solid, b.x0 - 3, b.y0 - 3, b.x1 + 3, b.y1 + 3, b);
 function pip(x, y, p) { let ins = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const xi = p[i][0], yi = p[i][1], xj = p[j][0], yj = p[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins; } return ins; }
 function pushOut(o, r) {
@@ -334,13 +338,9 @@ function riverBlock(o, r) {
 const blocked = (x, y, r) => { const t = { x, y }; return pushOut(t, r) || riverBlock(t, r); };
 
 // party office = Sufan Bikash Ghor
-const OFFICE_AT = { x: 25.7, y: 84.2 };
-let office = null, door = null;
-{
-  let best = 1e18;
-  for (const b of buildings) { const d = pip(OFFICE_AT.x, OFFICE_AT.y, b.p) ? -1 : Math.hypot(b.cx - OFFICE_AT.x, b.cy - OFFICE_AT.y); if (d < best) { best = d; office = b; } }
-  const nr = nearestRoad(office.cx, office.cy); door = { x: nr.x, y: nr.y, hw: nr.hw };
-}
+const office = buildings[buildings.length - 2]; // OFFICE_POLY, west of the lane
+let door = null;
+{ const nr = nearestRoad(office.cx, office.cy); door = { x: nr.x, y: nr.y, hw: nr.hw }; }
 const officeU = (() => { const dx = office.cx - door.x, dy = office.cy - door.y, L = Math.hypot(dx, dy) || 1; return { x: dx / L, y: dy / L }; })();
 const officeV = { x: -officeU.y, y: officeU.x };
 // Vhaiyar Dukan, the tea shop across from the office (24.836000, 91.953128 on Google Maps)
@@ -646,7 +646,7 @@ const tanks = [], stairs = [];
     b.ips = R() < .3;
     const wall = rgb(b === office ? "#f5c518" : WALLS[(R() * WALLS.length) | 0]);
     const tin = b !== office && b.h < 4 && R() < .7;
-    if (b === office || b === dukan || b === palace) continue; // these have their own models below
+    if (b === office || b === dukan || b === palace || b === brick) continue; // these have their own models below
     let cum = 0;
     b.p.forEach((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dz = n[1] - q[1], L = Math.hypot(dx, dz); if (L < .01) return;
@@ -980,6 +980,37 @@ if (dukan) {
     const hh = 8 + (k % 3) * 1.3, tr = new THREE.Mesh(new THREE.CylinderGeometry(.09, .13, hh, 6), trunk); tr.position.set(x, hh / 2, WZ + .55 + (k % 2) * .25); tr.castShadow = true; g.add(tr);
     for (let j = 0; j < 6; j++) { const fr = new THREE.Mesh(new THREE.ConeGeometry(.28, 2.2, 3), frond); fr.geometry.translate(0, 1.1, 0); fr.position.set(x, hh, tr.position.z); fr.rotation.set(1.1, j / 6 * Math.PI * 2, 0, "YXZ"); fr.scale.z = .25; fr.castShadow = true; g.add(fr); }
   }
+}
+
+// the unfinished house next to the office: two storeys of bare brick, empty window holes, rebar sticking up for the next floor
+{
+  const f = frameOf(brick), { g, box, plane } = landmark(f), W = f.w, D = f.d, hw = W / 2, F = D / 2;
+  brick.h = 6.2;
+  const brickT = canvasTex(128, 128, (c) => {
+    c.fillStyle = "#8c8479"; c.fillRect(0, 0, 128, 128); const R = rng32(31);
+    for (let r = 0; r < 16; r++) for (let k = -1; k < 6; k++) {
+      const x = k * 24 + (r % 2) * 12, t = R(); c.fillStyle = `rgb(${172 + t * 30 | 0},${78 + t * 24 | 0},${52 + t * 16 | 0})`; c.fillRect(x + 1, r * 8 + 1, 22, 6);
+    }
+    c.fillStyle = "rgba(60,50,40,.18)"; for (let k = 0; k < 14; k++) c.fillRect(R() * 128, R() * 128, 3 + R() * 10, 2 + R() * 6); // mortar smears
+  }, true);
+  const mat = (rx, ry) => { const t = brickT.clone(); t.repeat.set(rx, ry); t.needsUpdate = true; return lam({ map: t }); };
+  const conc = lam({ color: "#a7a39b" }), hole = lam({ color: "#211d1a" }), rebar = lam({ color: "#5b3d2a" });
+  for (const [y0, hh] of [[0, 2.9], [3.1, 2.9]]) {
+    box(W, hh, D, 0, y0 + hh / 2, 0, mat(W / 1.6, hh / 1.6));
+  }
+  box(W + .3, .22, D + .3, 0, 3.0, 0, conc);                                            // floor slab
+  box(W + .3, .2, D + .3, 0, 6.1, 0, conc);                                             // roof slab, still bare
+  // empty openings, no frames yet
+  for (const x of [-hw * .55, hw * .55]) { plane(1.1, 1.2, hole, x, 4.6, F + .01); plane(1.1, 1.2, hole, x, 1.7, F + .01); }
+  plane(1.1, 2.2, hole, 0, 1.1, F + .01);                                               // the door hole
+  for (const z of [-F * .4, F * .4]) for (const s2 of [-1, 1]) plane(.9, 1.0, hole, s2 * (hw + .02), 4.6, z, s2 * Math.PI / 2);
+  // column bars waiting for the third floor
+  for (const x of [-hw + .2, 0, hw - .2]) for (const z of [-F + .2, F - .2]) for (const dx of [-.07, .07]) {
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, 1.3, 4), rebar); r.position.set(x + dx, 6.85, z); r.rotation.z = dx * 1.2; g.add(r);
+  }
+  // a heap of bricks and sand by the road
+  box(1.2, .5, .7, -hw + .8, .25, F + 1.0, mat(.8, .3));
+  const sand = new THREE.Mesh(new THREE.ConeGeometry(.9, .6, 10), lam({ color: "#cdb98e" })); sand.position.set(hw - .7, .3, F + 1.1); sand.receiveShadow = true; g.add(sand);
 }
 
 // mosques: a small white prayer hall, green dome and a minaret at each neighbourhood
@@ -1905,7 +1936,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 // test hook
 window.__sim3 = {
   get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
-  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, get placeTags() { return placeTags; }, openShop, closeShop,
+  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, brick, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };

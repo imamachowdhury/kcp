@@ -122,6 +122,9 @@
   .money small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
   .money.minus { background: #ffd2c8; }
   .money[hidden] { display: none; }
+  .garage { display: block; width: 100%; height: 190px; margin: 2px 0 10px; border: 2.5px solid var(--ink); border-radius: 14px; background: #cfc8b8;
+    position: sticky; top: -6px; z-index: 2; box-shadow: 3px 3px 0 var(--ink); touch-action: pan-y; cursor: grab; }
+  .mini-btn.seen { background: var(--yellow); color: var(--ink); }
   .wallet { display: inline-block; background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 999px; padding: 3px 14px; font-weight: 700; font-size: 16px; margin: 0 0 12px; }
   .earn { background: #dff3e4; border: 2.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; font-weight: 600; margin: 0 0 10px; font-size: 15px; line-height: 1.55; }
   .earn b { font-size: 18px; }
@@ -220,6 +223,7 @@
   <div class="panel">
     <p class="kicker">পংক ভাইয়ের গ্যারেজ</p>
     <h2>দোকান</h2>
+    <canvas class="garage" id="garage" aria-label="পংক ভাইয়ের সিএনজি, গ্যারেজে ঘুরছে"></canvas>
     <div class="wallet" id="shopWallet">পকেটে: ৳০</div>
     <div id="shopList"></div>
     <div class="btns" style="margin-top:14px"><button class="btn" id="shopBack">ফিরে যাও</button></div>
@@ -344,8 +348,12 @@ function poly(pts, kind) {
   return { p: pts, x0, y0, x1, y1, cx: cx / pts.length, cy: cy / pts.length, kind, roof: ROOFS[(roofRng() * ROOFS.length) | 0] };
 }
 const PALACE_POLY = [[124, 36], [131, 36], [131, 46], [124, 46]]; // Sufan Palace (24.836232, 91.953999), missing from OpenStreetMap
-const buildings = [...MAP.buildings, PALACE_POLY].map(p => poly(p, "b"));
-const palace = buildings[buildings.length - 1];
+// Sufan Bikash Ghor (24.835843, 91.952955) stands on the WEST side of the lane, facing east; OpenStreetMap has no building there.
+// Next to it, south along the lane, an unfinished bare-brick house.
+const OFFICE_POLY = [[24.3, 79.8], [22.6, 86.1], [17.8, 84.9], [19.5, 78.5]];
+const BRICK_POLY = [[22.4, 86.8], [20.9, 92.6], [15.1, 91.1], [16.6, 85.3]];
+const buildings = [...MAP.buildings, PALACE_POLY, OFFICE_POLY, BRICK_POLY].map(p => poly(p, "b"));
+const palace = buildings[buildings.length - 3], brick = buildings[buildings.length - 1];
 const ponds = MAP.water.map(p => poly(p, "w"));
 for (const b of [...buildings, ...ponds]) addBox(G.solid, b.x0 - 3, b.y0 - 3, b.x1 + 3, b.y1 + 3, b);
 function pip(x, y, p) {
@@ -394,14 +402,9 @@ function riverBlock(o, r) {
 const blocked = (x, y, r) => { const t = { x, y }; return pushOut(t, r) || riverBlock(t, r); };
 
 // party office = Sufan Bikash Ghor, at 24.835843, 91.952955 (meters from the map pin, y points south)
-const OFFICE_AT = { x: 25.7, y: 84.2 };
-let office = null, door = null;
+const office = buildings[buildings.length - 2]; // OFFICE_POLY, west of the lane, facing east
+let door = null;
 {
-  let best = 1e18;
-  for (const b of buildings) {
-    const d = pip(OFFICE_AT.x, OFFICE_AT.y, b.p) ? -1 : Math.hypot(b.cx - OFFICE_AT.x, b.cy - OFFICE_AT.y);
-    if (d < best) { best = d; office = b; }
-  }
   const nr = nearestRoad(office.cx, office.cy);
   door = { x: nr.x, y: nr.y, hw: nr.hw };
   office.kind = "office";
@@ -495,7 +498,7 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
       if (R() < .4) b.cloth = [ctr(.6, 1), ctr(.6, 3), R() * 6];
       if (R() < .3) b.dish = ctr(.55, b.p.length - 1);
     }
-    const wall = hexRgb(b === office ? "#86d6bf" : b === dukan ? "#ece8de" : b === palace ? "#efe3b0" : WALLS[(R() * WALLS.length) | 0]);
+    const wall = hexRgb(b === office ? "#86d6bf" : b === dukan ? "#ece8de" : b === palace ? "#efe3b0" : b === brick ? "#b8603f" : WALLS[(R() * WALLS.length) | 0]);
     b.edges = b.p.map((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dy = n[1] - q[1], L = Math.hypot(dx, dy) || 1;
       const nx = dy / L * b.sgn, ny = -dx / L * b.sgn;          // outward normal
@@ -519,6 +522,14 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     b.wall = [[P2(WZ, -hw - 1), P2(WZ, hw * .35 - .25)], [P2(WZ, hw * .35 + 2.15), P2(WZ, hw + 1.2)], [P2(WZ, hw + 1.2), P2(F + 1, hw + 1.2)], [P2(F + 1, hw + 1.2), P2(F + 1, -hw - 1)], [P2(F + 1, -hw - 1), P2(WZ, -hw - 1)]];
     b.gate = [P2(WZ, hw * .35 - .25), P2(WZ, hw * .35 + 2.15)];
     b.tag = P2(F + 6, 0);
+  }
+  // the unfinished house beside the office: two storeys of bare brick, a bare concrete roof slab with rebar sticking up
+  brick.h = 6.2; brick.floors = 2; brick.tin = false; brick.roof = "#a7a39b"; brick.tank = brick.stair = brick.cloth = brick.dish = null; brick.ips = false;
+  { // the third floor just started: a low brick wall along the back and half of one side
+    const ins = ([x, y], k) => [x + (brick.cx - x) * k, y + (brick.cy - y) * k], ux = brick.cx - door.x, uy = brick.cy - door.y, n = brick.p.length;
+    const back = brick.edges.reduce((m, e, i) => (e.nx * ux + e.ny * uy) > m.d ? { i, d: e.nx * ux + e.ny * uy } : m, { i: 0, d: -1e9 }).i;
+    const b = brick.p[back], c = brick.p[(back + 1) % n], d = brick.p[(back + 2) % n], m = [(c[0] + d[0]) / 2, (c[1] + d[1]) / 2];
+    brick.walls3 = [[ins(b, .04), ins(c, .04), ins(c, .16), ins(b, .16)], [ins(c, .04), ins(m, .04), ins(m, .16), ins(c, .16)]];
   }
   if (dukan) { // one long storey under grey tin, open to the road
     dukan.h = 3.2; dukan.floors = 1; dukan.tin = true; dukan.roof = "#9aa3a8"; dukan.tank = dukan.stair = dukan.cloth = dukan.dish = null; dukan.ips = true;
@@ -1482,10 +1493,15 @@ function drawCity(t) {
       ctx.fillStyle = e.col; ctx.beginPath();
       ctx.moveTo(e.a[0], e.a[1]); ctx.lineTo(e.b[0], e.b[1]); ctx.lineTo(tb[0], tb[1]); ctx.lineTo(ta[0], ta[1]); ctx.closePath();
       ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .35; ctx.stroke();
+      if (b === brick) { // mortar courses
+        ctx.strokeStyle = "rgba(70,40,28,.35)"; ctx.lineWidth = .08; ctx.beginPath();
+        for (let k = 1; k < 14; k++) { const v = k / 14, ax = e.a[0] + (ta[0] - e.a[0]) * v, ay = e.a[1] + (ta[1] - e.a[1]) * v, bx = e.b[0] + (tb[0] - e.b[0]) * v, by = e.b[1] + (tb[1] - e.b[1]) * v; ctx.moveTo(ax, ay); ctx.lineTo(bx, by); }
+        ctx.stroke();
+      }
       if (!e.win || (b === office && i === b.front)) return;
       // windows: one row per storey
       const P2 = (u, v) => { const bx = e.a[0] + (e.b[0] - e.a[0]) * u, by = e.a[1] + (e.b[1] - e.a[1]) * u, tx = ta[0] + (tb[0] - ta[0]) * u, ty = ta[1] + (tb[1] - ta[1]) * u; return [bx + (tx - bx) * v, by + (ty - by) * v]; };
-      ctx.fillStyle = b === office ? "#7a3b12" : "rgba(52,72,92,.78)"; ctx.beginPath();
+      ctx.fillStyle = b === office ? "#7a3b12" : b === brick ? "#211d1a" : "rgba(52,72,92,.78)"; ctx.beginPath();
       for (let f = 0; f < b.floors; f++) {
         const v0 = (f + .38) / b.floors, v1 = (f + .78) / b.floors;
         for (let k = 0; k < e.win; k++) {
@@ -1505,6 +1521,12 @@ function drawCity(t) {
     ctx.strokeStyle = C.ink; ctx.lineWidth = .45; ctx.stroke();
     ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = .9; ctx.stroke(); ctx.restore();
     roofBits(b, t);
+    if (b === brick) { // column bars waiting for the next floor, and the first courses of its walls
+      for (const q of b.walls3) prism(q, b.h, b.h + 1.1, "#b8603f", "#9c4f33");
+      ctx.strokeStyle = "#5b3d2a"; ctx.lineWidth = .2; ctx.beginPath();
+      b.p.forEach((q, i) => { const n = b.p[(i + 1) % b.p.length]; for (const f of [.08, .5, .92]) { const x = q[0] + (n[0] - q[0]) * f + (b.cx - q[0]) * .06, y = q[1] + (n[1] - q[1]) * f + (b.cy - q[1]) * .06, lo = lift(x, y, b.h), hi = lift(x, y, b.h + 1.2); ctx.moveTo(lo[0], lo[1]); ctx.lineTo(hi[0], hi[1]); } });
+      ctx.stroke();
+    }
   }
 }
 
@@ -1639,6 +1661,53 @@ function drawBanner() {
   ctx.restore();
 }
 
+// the CNG's own shape in metres (nose toward +x), shared by the game and the garage preview; paint is a SHOP item
+function cngShape(c, paint, t) {
+  c.lineJoin = "round"; c.strokeStyle = C.ink; c.lineWidth = .28;
+  c.fillStyle = C.ink;
+  c.fillRect(-2.1, -1.85, 1.3, .45); c.fillRect(-2.1, 1.4, 1.3, .45); c.fillRect(2.35, -.22, 1.1, .44);
+  // body: wide passenger cabin tapering to the driver's nose
+  c.fillStyle = paint.col;
+  c.beginPath();
+  c.moveTo(-2.7, -1.45); c.lineTo(1.0, -1.45); c.quadraticCurveTo(2.2, -1.3, 2.95, -.55);
+  c.lineTo(2.95, .55); c.quadraticCurveTo(2.2, 1.3, 1.0, 1.45); c.lineTo(-2.7, 1.45); c.closePath();
+  c.fill(); c.stroke();
+  // windshield
+  c.fillStyle = "#a9d6e5";
+  c.beginPath(); c.moveTo(1.05, -1.15); c.lineTo(1.75, -.95); c.lineTo(1.75, .95); c.lineTo(1.05, 1.15); c.closePath(); c.fill(); c.stroke();
+  // dark canopy over the cabin, with ribs
+  c.fillStyle = "#1e2a22"; rr(c, -2.85, -1.55, 3.85, 3.1, .55); c.fill(); c.stroke();
+  c.strokeStyle = "rgba(246,239,225,.18)"; c.lineWidth = .12;
+  for (const x of [-1.9, -.9, .1]) { c.beginPath(); c.moveTo(x, -1.45); c.lineTo(x, 1.45); c.stroke(); }
+  if (paint.id === "paint-sticker") { // campaign posters stuck on the canopy
+    const pa = posterFor(0), pb = posterFor(1);
+    if (pa) c.drawImage(pa.img, -2.55, -1.3, 1.1, 1.1);
+    if (pb) c.drawImage(pb.img, -2.55, .2, 1.1, 1.1);
+  }
+  if (paint.id === "paint-gold") { // glints
+    c.fillStyle = `rgba(255,250,210,${.5 + .5 * Math.sin(t * 5)})`;
+    for (const [gx, gy] of [[1.6, -1.25], [2.4, .7], [1.2, 1.2]]) { c.beginPath(); c.arc(gx, gy, .16, 0, 7); c.fill(); }
+  }
+  // yellow + white stripe across the back, like the real ones
+  c.strokeStyle = C.ink; c.lineWidth = .2;
+  c.fillStyle = C.yellow; c.fillRect(-3.05, -1.5, .38, 3); c.strokeRect(-3.05, -1.5, .38, 3);
+  c.fillStyle = C.paper; c.fillRect(-3.05, -1.5, .14, 3);
+  // headlight and the owner's name on the roof
+  c.fillStyle = "#e58a1f"; c.beginPath(); c.arc(2.95, 0, .22, 0, 7); c.fill();
+  // upgrades you can see: chrome cow-bumper, LED bar, red umbrella tied on the canopy
+  c.strokeStyle = C.ink;
+  if (has("up-bumper")) { c.lineWidth = .5; c.strokeStyle = "#cfd5da"; c.beginPath(); c.arc(2.2, 0, 1.25, -1.05, 1.05); c.stroke(); c.lineWidth = .14; c.strokeStyle = C.ink; c.beginPath(); c.arc(2.2, 0, 1.53, -1.05, 1.05); c.stroke(); }
+  if (has("up-led")) { c.fillStyle = "#ffffff"; c.fillRect(2.6, -.7, .22, 1.4); c.lineWidth = .1; c.strokeRect(2.6, -.7, .22, 1.4); }
+  if (has("up-umbrella")) {
+    c.fillStyle = C.red; c.lineWidth = .18; c.beginPath();
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 + Math.PI / 8; c.lineTo(-1.2 + Math.cos(a) * 1.75, Math.sin(a) * 1.75); }
+    c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = "rgba(29,26,23,.35)"; c.lineWidth = .08; c.beginPath();
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 + Math.PI / 8; c.moveTo(-1.2, 0); c.lineTo(-1.2 + Math.cos(a) * 1.75, Math.sin(a) * 1.75); }
+    c.stroke(); c.fillStyle = C.ink; c.beginPath(); c.arc(-1.2, 0, .14, 0, 7); c.fill();
+  }
+}
+
 // Ponk Vai's CNG, seen from above: green body, dark canopy, yellow back stripe, one front wheel
 function drawCNG(t) {
   const s = Math.max(cam.z, 3.6) * 1.6;
@@ -1661,37 +1730,7 @@ function drawCNG(t) {
     for (let k = 0; k <= 4; k++) { const x = -2.9 + ox * k / 4, y = -1.5 + oy * k / 4; ctx.moveTo(x, y); ctx.lineTo(x + 5.9, y); ctx.lineTo(x + 5.9, y + 3); ctx.lineTo(x, y + 3); ctx.closePath(); }
     ctx.fill();
   }
-  ctx.fillStyle = C.ink;
-  ctx.fillRect(-2.1, -1.85, 1.3, .45); ctx.fillRect(-2.1, 1.4, 1.3, .45); ctx.fillRect(2.35, -.22, 1.1, .44);
-  // body: wide passenger cabin tapering to the driver's nose
-  const paint = paintItem();
-  ctx.fillStyle = paint.col;
-  ctx.beginPath();
-  ctx.moveTo(-2.7, -1.45); ctx.lineTo(1.0, -1.45); ctx.quadraticCurveTo(2.2, -1.3, 2.95, -.55);
-  ctx.lineTo(2.95, .55); ctx.quadraticCurveTo(2.2, 1.3, 1.0, 1.45); ctx.lineTo(-2.7, 1.45); ctx.closePath();
-  ctx.fill(); ctx.stroke();
-  // windshield
-  ctx.fillStyle = "#a9d6e5";
-  ctx.beginPath(); ctx.moveTo(1.05, -1.15); ctx.lineTo(1.75, -.95); ctx.lineTo(1.75, .95); ctx.lineTo(1.05, 1.15); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // dark canopy over the cabin, with ribs
-  ctx.fillStyle = "#1e2a22"; rr(ctx, -2.85, -1.55, 3.85, 3.1, .55); ctx.fill(); ctx.stroke();
-  ctx.strokeStyle = "rgba(246,239,225,.18)"; ctx.lineWidth = .12;
-  for (const x of [-1.9, -.9, .1]) { ctx.beginPath(); ctx.moveTo(x, -1.45); ctx.lineTo(x, 1.45); ctx.stroke(); }
-  if (paint.id === "paint-sticker") { // campaign posters stuck on the canopy
-    const pa = posterFor(0), pb = posterFor(1);
-    if (pa) ctx.drawImage(pa.img, -2.55, -1.3, 1.1, 1.1);
-    if (pb) ctx.drawImage(pb.img, -2.55, .2, 1.1, 1.1);
-  }
-  if (paint.id === "paint-gold") { // glints
-    ctx.fillStyle = `rgba(255,250,210,${.5 + .5 * Math.sin(t * 5)})`;
-    for (const [gx, gy] of [[1.6, -1.25], [2.4, .7], [1.2, 1.2]]) { ctx.beginPath(); ctx.arc(gx, gy, .16, 0, 7); ctx.fill(); }
-  }
-  // yellow + white stripe across the back, like the real ones
-  ctx.strokeStyle = C.ink; ctx.lineWidth = .2;
-  ctx.fillStyle = C.yellow; ctx.fillRect(-3.05, -1.5, .38, 3); ctx.strokeRect(-3.05, -1.5, .38, 3);
-  ctx.fillStyle = C.paper; ctx.fillRect(-3.05, -1.5, .14, 3);
-  // headlight and the owner's name on the roof
-  ctx.fillStyle = "#e58a1f"; ctx.beginPath(); ctx.arc(2.95, 0, .22, 0, 7); ctx.fill();
+  cngShape(ctx, paintItem(), t);
   ctx.scale(1 / s, 1 / s); // text at real pixel size so tiny fonts render cleanly
   ctx.fillStyle = "#f0a23a"; ctx.font = `700 ${Math.max(7, .8 * s).toFixed(1)}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText("পংক ভাই", -.92 * s, .05 * s);
@@ -2095,27 +2134,72 @@ function renderShop() {
       else if (on) btns.push(`<button class="mini-btn ok" disabled>চলছে ✓</button>`);
       else btns.push(`<button class="mini-btn ghost" data-use="${i.id}">ব্যবহার করো</button>`);
       if (cat === "horn") btns.push(`<button class="mini-btn ghost" data-try="${i.id}">🔊 শোনো</button>`);
+      if (cat === "paint" && !on) { const seen = garage.preview === i.id; btns.push(`<button class="mini-btn ${seen ? "seen" : "ghost"}" data-try="${i.id}">${seen ? "👀 দেখছো" : "👀 দেখো"}</button>`); }
       return `<div class="item${on ? " on" : ""}"><span class="ic">${i.ic}</span><span><b>${i.n}</b><small>${i.d}</small></span><span class="act">${btns.join("")}</span></div>`;
     }).join("") + `</div>`).join("");
 }
+// the garage: Ponk Vai's CNG turning slowly on the floor; drag it to spin it; a paint can be tried before buying
+const garage = { on: false, a: -.6, drag: null, preview: null, last: 0 };
+function drawGarage(now) {
+  if (!garage.on) return;
+  const cvg = el("garage"), r = cvg.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+  if (cvg.width !== Math.round(r.width * dpr)) { cvg.width = Math.round(r.width * dpr); cvg.height = Math.round(r.height * dpr); }
+  const g = cvg.getContext("2d"), w = r.width, hh = r.height, t = now / 1000, dt = Math.min(.05, (now - (garage.last || now)) / 1000);
+  garage.last = now; if (!garage.drag) garage.a += dt * .45;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // floor tiles, an oil stain, the back wall with a sign
+  g.fillStyle = "#cfc8b8"; g.fillRect(0, 0, w, hh);
+  g.strokeStyle = "rgba(29,26,23,.1)"; g.lineWidth = 1; g.beginPath();
+  for (let x = 0; x < w; x += 34) { g.moveTo(x, 30); g.lineTo(x, hh); } for (let y = 30; y < hh; y += 34) { g.moveTo(0, y); g.lineTo(w, y); } g.stroke();
+  g.fillStyle = "#8d8576"; g.fillRect(0, 0, w, 30); g.fillStyle = "rgba(29,26,23,.25)"; g.fillRect(0, 28, w, 3);
+  g.fillStyle = "rgba(40,36,30,.18)"; g.beginPath(); g.ellipse(w * .78, hh * .74, 22, 9, .3, 0, 7); g.fill();
+  g.font = `700 13px ${FONT}`; g.textAlign = "left"; g.textBaseline = "middle"; g.fillStyle = C.yellow; g.fillText("পংক ভাইয়ের গ্যারেজ 🔧", 12, 15);
+  g.textAlign = "right"; g.fillStyle = "rgba(246,239,225,.75)"; g.font = `600 11px ${FONT}`; g.fillText("টেনে ঘোরাও ↔", w - 12, 15);
+  // turntable and the CNG
+  const cx = w / 2, cy = 30 + (hh - 30) / 2, sc = Math.min(w / 8.5, (hh - 30) / 6.6);
+  g.fillStyle = "#b9b1a0"; g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.ellipse(cx, cy, sc * 3.6, sc * 3.4, 0, 0, 7); g.fill(); g.stroke();
+  g.save(); g.translate(cx, cy); g.rotate(garage.a); g.scale(sc, sc);
+  g.fillStyle = "rgba(40,44,70,.28)"; g.beginPath(); g.ellipse(-.1 + .35, .35, 3.4, 1.9, 0, 0, 7); g.fill();
+  const paint = SHOP.find(i => i.id === (garage.preview || shop.paint)) || SHOP[4];
+  cngShape(g, paint, t);
+  g.scale(1 / sc, 1 / sc); g.fillStyle = "#f0a23a"; g.font = `700 ${Math.max(9, .8 * sc).toFixed(1)}px ${FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("পংক ভাই", -.92 * sc, .05 * sc);
+  g.restore();
+  if (garage.preview) { // a ribbon saying this paint is only a try-on
+    const label = `👀 ${paint.n} — ৳${bn(paint.price)}`; g.font = `700 12px ${FONT}`; const tw = g.measureText(label).width + 20;
+    g.fillStyle = C.yellow; g.strokeStyle = C.ink; g.lineWidth = 2; rr(g, w / 2 - tw / 2, hh - 30, tw, 22, 11); g.fill(); g.stroke();
+    g.fillStyle = C.ink; g.textAlign = "center"; g.fillText(label, w / 2, hh - 18.5);
+  }
+  requestAnimationFrame(drawGarage);
+}
+{
+  const cvg = el("garage");
+  cvg.addEventListener("pointerdown", e => { garage.drag = { x: e.clientX, a: garage.a }; cvg.setPointerCapture(e.pointerId); cvg.style.cursor = "grabbing"; });
+  cvg.addEventListener("pointermove", e => { if (garage.drag) garage.a = garage.drag.a + (e.clientX - garage.drag.x) * .015; });
+  for (const ev of ["pointerup", "pointercancel"]) cvg.addEventListener(ev, () => { garage.drag = null; cvg.style.cursor = ""; });
+}
 function openShop(from) {
-  shopFrom = from; renderShop();
+  shopFrom = from; garage.preview = null; renderShop();
   el(from).classList.add("hidden"); el("shop").classList.remove("hidden"); el("shop").scrollTop = 0;
+  if (!garage.on) { garage.on = true; garage.last = 0; requestAnimationFrame(drawGarage); }
 }
 el("shopFromStart").addEventListener("click", () => openShop("start"));
 el("shopFromEnd").addEventListener("click", () => openShop("end"));
-el("shopBack").addEventListener("click", () => { el("shop").classList.add("hidden"); syncWallet(); el(shopFrom).classList.remove("hidden"); });
+el("shopBack").addEventListener("click", () => { garage.on = false; garage.preview = null; el("shop").classList.add("hidden"); syncWallet(); el(shopFrom).classList.remove("hidden"); });
 el("shopList").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   ensureAudio();
   const id = b.dataset.buy || b.dataset.use || b.dataset.try, item = SHOP.find(i => i.id === id); if (!item) return;
-  if (b.dataset.try) { const prev = shop.horn; shop.horn = id; sfx.horn(); shop.horn = prev; return; }
+  if (b.dataset.try) {
+    if (item.cat === "horn") { const prev = shop.horn; shop.horn = id; sfx.horn(); shop.horn = prev; }
+    else { garage.preview = garage.preview === id ? null : id; garage.a += .9; renderShop(); }
+    return;
+  }
   if (b.dataset.buy) {
     if (shop.wallet < item.price || has(id)) return;
     shop.wallet -= item.price; shop.owned.push(id); sfx.cash();
   }
   if (item.cat !== "up") { shop[item.cat] = id; if (item.cat === "horn") setTimeout(() => sfx.horn(), 250); }
-  saveShop(); renderShop();
+  garage.preview = null; saveShop(); renderShop();
 });
 syncWallet();
 
