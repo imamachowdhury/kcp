@@ -28,6 +28,8 @@
   .tag, .bub, .floaty { position: absolute; left: 0; top: 0; will-change: transform; white-space: nowrap; }
   .tag { font: 700 12px var(--font-body); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; padding: 0 8px; line-height: 18px; }
   .tag.sleep { background: #dfe3f5; } .tag.awake { background: #c9f0c2; } .tag.flee { background: #ffd2a6; } .tag.warn { background: #ffd2a6; }
+  .tag.drv { display: inline-flex; align-items: center; gap: 5px; background: var(--yellow); padding-left: 2px; }
+  .tag.drv i { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--paper) center/cover; }
   .tag.office { background: var(--red); color: var(--paper); font-size: 13px; }
   .tag.place { background: #dff3e4; font-size: 11px; }
   .bub { max-width: 230px; white-space: normal; width: max-content; font: 600 13.5px/1.35 var(--font-body); background: #fff; border: 2.5px solid var(--ink);
@@ -307,9 +309,9 @@ const RIDE_LINES = ["পংক ভাই, মিটারে কত উঠলো
 const FAST_LINES = ["মামা আস্তে চালান, চা পড়ে যাবে!", "আল্লাহ বাঁচাও!! 😱", "এইটা সিএনজি না রকেট?", "পংক ভাই, লাইসেন্স আছে তো?"];
 // who drives today: Ponki Vai is fast and reckless, Neta Muhon Vai is careful but can't pass a procession
 const DRIVERS = {
-  ponki: { n: "পংকি ভাই", label: "পংকি ভাইয়ের সিএনজি", speed: 1.18, turn: 1.15, crashy: true,
+  ponki: { id: "ponki", n: "পংকি ভাই", label: "পংকি ভাইয়ের সিএনজি", shirt: "#e3d24a", speed: 1.18, turn: 1.15, crashy: true,
     hello: "পংকি ভাই স্টিয়ারিংয়ে! শক্ত করে ধরেন, আজকে উড়াইয়া নিমু। প্যাঁ-পোঁ!" },
-  muhon: { n: "মুহন ভাই", label: "নেতা মুহন ভাই চালাচ্ছেন", speed: 1, turn: 1, rally: true,
+  muhon: { id: "muhon", n: "মুহন ভাই", label: "নেতা মুহন ভাই চালাচ্ছেন", shirt: "#a3122a", speed: 1, turn: 1, rally: true,
     hello: "মুহন ভাই স্টিয়ারিংয়ে। ধীরে চলি, নিরাপদে চলি। চলো কমরেডদের ঘুম ভাঙাই!" },
 };
 let driverId = "ponki";
@@ -613,7 +615,7 @@ function textTex(text, bg, fg, w = 512, h = 128, font = 64, opts = {}) {
 
 // round face badges from the comrades' photos (redrawn when the photo arrives)
 const PHOTOS = {};
-for (const c of [...COMRADES, SUFAN, SAM]) {
+for (const c of [...COMRADES, SUFAN, SAM, ...Object.values(DRIVERS)]) {
   if (c.emoji && !c.src) continue;
   const im = new Image(); im.src = c.src || `../assets/people/${c.id}.jpg`; PHOTOS[c.id] = im;
 }
@@ -1312,8 +1314,8 @@ function makeCNG() {
   }
 
   // inside: Ponk Vai at the handlebar, and the passengers' bench
-  pBox(.36, .42, .5, .5, 1.17, 0, lam({ color: "#f6efe1" }));
-  add(new THREE.Mesh(new THREE.SphereGeometry(.14, 10, 8), lam({ color: "#c58f5e" }))).position.set(.52, 1.46, 0);
+  const drvShirt = pBox(.36, .42, .5, .5, 1.17, 0, lam({ color: "#f6efe1" })); // the driver's panjabi, coloured per driver
+  const drvFace = new THREE.Sprite(new THREE.SpriteMaterial()); drvFace.scale.set(.34, .34, 1); drvFace.position.set(.54, 1.4, 0); body.add(drvFace);
   pBox(.05, .05, .62, .86, 1.22, 0, ink);
   pBox(.7, .14, W - .16, -.75, 1.12, 0, lam({ color: "#7a2e24" })); pBox(.12, .36, W - .16, -1.18, 1.3, 0, lam({ color: "#7a2e24" }));
 
@@ -1329,7 +1331,7 @@ function makeCNG() {
   const stickU = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .5, 6), ink); stickU.position.y = 2.1; umb.add(stickU); umb.position.x = -.5;
   // headlight beam for load-shedding
   const spot = new THREE.SpotLight("#ffe7b0", 0, 70, .55, .6, 1.2); spot.position.set(1.5, .7, 0); const tgt = new THREE.Object3D(); tgt.position.set(16, 0, 0); g.add(spot, tgt); spot.target = tgt;
-  return { g, body, stick, spot, umb, bumper, led, lens };
+  return { g, body, stick, spot, umb, bumper, led, lens, drvShirt, drvFace };
 }
 const cng = makeCNG(); scene.add(cng.g);
 // paint, stickers and visible upgrades on the CNG; `paint` can be a paint the shop is only previewing
@@ -1337,6 +1339,7 @@ function applyLook(paint = shop.paint) {
   paintMat.color.set(PAINT[paint] || C.green); paintMat.emissive.set(paint === "paint-gold" ? "#3a2a00" : "#000000");
   cng.stick.visible = paint === "paint-sticker"; cng.umb.visible = has("up-umbrella"); cng.bumper.visible = has("up-bumper");
   cng.led.visible = has("up-led"); cng.lens.material.color.set(has("up-led") ? "#ffffff" : "#ffe9a8");
+  const d = DRV(); cng.drvShirt.material.color.set(d.shirt); cng.drvFace.material.map = faceTex(d, C.yellow); cng.drvFace.material.needsUpdate = true;
 }
 applyLook();
 // rider badges float above the CNG so you can see who you're carrying
@@ -1560,7 +1563,7 @@ let state = "menu", rand = Math.random, P = null, comrades = [], cows = [], mich
 let time = 0, lastTick = -1, sufanCd = 0, events = {}, shedLevel = 0, rainLevel = 0, flash = 0, area = null, chatCd = 0, warned30 = false, samWarnCd = 0, shakeT = 0, gid = 0;
 const dyn = new THREE.Group(); scene.add(dyn);
 const rings = [];
-let sufan = null, officeTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
+let sufan = null, officeTag = null, drvTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
 
 function clearDyn() {
   while (dyn.children.length) dyn.remove(dyn.children[0]);
@@ -1632,6 +1635,7 @@ function newGame() {
   sufan = { x: sp.x, y: sp.y, hy: 3.4, mesh: makePerson("#2f8a4f", faceTex(SUFAN, RING.done)), tag: mkEl("tag", "সুফান") };
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
+  drvTag = mkEl("tag drv", ""); drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${DRV().label}`;
   placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")], [mamu, mkEl("tag", "রিয়েল মামুর দোকান 🍟")]].filter(([b]) => b);
   for (const sh of SHOPS) { // a dashed ring on the road where to stop
     const g = new THREE.Group();
@@ -2040,6 +2044,7 @@ function render(t, dt) {
       !full && near(s.x, s.y, 80) ? place(s.tag, project(s.x, 1.2, s.y)) : (s.tag.style.display = "none");
     }
     for (const pl of PLACES) if (pl.tag) near(pl.mx, pl.my, 140) ? place(pl.tag, project(pl.mx, 12, pl.my)) : (pl.tag.style.display = "none");
+    if (drvTag) Math.abs(P.v) < 3 && state === "play" ? place(drvTag, project(P.x, 2.5, P.y)) : (drvTag.style.display = "none");
     if (officeTag) near(office.cx, office.cy, 170) ? place(officeTag, project(office.cx, office.h + 6.5, office.cy)) : (officeTag.style.display = "none");
     for (const [b, tg] of placeTags) near(b.cx, b.cy, 110) ? place(tg, project(b.cx, b.h + 3, b.cy)) : (tg.style.display = "none");
     if (sufan) near(sufan.x, sufan.y) ? place(sufan.tag, project(sufan.x, 3.05, sufan.y)) : (sufan.tag.style.display = "none");
@@ -2146,7 +2151,7 @@ function closeShop() {
 el("shopFromStart").addEventListener("click", () => { ensureAudio(); openShop("start"); });
 const syncDrivers = () => document.querySelectorAll(".driver").forEach(b => b.classList.toggle("on", b.dataset.d === driverId));
 document.querySelectorAll(".driver").forEach(b => b.addEventListener("click", () => {
-  driverId = b.dataset.d; syncDrivers();
+  driverId = b.dataset.d; syncDrivers(); applyLook();
   try { localStorage.setItem("kcp-sim-driver", driverId); } catch (e) {}
 }));
 syncDrivers();
