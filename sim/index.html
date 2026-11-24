@@ -261,7 +261,7 @@
     </div>
     <div class="drivers" id="drivers">
       <p class="sec" id="drvQ">২. আজকে সিএনজি চালাবেন কে?</p>
-      <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু এক্সিডেন্টের ভয়ও বেশি।</small></button>
+      <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু ফুল স্পিডে লম্বা মোড় নিলে এক্সিডেন্ট করেন।</small></button>
       <button class="driver" data-d="muhon"><span class="ph" style="background-image:url('../assets/people/muhon.jpg')"></span><b>নেতা মুহন ভাই</b><small>✅ সব ঠিকঠাক, সাবধানে চালান।<br>📢 কিন্তু মিছিল দেখলে থেমে স্লোগান দিতে লেগে যান।</small></button>
     </div>
     <ul class="rules">
@@ -1150,7 +1150,7 @@ function newGame() {
   const s0 = roadSegs.reduce((b, s) => { const d = segD2(door.x, door.y, s.ax, s.ay, s.bx, s.by); return d < b.d ? { d, s } : b; }, { d: 1e18 }).s;
   const a0 = Math.atan2(s0.by - s0.ay, s0.bx - s0.ax);
   // park a little way down the road so the CNG isn't hidden under the office labels
-  P = { x: door.x + Math.cos(a0) * 24, y: door.y + Math.sin(a0) * 24, a: a0, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0, tea: 0, chips: 0, rally: null };
+  P = { x: door.x + Math.cos(a0) * 24, y: door.y + Math.sin(a0) * 24, a: a0, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0, tea: 0, chips: 0, rally: null, risk: 0, warned: false };
   if (!onRoad(P.x, P.y)) { P.x = door.x; P.y = door.y; }
   delivered = []; bubbles = []; floaties = []; rings = []; dust = [];
   time = 0; lastTick = -1; shake = 0; sufanCd = 3;
@@ -1331,9 +1331,16 @@ function update(dt) {
   } else P.v += clamp(-P.v, -15 * dt, 15 * dt);
   if (P.v > maxV) P.v = Math.max(maxV, P.v - 22 * dt);
   P.x += Math.cos(P.a) * P.v * dt; P.y += Math.sin(P.a) * P.v * dt;
-  if (DRV().crashy && P.stun <= 0 && P.v > 13) { // Ponki Vai takes corners flat out, and sometimes it goes wrong
-    const turning = Math.abs(wrapAng(P.a - aWas)) / dt > .9;
-    if (rand() < dt * (turning ? .3 : .03) * (1 + rainLevel)) {
+  if (DRV().crashy && P.stun <= 0) { // Ponki Vai takes corners flat out: a long hard turn near top speed skids, then crashes
+    const turning = Math.abs(wrapAng(P.a - aWas)) / dt > .9, risky = turning && P.v > maxV * .8;
+    P.risk = Math.max(0, P.risk + (risky ? dt * (1 + rainLevel) : -dt * 1.5));
+    if (P.risk === 0) P.warned = false;
+    if (risky && P.risk > .4 && !P.warned) { // warn first, so easing off the gas or the turn saves it
+      P.warned = true; sfx.scratch(); floaty(P.x, P.y - 6, "চাকা পিছলায়!", C.red); say(P, "পংকি ভাই, আস্তে!", 1.2);
+      skids.push({ x: P.x, y: P.y, a: P.a, t: 0 });
+    }
+    if (P.risk > .9) {
+      P.risk = 0; P.warned = false;
       P.stun = 1.4; P.v = 0; shake = .5; stats.crashes++;
       skids.push({ x: P.x, y: P.y, a: P.a, t: 0 }, { x: P.x, y: P.y, a: P.a + .6, t: 0 });
       say(P, CRASH_LINES[(rand() * CRASH_LINES.length) | 0], 2.2); floaty(P.x, P.y, "ধড়াম!", C.red);
