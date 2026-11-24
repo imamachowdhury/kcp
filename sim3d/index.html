@@ -165,21 +165,40 @@
     .count { white-space: nowrap; } .seats { margin-left: 4px; }
     #horn { width: 84px; height: 84px; font-size: 17px; }
   }
-  /* phone driving buttons: steer on the left, gas and brake on the right (shown with the horn) */
-  .pad { display: none; }
-  .pad button { position: fixed; z-index: 3; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px); width: 70px; height: 70px; padding: 0;
+  @media (max-width: 420px) {
+    .hud { gap: 5px; left: 6px; right: 6px; }
+    .card { padding: 3px 7px; } .clock, .count, .money { font-size: 15px; }
+    .seats { gap: 2px; margin-left: 3px; } .seats i { width: 8px; height: 8px; border-width: 1.5px; }
+    .icon-btn { width: 34px; height: 34px; font-size: 15px; }
+  }
+  @media (max-width: 360px) { /* the money card drops under the clock so the buttons stay on screen */
+    .hud .money { position: fixed; left: 6px; top: calc(max(10px, env(safe-area-inset-top)) + 44px); }
+  }
+  /* phone driving buttons: steer on the left, gas and brake (hold to reverse) on the right, horn above gas.
+     Sizes follow the screen width so all four fit on a 320px phone. */
+  .pad { display: none; --b: clamp(54px, 17.5vw, 72px); --gap: 10px; --edge: 14px; --low: calc(max(16px, env(safe-area-inset-bottom)) + 4px); }
+  .pad button { position: fixed; z-index: 3; bottom: var(--low); width: var(--b); height: var(--b); padding: 0;
     border: 3px solid var(--ink); border-radius: 50%; background: rgba(246, 239, 225, .9); box-shadow: 3px 3px 0 var(--ink); color: var(--ink);
-    font: 700 26px/1 var(--font-body); cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-  .pad .pl { left: max(14px, env(safe-area-inset-left)); }
-  .pad .pr { left: calc(max(14px, env(safe-area-inset-left)) + 82px); }
-  .pad .pg { right: max(14px, env(safe-area-inset-right)); width: 78px; height: 104px; border-radius: 18px; background: #2f8a4f; color: var(--paper); font-size: 17px; }
-  .pad .pg small { display: block; font-size: 20px; margin-bottom: 4px; }
-  .pad .pb { right: calc(max(14px, env(safe-area-inset-right)) + 90px); width: 72px; height: 72px; border-radius: 18px; background: var(--red); color: var(--paper); font-size: 16px; }
+    font: 700 24px/1 var(--font-body); cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .pad .pl { left: max(var(--edge), env(safe-area-inset-left)); }
+  .pad .pr { left: calc(max(var(--edge), env(safe-area-inset-left)) + var(--b) + var(--gap)); }
+  .pad .pg { right: max(var(--edge), env(safe-area-inset-right)); width: calc(var(--b) + 6px); height: calc(var(--b) * 1.45); border-radius: 18px;
+    background: #2f8a4f; color: var(--paper); font-size: 16px; }
+  .pad .pb { right: calc(max(var(--edge), env(safe-area-inset-right)) + var(--b) + 6px + var(--gap)); border-radius: 18px;
+    background: var(--red); color: var(--paper); font-size: 15px; }
+  .pad .pg small { display: block; font-size: 18px; margin-bottom: 3px; }
+  .pad .pb small { display: block; font-size: 11px; font-weight: 600; margin-top: 3px; opacity: .9; }
   .pad .on { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); filter: brightness(.88); }
   @media (pointer: coarse) {
     #horn + .pad { display: block; }
     #horn[hidden] + .pad { display: none; }
-    #horn { right: max(14px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 122px); width: 78px; height: 78px; font-size: 17px; }
+    #horn { --b: clamp(54px, 17.5vw, 72px); right: max(14px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px + var(--b) * 1.45 + 14px);
+      width: calc(var(--b) + 6px); height: calc(var(--b) + 6px); font-size: calc(var(--b) * .24); line-height: 1.1; white-space: nowrap; padding: 0; }
+    #horn small { font-size: 10px; margin-top: 2px; }
+  }
+  /* phone on its side: little height, so the horn joins the bottom row next to the brake */
+  @media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+    #horn { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px); right: calc(max(14px, env(safe-area-inset-right)) + var(--b) * 2 + 6px + 20px); }
   }
   @media (pointer: coarse) { #target { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 92px); } }
 </style>
@@ -213,7 +232,7 @@
   </div>
 </div>
 <button id="horn" hidden>প্যাঁ-পোঁ!<small>Space</small></button>
-<div class="pad" id="pad"><button class="pl" data-k="pad-l" aria-label="বামে ঘোরাও">◀</button><button class="pr" data-k="pad-r" aria-label="ডানে ঘোরাও">▶</button><button class="pb" data-k="pad-brake">ব্রেক</button><button class="pg" data-k="pad-gas"><small>▲</small>গ্যাস</button></div>
+<div class="pad" id="pad"><button class="pl" data-k="pad-l" aria-label="বামে ঘোরাও">◀</button><button class="pr" data-k="pad-r" aria-label="ডানে ঘোরাও">▶</button><button class="pb" data-k="pad-brake" aria-label="ব্রেক, চেপে রাখলে পিছে যাবে">ব্রেক<small>পিছে ▼</small></button><button class="pg" data-k="pad-gas"><small>▲</small>গ্যাস</button></div>
 <div class="keys" id="keys" hidden>W/↑ চালাও · S/↓ ব্রেক · A D/← → ঘোরাও · Space হর্ন · C ক্যামেরা</div>
 
 <div class="screen" id="start">
