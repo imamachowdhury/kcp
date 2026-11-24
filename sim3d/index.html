@@ -52,7 +52,43 @@
   .seats i.on { background: #2f9a4a; }
   .money { font: 700 18px/1.1 var(--font-body); background: #dff3e4; } .money small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
   .money.minus { background: #ffd2c8; }
+  .drivers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
+  .drivers .sec { grid-column: 1 / -1; margin: 0; font-weight: 700; font-size: 14px; text-align: left; }
+  .driver { font: inherit; color: var(--ink); text-align: left; background: var(--paper-2); border: 2.5px solid var(--ink); border-radius: 12px;
+    padding: 8px; cursor: pointer; display: grid; grid-template-columns: 46px 1fr; gap: 4px 8px; align-items: center; box-shadow: 2px 2px 0 var(--ink); }
+  .driver .ph { width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper) center/cover; grid-row: span 2; }
+  .driver b { font-size: 15px; line-height: 1.2; }
+  .driver small { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
+  .driver.on { background: #fff3c2; box-shadow: 0 0 0 3px var(--red), 3px 3px 0 var(--ink); }
+  .driver.on b::after { content: " ✓"; color: var(--red); }
+  @media (max-width: 400px) { .drivers { grid-template-columns: 1fr; } }
+  .money .bag { display: block; font-size: 12.5px; font-weight: 700; margin-top: 2px; white-space: nowrap; }
+  .tag.ask { background: var(--yellow); }
   .spacer { flex: 1; }
+  .talk {
+    position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 4;
+    width: min(520px, calc(100% - 20px)); background: var(--paper); border: 3px solid var(--ink); border-radius: 16px;
+    box-shadow: 6px 6px 0 var(--ink); padding: 12px 12px 10px; animation: talkIn .22s ease-out;
+  }
+  .talk[hidden] { display: none; }
+  @keyframes talkIn { from { transform: translate(-50%, 30px); opacity: 0; } }
+  .talk-top { display: flex; gap: 10px; align-items: flex-start; }
+  .talk-ph { flex: none; width: 52px; height: 52px; border-radius: 50%; border: 2.5px solid var(--ink); background: #efe4cc center/cover;
+    display: grid; place-items: center; font-size: 26px; }
+  .talk-top b { font-size: 15px; }
+  .talk-top b small { font-weight: 600; color: var(--ink-soft); font-size: 12px; }
+  .talk-top p { margin: 2px 0 0; font-size: 15.5px; line-height: 1.45; font-weight: 600; }
+  .talk-bar { height: 6px; border: 1.5px solid var(--ink); border-radius: 99px; margin: 9px 0 9px; overflow: hidden; background: #efe4cc; }
+  .talk-bar i { display: block; height: 100%; width: 100%; background: var(--red); }
+  .talk-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .talk-btns button { font: 700 14px/1.25 var(--font-body); color: var(--ink); background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 11px;
+    box-shadow: 3px 3px 0 var(--ink); padding: 7px 6px; cursor: pointer; touch-action: manipulation; }
+  .talk-btns button small { display: block; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); margin-top: 2px; }
+  .talk-btns button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .talk-btns button:disabled { background: #efe4cc; opacity: .7; box-shadow: none; cursor: not-allowed; }
+  .talk-btns kbd { margin-right: 3px; }
+  @media (pointer: coarse) { .talk-btns kbd { display: none; } }
+  @media (max-width: 420px) { .talk-btns { grid-template-columns: 1fr; } .talk-btns button { text-align: left; padding: 8px 10px; } }
   .icon-btn { pointer-events: auto; width: 42px; height: 42px; border-radius: 12px; border: 2.5px solid var(--ink); background: var(--paper);
     box-shadow: 3px 3px 0 var(--ink); font-size: 19px; cursor: pointer; display: grid; place-items: center; text-decoration: none; color: var(--ink); padding: 0; }
   #mini { position: fixed; right: 10px; top: calc(max(10px, env(safe-area-inset-top)) + 52px); width: 160px; height: 140px; z-index: 2;
@@ -147,6 +183,15 @@
 <div class="card" id="target" hidden></div>
 <div id="stickZone" hidden></div>
 <div id="stick"><i></i></div>
+<div class="talk" id="talk" hidden role="dialog" aria-label="কমরেডের অজুহাত">
+  <div class="talk-top"><div class="talk-ph" id="talkPh"></div><div><b id="talkName"></b><p id="talkText"></p></div></div>
+  <div class="talk-bar"><i id="talkBar"></i></div>
+  <div class="talk-btns">
+    <button data-r="tea"><kbd>1</kbd>☕ চা খাওয়াবো<small id="talkTea"></small></button>
+    <button data-r="chips"><kbd>2</kbd>🍟 চিপস দিবো<small id="talkChips"></small></button>
+    <button data-r="emran"><kbd>3</kbd>📢 "এমরান ভাই আসতেছেন!"<small>চাপাবাজি, কাজ করতেও পারে</small></button>
+  </div>
+</div>
 <button id="horn" hidden>প্যাঁ-পোঁ!<small>Space</small></button>
 <div class="keys" id="keys" hidden>W/↑ চালাও · S/↓ ব্রেক · A D/← → ঘোরাও · Space হর্ন · C ক্যামেরা</div>
 
@@ -158,9 +203,16 @@
     <ul class="rules">
       <li><span>📯</span><span>ঘুমন্ত কমরেডের কাছে গিয়ে <b>হর্ন</b> দাও। কেউ কেউ ঘুম ভেঙে পালায়, ধাওয়া করে ধরো!</span></li>
       <li><span>🛺</span><span>সিএনজিতে ৩টা সিট। ভরে গেলে পার্টি অফিসে নামিয়ে দাও। মাথার উপরের হলুদ তীর পথ দেখাবে।</span></li>
+      <li><span>🗣️</span><span>কেউ কেউ ঘুম ভেঙে <b>অজুহাত</b> দেবে। শুনে ঠিক জবাব বাছো: চা, চিপস, নাকি "এমরান ভাই আসতেছেন!" ভুল হলে পালাবে।</span></li>
+      <li><span>☕</span><span><b>ভাইয়ার দোকানে</b> থামলে চা, তিন রাস্তার মোড়ে <b>রিয়েল মামুর দোকানে</b> থামলে চিপস (৳৫ করে, ৩টা পর্যন্ত)।</span></li>
       <li><span>🐄</span><span>রাস্তায় গরু আর মিছিল। ধাক্কা খেলে জরিমানা। আর <b>সাম ভাইয়ের</b> গায়ে গাড়ি তুললেই গেম ওভার!</span></li>
       <li><span>💰</span><span>প্রতি কমরেডের ভাড়া পাবে। জমানো টাকায় <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো। ২ডি আর ৩ডি খেলার পকেট একটাই।</span></li>
     </ul>
+    <div class="drivers" id="drivers">
+      <p class="sec">আজকে সিএনজি চালাবেন কে?</p>
+      <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু এক্সিডেন্টের ভয়ও বেশি।</small></button>
+      <button class="driver" data-d="muhon"><span class="ph" style="background-image:url('../assets/people/muhon.jpg')"></span><b>নেতা মুহন ভাই</b><small>✅ সব ঠিকঠাক, সাবধানে চালান।<br>📢 কিন্তু মিছিল দেখলে থেমে স্লোগান দিতে লেগে যান।</small></button>
+    </div>
     <div class="wallet" id="startWallet">পকেটে: ৳০</div>
     <div class="btns">
       <button class="btn" id="play" disabled>লোড হচ্ছে...</button>
@@ -230,10 +282,41 @@ const EXCUSES = [
   "দুপুরের ঘুম এখনো শেষ হয়নি। সন্ধ্যায় শেষ হবে, ইনশাআল্লাহ।",
   "বাইকের তেল শেষ, আর হেঁটে যাওয়া পুঁজিবাদী ব্যায়াম।",
 ];
+// excuses that want something: tea, chips, or a big name ("Emran bhai is coming!")
+const TALKS = [
+  { w: "tea", t: "মাথাটা ধরছে মামা। এক কাপ কড়া চা না খাইলে চোখই খুলবে না।" },
+  { w: "tea", t: "দুপুরের ঘুম এখনো শেষ হয়নি। গরম কিছু পেটে পড়লে হয়তো শেষ হইতো..." },
+  { w: "tea", t: "শরীরটা ম্যাজম্যাজ করতেছে। দুধ-চিনি বেশি দিয়া কিছু একটা লাগবে।" },
+  { w: "tea", t: "মেহমানরে চা খাওয়াইলাম, নিজের কাপটাই খাওয়া হয় নাই।" },
+  { w: "chips", t: "খিদায় পেট চোঁ চোঁ করতেছে। খালি পেটে বিপ্লব হয় না মামা।" },
+  { w: "chips", t: "সভায় তো কোনো নাস্তা থাকে না। গিয়া কী লাভ?" },
+  { w: "chips", t: "মুখটা কেমন পানসে লাগতেছে, ঝাল-মচমচে কিছু হইলে..." },
+  { w: "chips", t: "বিকালে কিছু মুখে না দিলে আমার মাথা কাজ করে না।" },
+  { w: "emran", t: "আজকে ফিলিং নাই। বড় কেউ ডাকলে অবশ্য অন্য কথা।" },
+  { w: "emran", t: "রাস্তায় আছি, পাঁচ মিনিটে আসছি। (এখনো লুঙ্গি পরে বিছানায়)" },
+  { w: "emran", t: "সভায় তো খালি আমরা আমরা। নেতা-টেতা কেউ আসলে যাইতাম।" },
+  { w: "emran", t: "আজকে খেলা আছে। বাংলাদেশের না, কিন্তু খেলা তো খেলা।" },
+];
+const TALK_RIGHT = { tea: "আহ্‌, চা! চলো মামা, বিপ্লব শুরু। ☕", chips: "মচমচে! এইবার সভায় যাওয়া যায়। 🍟", emran: "কী! এমরান ভাই আসতেছেন? দৌড়াইয়া আসতেছি!" };
+const TALK_WRONG = { tea: "শুধু চা দিয়া কাম হইবো না মামা! আমি গেলাম।", chips: "চিপস দিয়া ভুলাইবা? আমি গেলাম!", emran: "হাহা, এমরান ভাই তো মিছিলে! আমারে বোকা বানাও? গেলাম!" };
+const TALK_OK = { tea: "এইটা চাইছিলাম না... আচ্ছা, চা-ই সই। চলো।", chips: "এইটা চাইছিলাম না... আচ্ছা, চলো।", emran: "সত্যি? আচ্ছা, যাই দেখি..." };
+const TALK_LEN = 9;
 const SNORES = ["উমম...", "আর পাঁচ মিনিট...", "আম্মা, আজকে শুক্রবার...", "কে রে?", "ঘুমাইতে দেও মামা..."];
 const WAKES = ["আসছি মামা!", "কে? ও, সভা? চলো।", "ঘুমটা মাত্র জমছিল...", "লুঙ্গিটা বদলাইয়া আসি... না থাক, চলো।", "চা আছে তো?"];
 const RIDE_LINES = ["পংক ভাই, মিটারে কত উঠলো?", "এই রাস্তা দিয়া না, ওইটা শর্টকাট!", "সভায় নাস্তা আছে তো?", "সিএনজিতে এসি নাই কেন? এইটা কি বিপ্লব?", "গান ছাড়েন মামা, একটু মুড আসুক।", "৩ডিতে আমারে আরো সুন্দর লাগতেছে না?"];
 const FAST_LINES = ["মামা আস্তে চালান, চা পড়ে যাবে!", "আল্লাহ বাঁচাও!! 😱", "এইটা সিএনজি না রকেট?", "পংক ভাই, লাইসেন্স আছে তো?"];
+// who drives today: Ponki Vai is fast and reckless, Neta Muhon Vai is careful but can't pass a procession
+const DRIVERS = {
+  ponki: { n: "পংকি ভাই", label: "পংকি ভাইয়ের সিএনজি", speed: 1.18, turn: 1.15, crashy: true,
+    hello: "পংকি ভাই স্টিয়ারিংয়ে! শক্ত করে ধরেন, আজকে উড়াইয়া নিমু। প্যাঁ-পোঁ!" },
+  muhon: { n: "মুহন ভাই", label: "নেতা মুহন ভাই চালাচ্ছেন", speed: 1, turn: 1, rally: true,
+    hello: "মুহন ভাই স্টিয়ারিংয়ে। ধীরে চলি, নিরাপদে চলি। চলো কমরেডদের ঘুম ভাঙাই!" },
+};
+let driverId = "ponki";
+try { const d = localStorage.getItem("kcp-sim-driver"); if (DRIVERS[d]) driverId = d; } catch (e) {}
+const DRV = () => DRIVERS[driverId];
+const CRASH_LINES = ["আরে আরে! ব্রেক কই গেল!", "ধড়াম! কিছু হয় নাই, কিছু হয় নাই... 😵", "পংকি ভাই: এইটা গাড়ির দোষ, আমার না!", "রিকশার সাথে লাগলো! মাফ কইরা দেন ভাই!", "সিএনজি উল্টাইতে উল্টাইতে বাঁচলো! 😱"];
+const RALLY_LINES = ["মিছিল দেখলে আমি থামতে পারি না ভাই!", "এক মিনিট, একটা স্লোগান দিয়াই আসি!", "নেতা মানুষ, মিছিল ফালাইয়া যাই কেমনে?"];
 const CHANTS = ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই!", "এমরান ভাই এমরান ভাই!", "ধানের শীষে ভোট দিন!", "জিন্দাবাদ! জিন্দাবাদ!", "ভোট দিন, ভোট দিন!"];
 const SAM_LINES = ["সাবধানে চালাও বাবা!", "আস্তে, আস্তে! রাস্তা কারো বাপের না।", "এলাকার উন্নয়ন চলছে, সাইড দাও।", "সালাম দিয়া যাও, পংক!"];
 const POSTER_SRC = ["../sim/poster.jpg", "../sim/poster2.jpg"];
@@ -267,8 +350,8 @@ const SHOP = [
   { id: "up-seat4", cat: "up", ic: "💺", n: "চতুর্থ সিট", d: "একসাথে ৪ জন কমরেড তোলা যাবে।", price: 500 },
 ];
 const PAINT = Object.fromEntries(SHOP.filter(i => i.cat === "paint").map(i => [i.id, i.col]));
-let run = { fare: 0, bonus: 0, fine: 0 };
-const runTotal = () => run.fare + run.bonus - run.fine;
+let run = { fare: 0, bonus: 0, fine: 0, spend: 0 };
+const runTotal = () => run.fare + run.bonus - run.fine - run.spend;
 
 /* ================= geometry helpers (same map logic as the 2D game) ================= */
 const [X0, Y0, X1, Y1] = MAP.bounds;
@@ -362,6 +445,14 @@ function frameOf(b) {
   return { u, v, w: v1 - v0, d: u1 - u0, x: b.cx + u.x * (u0 + u1) / 2 + v.x * (v0 + v1) / 2, y: b.cy + u.y * (u0 + u1) / 2 + v.y * (v0 + v1) / 2, road: nr };
 }
 const DROP_R = 18;
+// stop the CNG in front of these two and the shopkeeper hands over the goods
+const SHOPS = [[dukan, "tea", "☕", "চা", ["গরম চা নেন মামা! ☕", "চা রেডি, দুধ-চিনি বেশি।"], "মামা, এক কাপ চা খাইয়া যান!"],
+               [mamu, "chips", "🍟", "চিপস", ["নেও মামা, মচমচে চিপস! 🍟", "চিপস নেও, রিয়েল জিনিস।"], "রিয়েল মামুর রিয়েল চিপস, থামেন মামা!"]]
+  .filter(([b]) => b).map(([b, item, ic, n, lines, call]) => {
+    const nr = nearestRoad(b.cx, b.cy);
+    return { item, ic, n, lines, call, x: nr.x, y: nr.y, keeper: { x: (b.cx + nr.x) / 2, y: (b.cy + nr.y) / 2, hy: 3.2 }, wait: 0, cd: 0 };
+  });
+const STOP_R = 7;
 
 // land reachable from the office without swimming
 const RS = 4, RW = Math.ceil((X1 - X0) / RS), RH = Math.ceil((Y1 - Y0) / RS), reach = new Uint8Array(RW * RH);
@@ -551,7 +642,7 @@ function faceTex(c, ring) {
   if (im && !im.complete) im.addEventListener("load", () => { draw(); tex.needsUpdate = true; });
   return tex;
 }
-const RING = { sleep: "#5a6aa8", awake: "#2f9a4a", flee: "#e07a1f", ride: "#f5c518", done: "#f6efe1", sam: "#c8102e" };
+const RING = { sleep: "#5a6aa8", awake: "#2f9a4a", flee: "#e07a1f", talk: "#f5c518", ride: "#f5c518", done: "#f6efe1", sam: "#c8102e" };
 
 /* ================= the town ================= */
 const lam = (o) => new THREE.MeshLambertMaterial(o);
@@ -1425,7 +1516,8 @@ const keys = new Set();
 addEventListener("keydown", e => {
   const k = e.key.toLowerCase();
   if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
-  if (k === " " && !e.repeat) { horn(); flashHorn(); }
+  if (k === " " && !e.repeat && !talk) { horn(); flashHorn(); }
+  if (talk && ["1", "2", "3"].includes(k)) answerTalk(["tea", "chips", "emran"][+k - 1]);
   if (k === "m" && !e.repeat) toggleMute();
   if (k === "c" && !e.repeat && state === "play") nextCam();
   if (k === "enter" && !garage && (state === "menu" || state === "over") && !el("play").disabled) startGame();
@@ -1540,31 +1632,40 @@ function newGame() {
   sufan = { x: sp.x, y: sp.y, hy: 3.4, mesh: makePerson("#2f8a4f", faceTex(SUFAN, RING.done)), tag: mkEl("tag", "সুফান") };
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
-  placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")], [mamu, mkEl("tag", "রিয়েল মামুর দোকান 🍵")]].filter(([b]) => b);
+  placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")], [mamu, mkEl("tag", "রিয়েল মামুর দোকান 🍟")]].filter(([b]) => b);
+  for (const sh of SHOPS) { // a dashed ring on the road where to stop
+    const g = new THREE.Group();
+    for (let k = 0; k < 16; k++) { const a = new THREE.Mesh(new THREE.RingGeometry(STOP_R - .35, STOP_R, 8, 1, k / 16 * Math.PI * 2, Math.PI / 16), new THREE.MeshBasicMaterial({ color: "#8a5a2b", side: THREE.DoubleSide })); a.rotation.x = -Math.PI / 2; g.add(a); }
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(STOP_R - .35, 32), new THREE.MeshBasicMaterial({ color: C.yellow, transparent: true, opacity: .22, depthWrite: false })); fill.rotation.x = -Math.PI / 2; g.add(fill);
+    g.position.set(sh.x, .14, sh.y); dyn.add(g);
+    sh.g = g; sh.fill = fill; sh.tag = mkEl("tag ask", ""); sh.wait = 0; sh.cd = 6; sh.tagKey = "";
+  }
+  closeTalk();
   for (const pl of PLACES) pl.tag = mkEl("tag place", `🕌 ${pl.mosque}`);
   for (const b of billboards) b.seen = false;
 
   const s0 = roadSegs.reduce((b, s) => { const d = segD2(door.x, door.y, s.ax, s.ay, s.bx, s.by); return d < b.d ? { d, s } : b; }, { d: 1e18 }).s;
   const a0 = Math.atan2(s0.by - s0.ay, s0.bx - s0.ax);
-  P = { x: door.x + Math.cos(a0) * 22, y: door.y + Math.sin(a0) * 22, a: a0, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0, roll: 0 };
+  P = { x: door.x + Math.cos(a0) * 22, y: door.y + Math.sin(a0) * 22, a: a0, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0, roll: 0, tea: 0, chips: 0, rally: null };
   if (!onRoad(P.x, P.y)) { P.x = door.x; P.y = door.y; }
-  delivered = []; time = 0; lastTick = -1; sufanCd = 3; run = { fare: 0, bonus: 0, fine: 0 };
+  delivered = []; time = 0; lastTick = -1; sufanCd = 3; run = { fare: 0, bonus: 0, fine: 0, spend: 0 };
   const shedAt = 50 + rand() * 55;
   events = { shed: { at: shedAt, dur: 9 }, rain: { at: Math.min(GAME_LEN - 40, shedAt + 40 + rand() * 30), dur: 16 } };
   shedLevel = 0; rainLevel = 0; flash = 0; area = null; chatCd = 8; warned30 = false; samWarnCd = 0; shakeT = 0;
   applyLook();
   el("seats").innerHTML = "<i></i>".repeat(seatCount());
   camPos.set(P.x - Math.cos(P.a) * 10, 6, P.y - Math.sin(P.a) * 10);
-  say(P, "পংক ভাইয়ের সিএনজি রেডি! চলো, কমরেডদের ঘুম ভাঙাই। প্যাঁ-পোঁ!", 3.2);
+  say(P, DRV().hello, 3.2);
 }
 
-function earn(kind, amt, x, y, label) {
+function earn(kind, amt, x, y, label) { // fare/bonus add, fine/spend (tea, chips, singara) take away
   run[kind] += amt;
-  floaty(x, y, `${kind === "fine" ? "−" : "+"}৳${bn(amt)}${label ? " " + label : ""}`, kind === "fine" ? C.red : "#2f8a4f");
-  if (kind !== "fine") sfx.cash();
+  const minus = kind === "fine" || kind === "spend";
+  floaty(x, y, `${minus ? "−" : "+"}৳${bn(amt)}${label ? " " + label : ""}`, kind === "fine" ? C.red : kind === "spend" ? "#8a5a2b" : "#2f8a4f");
+  if (!minus || kind === "spend") sfx.cash();
 }
 function horn() {
-  if (state !== "play" || P.hornCd > 0) return;
+  if (state !== "play" || talk || P.hornCd > 0) return;
   P.hornCd = .32; sfx.horn();
   rings.push({ x: P.x, y: P.y, t: 0, mesh: null });
   if (sam && dist(sam, P) < 40 && sam.scare <= 0) { sam.scare = 2.5; sam.dir = -sam.dir; say(sam, "হর্ন শুনছি, সরলাম!", 1.6); }
@@ -1580,19 +1681,66 @@ function horn() {
     w.dir = (bx - ax) * (w.x - P.x) + (by - ay) * (w.y - P.y) >= 0 ? 1 : -1;
   }
 }
-function wake(c) {
-  c.khat.userData.body.visible = false; c.sleepFace.visible = false; c.person.visible = true;
-  if (!c.fled && rand() < .4) {
-    c.fled = true; c.state = "flee"; c.fleeT = 13;
-    const far = spots.filter(s => { const d = Math.hypot(s.x - c.x, s.y - c.y); return d > 70 && d < 170; });
-    const t = far.length ? far[(rand() * far.length) | 0] : { x: c.x + 60, y: c.y }; c.tx = t.x; c.ty = t.y;
-    say(c, EXCUSES[(rand() * EXCUSES.length) | 0], 3.8); sfx.scratch(); setTimeout(() => sfx.run(), 260);
-  } else { c.state = "awake"; say(c, WAKES[(rand() * WAKES.length) | 0], 2.4); sfx.pop(); }
+function flee(c, line) {
+  c.fled = true; c.state = "flee"; c.fleeT = 13;
+  const far = spots.filter(s => { const d = Math.hypot(s.x - c.x, s.y - c.y); return d > 70 && d < 170; });
+  const t = far.length ? far[(rand() * far.length) | 0] : { x: c.x + 60, y: c.y }; c.tx = t.x; c.ty = t.y;
+  say(c, line, 3.8); sfx.scratch(); setTimeout(() => sfx.run(), 260);
   setFace(c);
 }
+function wake(c) {
+  c.khat.userData.body.visible = false; c.sleepFace.visible = false; c.person.visible = true;
+  c.ang = Math.atan2(P.y - c.y, P.x - c.x);
+  if (!c.fled && !talk && rand() < .45) openTalk(c);       // an excuse, and you pick the answer
+  else if (!c.fled && rand() < .12) flee(c, EXCUSES[(rand() * EXCUSES.length) | 0]); // some just run
+  else { c.state = "awake"; say(c, WAKES[(rand() * WAKES.length) | 0], 2.4); sfx.pop(); setFace(c); }
+}
+
+/* ---- excuses: the game waits while you pick an answer */
+let talk = null;
+const talkEl = el("talk"), talkBtns = [...talkEl.querySelectorAll("button")];
+function openTalk(c) {
+  const tk = TALKS[(rand() * TALKS.length) | 0];
+  c.fled = true; c.state = "talk"; c.want = tk.w; setFace(c);
+  talk = { c, t: 0 };
+  el("talkPh").style.backgroundImage = c.emoji ? "" : `url('../assets/people/${c.id}.jpg')`;
+  el("talkPh").textContent = c.emoji || "";
+  el("talkName").innerHTML = `${c.n} <small>ঘুম থেকে উঠে বললো:</small>`;
+  el("talkText").textContent = `"${tk.t}"`;
+  const left = (k, where) => P[k] > 0 ? `সাথে আছে ${bn(P[k])}টা` : `নাই! ${where}`;
+  el("talkTea").textContent = left("tea", "ভাইয়ার দোকানে পাবে");
+  el("talkChips").textContent = left("chips", "মামুর দোকানে পাবে");
+  talkBtns[0].disabled = P.tea <= 0; talkBtns[1].disabled = P.chips <= 0;
+  talkEl.hidden = false; el("horn").hidden = true; el("stickZone").hidden = true;
+  keys.clear(); stick = null; stickEl.style.display = "none"; P.v = 0;
+  sfx.scratch();
+}
+function closeTalk() {
+  talk = null; talkEl.hidden = true;
+  if (state === "play") { el("horn").hidden = false; if (mobile) el("stickZone").hidden = false; }
+}
+function answerTalk(r) {
+  if (!talk || state !== "play") return;
+  if ((r === "tea" || r === "chips") && P[r] <= 0) return;
+  const c = talk.c;
+  closeTalk();
+  if (r === "tea" || r === "chips") P[r]--;
+  const right = r === c.want;
+  if (right || rand() < (r === "emran" ? .25 : .35)) {
+    c.state = "awake"; setFace(c);
+    say(c, right ? TALK_RIGHT[r] : TALK_OK[r], 2.6);
+    if (right) { earn("bonus", 5, c.x, c.y, "খুশি"); sfx.chime(); } else sfx.pop();
+  } else flee(c, TALK_WRONG[r]);
+}
+function tickTalk(dt) {
+  talk.t += dt;
+  el("talkBar").style.width = `${Math.max(0, 100 - talk.t / TALK_LEN * 100)}%`;
+  if (talk.t >= TALK_LEN) { const c = talk.c; closeTalk(); flee(c, "কিছু বলবা না? তাইলে আমি গেলাম!"); }
+}
+talkBtns.forEach(b => b.addEventListener("click", () => answerTalk(b.dataset.r)));
 function setFace(c) {
   c.person.userData.face.material.map = faceTex(c, RING[c.state]); c.person.userData.face.material.needsUpdate = true;
-  c.tag.className = `tag ${c.state === "flee" ? "flee" : c.state === "sleep" ? "sleep" : "awake"}`; c.tag.textContent = c.state === "flee" ? `${c.n} 💨` : c.n;
+  c.tag.className = `tag ${c.state === "flee" ? "flee" : c.state === "sleep" ? "sleep" : c.state === "talk" ? "ask" : "awake"}`; c.tag.textContent = c.state === "flee" ? `${c.n} 💨` : c.n;
 }
 
 /* ================= update ================= */
@@ -1618,20 +1766,32 @@ function update(dt) {
 
   // ---- the CNG: gas, brake, reverse and steering like a three-wheeler
   const inp = readInput(), road = onRoad(P.x, P.y);
-  const maxV = 18 * (road ? 1 : .45) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - (has("up-umbrella") ? 0 : .22) * rainLevel) * (has("up-engine") ? 1.12 : 1);
+  const maxV = 18 * DRV().speed * (road ? 1 : .45) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - (has("up-umbrella") ? 0 : .22) * rainLevel) * (has("up-engine") ? 1.12 : 1);
   P.hornCd -= dt; P.boost -= dt;
-  if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
+  if (P.rally) { // Muhon Vai has stopped to chant with the procession
+    P.rally.t -= dt; P.rally.cd -= dt; P.v *= Math.pow(.01, dt);
+    if (P.rally.cd <= 0) { P.rally.cd = 1.5; say(P, `মুহন ভাই: ${CHANTS[(rand() * CHANTS.length) | 0]} ✊`, 1.5); sfx.megaphone(); }
+    if (P.rally.t <= 0) { P.rally = null; say(P, "মুহন ভাই: আচ্ছা আচ্ছা, সভা আছে। চলো!", 1.8); }
+  }
+  else if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
   else {
     if (inp.gas > 0) P.v += clamp(maxV * inp.gas - P.v, -22 * dt, 8 * dt);
     else if (inp.gas < 0) P.v += P.v > .5 ? -26 * dt : clamp(-6 * -inp.gas - P.v, -6 * dt, 6 * dt);
     else P.v += clamp(-P.v, -5 * dt, 5 * dt);
     const grip = 1 - (has("up-umbrella") ? 0 : .3) * rainLevel;
-    const turn = inp.steer * 1.9 * grip * clamp(Math.abs(P.v) / 4, 0, 1) * (P.v < 0 ? -1 : 1) * (Math.abs(P.v) > 14 ? .8 : 1);
+    const turn = inp.steer * 1.9 * DRV().turn * grip * clamp(Math.abs(P.v) / 4, 0, 1) * (P.v < 0 ? -1 : 1) * (Math.abs(P.v) > 14 ? .8 : 1);
     P.a = wrapAng(P.a + turn * dt);
     P.roll += (inp.steer * clamp(P.v / 18, 0, 1) * .12 - P.roll) * Math.min(1, dt * 6);
   }
   if (P.v > maxV) P.v = Math.max(maxV, P.v - 22 * dt);
   P.x += Math.cos(P.a) * P.v * dt; P.y += Math.sin(P.a) * P.v * dt;
+  if (DRV().crashy && P.stun <= 0 && P.v > 13 && !P.rally) { // Ponki Vai takes corners flat out, and sometimes it goes wrong
+    if (rand() < dt * (Math.abs(inp.steer) > .5 ? .3 : .03) * (1 + rainLevel)) {
+      P.stun = 1.4; P.v = 0; shakeT = .5; P.a = wrapAng(P.a + (rand() - .5) * .8);
+      say(P, CRASH_LINES[(rand() * CRASH_LINES.length) | 0], 2.2); floaty(P.x, P.y, "ধড়াম!");
+      sfx.bonk(); sfx.scratch(); earn("fine", 10, P.x, P.y, "এক্সিডেন্ট");
+    }
+  }
   const bump = pushOut(P, 1.6) | riverBlock(P, 1.6);
   if (bump) { P.v *= Math.pow(.15, dt); P.scrape += dt; } else P.scrape = Math.min(0, P.scrape + dt);
   if (P.scrape > 1.4) { say(P, "এই গলিতে সিএনজি ঢুকে না মামা!", 1.8); P.scrape = -4; sfx.bonk(); earn("fine", 5, P.x, P.y, "দেয়ালে ঘষা"); }
@@ -1653,8 +1813,14 @@ function update(dt) {
     m.scare -= dt; m.hitCd -= dt; m.chantCd -= dt; walkRoad(m, (m.scare > 0 ? 4.5 : 1.1) * dt);
     const d = dist(m, P);
     if (m.chantCd <= 0 && d < 70) { m.chantCd = 4 + rand() * 3; say(m, rand() < .45 ? CHANTS[0] : CHANTS[(rand() * CHANTS.length) | 0], 2.6); sfx.megaphone(); }
+    m.rallyCd = (m.rallyCd || 0) - dt;
+    if (DRV().rally && !P.rally && m.rallyCd <= 0 && d < 24) { // Muhon Vai can't drive past a procession
+      m.rallyCd = 40; m.scare = 0; P.rally = { t: 5, cd: 1.2 };
+      showBanner("মুহন ভাই মিছিলে!", "স্লোগান না দিয়া উনি নড়বেন না", 1.8);
+      say(P, `মুহন ভাই: ${RALLY_LINES[(rand() * RALLY_LINES.length) | 0]}`, 1.4);
+    }
     if (d < 7.5) P.v = Math.min(P.v, 4);
-    if (m.hitCd <= 0 && d < 5.5) { m.hitCd = 3; P.v *= .25; say(m, "মিছিলের রাস্তা আটকাইয়েন না ভাই!", 2); sfx.bonk(); floaty(m.x, m.y, "জ্যাম!"); }
+    if (m.hitCd <= 0 && d < 5.5 && !P.rally) { m.hitCd = 3; P.v *= .25; say(m, "মিছিলের রাস্তা আটকাইয়েন না ভাই!", 2); sfx.bonk(); floaty(m.x, m.y, "জ্যাম!"); }
   }
   if (sam) {
     sam.scare -= dt; sam.talkCd -= dt; samWarnCd -= dt; walkRoad(sam, (sam.scare > 0 ? 4 : 1.2) * dt);
@@ -1664,9 +1830,22 @@ function update(dt) {
     if (d < 2.8 && Math.abs(P.v) > 3) { samCrash(); return; }
     if (d < 2.8) { P.v = 0; P.x -= Math.cos(P.a) * .5; P.y -= Math.sin(P.a) * .5; }
   }
+  for (const s of SHOPS) { // tea at Vhaiyar Dukan, chips at Real Mamur Dukan
+    s.cd -= dt;
+    const d = dist(s, P), have = P[s.item];
+    if (d < STOP_R && Math.abs(P.v) < 2.5 && have < 3) {
+      if ((s.wait += dt) > .5) {
+        const n = 3 - have; P[s.item] = 3; s.wait = 0;
+        earn("spend", n * 5, s.x, s.y, `${s.n} ×${bn(n)}`);
+        say(s.keeper, s.lines[(rand() * s.lines.length) | 0], 2.2);
+        if (s.item === "tea") { P.boost = Math.max(P.boost, 4); say(P, "পংক ভাইও এক কাপ মারলেন। চা পাওয়ার! ☕", 2, .9); sfx.boost(); }
+      }
+    } else s.wait = 0;
+    if (d < 30 && d > 10 && have < 3 && s.cd <= 0) { s.cd = 22; say(s.keeper, s.call, 2.2); }
+  }
   for (const s of stalls) {
     s.cd -= dt;
-    if (s.cd <= 0 && dist(s, P) < 7) { s.cd = 25; P.boost = 6; say(P, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড বুস্ট!"); sfx.boost(); sfx.slide(); earn("fine", 5, s.x, s.y, "সিঙ্গারা"); }
+    if (s.cd <= 0 && dist(s, P) < 7) { s.cd = 25; P.boost = 6; say(P, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড বুস্ট!"); sfx.boost(); sfx.slide(); earn("spend", 5, s.x, s.y, "সিঙ্গারা"); }
   }
   // ---- comrades
   for (const c of comrades) {
@@ -1711,14 +1890,14 @@ function samCrash() {
 }
 function endGame(all, reason) {
   if (state === "over") return;
-  state = "over"; stick = null; stickEl.style.display = "none"; engineUpdate();
+  state = "over"; stick = null; stickEl.style.display = "none"; closeTalk(); engineUpdate();
   const n = delivered.length, N = comrades.length;
   const verdicts = [[N, "ঐতিহাসিক সভা! কোরাম পূর্ণ। কেসিপির ইতিহাসে প্রথমবার সবাই সময়মতো।"], [8, "সভা হলো! কয়েকজন যদিও 'পাঁচ মিনিটে আসছি' বলে এখনো আসছেন।"], [4, "অর্ধেক কমিটি। সভা মুলতবি, কিন্তু চা চলবে।"], [1, "কোরাম নাই। সভায় আছেন তুমি, সুফান, আর চায়ের কাপ।"], [0, "সভা বাতিল। কতোয়ালপুর এখনো দুপুরের ঘুমে।"]];
   el("endKicker").textContent = all ? "সময়ের আগেই সবাই হাজির!" : "বিকাল ৫টা · সভা শুরু";
   el("endTitle").textContent = all ? "সবাই এসেছে!" : n >= 8 ? "সভা হলো!" : n >= 1 ? "সভা... মোটামুটি" : "সভা বাতিল!";
   el("endScore").textContent = `${bn(n)}/${bn(N)} কমরেড`;
   el("endVerdict").textContent = verdicts.find(([m]) => n >= m)[1];
-  let total = Math.max(0, runTotal()), earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} − জরিমানা ৳${bn(run.fine)} = <b>৳${bn(total)}</b>`;
+  let total = Math.max(0, runTotal()), earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} − জরিমানা ৳${bn(run.fine)}${run.spend ? ` − চা-নাস্তা ৳${bn(run.spend)}` : ""} = <b>৳${bn(total)}</b>`;
   if (reason === "sam") {
     el("endKicker").textContent = "দুর্ঘটনা! · গেম ওভার"; el("endTitle").textContent = "গেম ওভার!";
     el("endVerdict").textContent = "আপনি একজন জনপ্রতিনিধির উপর গাড়ি তুলে দিয়েছেন! আপনাকে হাশরের দিনের হিসাব দিতে হবে।";
@@ -1836,8 +2015,8 @@ function render(t, dt) {
     if (c.state === "sleep") {
       const bob = Math.sin(t * 1.6 + c.phase) * .03, shake = c.shake > 0 ? Math.sin(t * 60) * .08 : 0;
       c.sleepFace.position.set(c.x + Math.cos(c.ang) * .8 + shake, 1.75 + bob * 4, c.y + Math.sin(c.ang) * .8);
-    } else if (c.state === "awake" || c.state === "flee") {
-      const hop = c.state === "awake" ? Math.abs(Math.sin(t * 5 + c.phase)) * .35 : Math.abs(Math.sin(t * 14)) * .3;
+    } else if (c.state === "awake" || c.state === "flee" || c.state === "talk") {
+      const hop = c.state === "talk" ? 0 : c.state === "awake" ? Math.abs(Math.sin(t * 5 + c.phase)) * .35 : Math.abs(Math.sin(t * 14)) * .3;
       c.person.position.set(c.x, hop, c.y); c.person.rotation.y = -c.ang;
     }
   }
@@ -1852,6 +2031,14 @@ function render(t, dt) {
     for (const m of michils) near(m.x, m.y) ? place(m.tag, project(m.x, 4.3, m.y)) : (m.tag.style.display = "none");
     if (sam) near(sam.x, sam.y) ? place(sam.tag, project(sam.x, 3.6, sam.y)) : (sam.tag.style.display = "none");
     for (const s of stalls) near(s.x, s.y, 70) ? place(s.tag, project(s.x, 3.4, s.y)) : (s.tag.style.display = "none");
+    for (const s of SHOPS) {
+      if (!s.g) continue;
+      const full = P[s.item] >= 3, close = dist(s, P) < STOP_R;
+      s.g.visible = !full; s.fill.material.opacity = close ? .4 : .22; s.g.rotation.y = t * .4;
+      const txt = `${s.ic} ${close ? (Math.abs(P.v) < 2.5 ? "দিচ্ছে..." : "থামো!") : `থামো · ${s.n} ৳৫`}`;
+      if (txt !== s.tagKey) { s.tagKey = txt; s.tag.textContent = txt; }
+      !full && near(s.x, s.y, 80) ? place(s.tag, project(s.x, 1.2, s.y)) : (s.tag.style.display = "none");
+    }
     for (const pl of PLACES) if (pl.tag) near(pl.mx, pl.my, 140) ? place(pl.tag, project(pl.mx, 12, pl.my)) : (pl.tag.style.display = "none");
     if (officeTag) near(office.cx, office.cy, 170) ? place(officeTag, project(office.cx, office.h + 6.5, office.cy)) : (officeTag.style.display = "none");
     for (const [b, tg] of placeTags) near(b.cx, b.cy, 110) ? place(tg, project(b.cx, b.h + 3, b.cy)) : (tg.style.display = "none");
@@ -1878,13 +2065,13 @@ function render(t, dt) {
 let hudKey = "", miniBase = null;
 function drawHud() {
   const total = 25 + Math.min(35, Math.floor(time / GAME_LEN * 35)), hh = 4 + Math.floor(total / 60), mm = total % 60, late = GAME_LEN - time < 30;
-  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}|${runTotal()}`;
+  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}|${runTotal()}|${P.tea}|${P.chips}`;
   if (key !== hudKey) {
     hudKey = key;
     el("clock").innerHTML = `${bn(hh)}:${bn(String(mm).padStart(2, "0"))}<small>${late ? "জলদি!" : "সভা ৫:০০ টায়"}</small>`; el("clock").classList.toggle("late", late);
     el("count").textContent = `${bn(delivered.length)}/${bn(comrades.length)}`;
     [...el("seats").children].forEach((s, i) => s.classList.toggle("on", i < P.riders.length));
-    const m = runTotal(); el("money").innerHTML = `${m < 0 ? "−" : ""}৳${bn(Math.abs(m))}<small>আজকের ভাড়া</small>`; el("money").classList.toggle("minus", m < 0);
+    const m = runTotal(); el("money").innerHTML = `${m < 0 ? "−" : ""}৳${bn(Math.abs(m))}<small>আজকের ভাড়া</small><span class="bag">☕ ${bn(P.tea)} · 🍟 ${bn(P.chips)}</span>`; el("money").classList.toggle("minus", m < 0);
   }
   const mini = el("mini"), r = mini.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
   if (!r.width || !r.height) return; // minimap hidden
@@ -1901,6 +2088,7 @@ function drawHud() {
   const m = mini.getContext("2d"); m.drawImage(miniBase, 0, 0);
   const dot = (x, y, col, rr) => { m.beginPath(); m.arc(ox + x * k, oy + y * k, rr * dpr, 0, Math.PI * 2); m.fillStyle = col; m.fill(); m.lineWidth = dpr; m.strokeStyle = C.ink; m.stroke(); };
   dot(door.x, door.y, C.red, 4);
+  for (const s of SHOPS) dot(s.x, s.y, P[s.item] >= 3 ? "rgba(138,90,43,.45)" : "#8a5a2b", 2.4);
   for (const c of comrades) if (c.state !== "ride" && c.state !== "done") dot(c.x, c.y, c.state === "sleep" ? C.yellow : c.state === "flee" ? "#e07a1f" : "#2f9a4a", 2.6);
   if (sam) dot(sam.x, sam.y, "#ffd2a6", 2.2);
   m.save(); m.translate(ox + P.x * k, oy + P.y * k); m.rotate(P.a); m.fillStyle = C.ink; m.beginPath(); m.moveTo(6 * dpr, 0); m.lineTo(-4 * dpr, -4 * dpr); m.lineTo(-4 * dpr, 4 * dpr); m.closePath(); m.fill(); m.restore();
@@ -1956,6 +2144,12 @@ function closeShop() {
   el("shop").classList.add("hidden"); syncWallet(); el(shopFrom).classList.remove("hidden");
 }
 el("shopFromStart").addEventListener("click", () => { ensureAudio(); openShop("start"); });
+const syncDrivers = () => document.querySelectorAll(".driver").forEach(b => b.classList.toggle("on", b.dataset.d === driverId));
+document.querySelectorAll(".driver").forEach(b => b.addEventListener("click", () => {
+  driverId = b.dataset.d; syncDrivers();
+  try { localStorage.setItem("kcp-sim-driver", driverId); } catch (e) {}
+}));
+syncDrivers();
 el("shopFromEnd").addEventListener("click", () => { ensureAudio(); openShop("end"); });
 el("shopBack").addEventListener("click", closeShop);
 el("shopList").addEventListener("click", e => {
@@ -1986,7 +2180,8 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
   const t = now / 1000;
-  if (state === "play") update(dt);
+  if (state === "play" && talk) tickTalk(dt);
+  else if (state === "play") update(dt);
   if (state === "menu" && !garage) { // slow drone orbit over the party office
     if (!P) P = { x: door.x, y: door.y, a: 0, v: 0, riders: [], roll: 0 };
     P.a += dt * .12; camMode = 1;
@@ -2019,6 +2214,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 
 // test hook
 window.__sim3 = {
+  get driver() { return driverId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
   get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },

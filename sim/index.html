@@ -122,6 +122,42 @@
   .money small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
   .money.minus { background: #ffd2c8; }
   .money[hidden] { display: none; }
+  .drivers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
+  .drivers .sec { grid-column: 1 / -1; margin: 0; font-weight: 700; font-size: 14px; text-align: left; }
+  .driver { font: inherit; color: var(--ink); text-align: left; background: var(--paper-2); border: 2.5px solid var(--ink); border-radius: 12px;
+    padding: 8px; cursor: pointer; display: grid; grid-template-columns: 46px 1fr; gap: 4px 8px; align-items: center; box-shadow: 2px 2px 0 var(--ink); }
+  .driver .ph { width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper) center/cover; grid-row: span 2; }
+  .driver b { font-size: 15px; line-height: 1.2; }
+  .driver small { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
+  .driver.on { background: #fff3c2; box-shadow: 0 0 0 3px var(--red), 3px 3px 0 var(--ink); }
+  .driver.on b::after { content: " ✓"; color: var(--red); }
+  @media (max-width: 400px) { .drivers { grid-template-columns: 1fr; } }
+  .money .bag { display: block; font-size: 13px; font-weight: 700; margin-top: 3px; white-space: nowrap; }
+
+  .talk {
+    position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 4;
+    width: min(520px, calc(100% - 20px)); background: var(--paper); border: 3px solid var(--ink); border-radius: 16px;
+    box-shadow: 6px 6px 0 var(--ink); padding: 12px 12px 10px; animation: talkIn .22s ease-out;
+  }
+  .talk[hidden] { display: none; }
+  @keyframes talkIn { from { transform: translate(-50%, 30px); opacity: 0; } }
+  .talk-top { display: flex; gap: 10px; align-items: flex-start; }
+  .talk-ph { flex: none; width: 52px; height: 52px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper-2) center/cover;
+    display: grid; place-items: center; font-size: 26px; }
+  .talk-top b { font-size: 15px; }
+  .talk-top b small { font-weight: 600; color: var(--ink-soft); font-size: 12px; }
+  .talk-top p { margin: 2px 0 0; font-size: 15.5px; line-height: 1.45; font-weight: 600; }
+  .talk-bar { height: 6px; border: 1.5px solid var(--ink); border-radius: 99px; margin: 9px 0 9px; overflow: hidden; background: var(--paper-2); }
+  .talk-bar i { display: block; height: 100%; width: 100%; background: var(--red); }
+  .talk-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .talk-btns button { font: 700 14px/1.25 var(--font-body); color: var(--ink); background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 11px;
+    box-shadow: 3px 3px 0 var(--ink); padding: 7px 6px; cursor: pointer; touch-action: manipulation; }
+  .talk-btns button small { display: block; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); margin-top: 2px; }
+  .talk-btns button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .talk-btns button:disabled { background: var(--paper-2); opacity: .7; box-shadow: none; cursor: not-allowed; }
+  .talk-btns kbd { margin-right: 3px; }
+  @media (pointer: coarse) { .talk-btns kbd { display: none; } }
+  @media (max-width: 420px) { .talk-btns { grid-template-columns: 1fr; } .talk-btns button { text-align: left; padding: 8px 10px; } }
   .garage { display: block; width: 100%; height: 190px; margin: 2px 0 10px; border: 2.5px solid var(--ink); border-radius: 14px; background: #cfc8b8;
     position: sticky; top: -6px; z-index: 2; box-shadow: 3px 3px 0 var(--ink); touch-action: pan-y; cursor: grab; }
   .mini-btn.seen { background: var(--yellow); color: var(--ink); }
@@ -168,6 +204,15 @@
 </div>
 <div class="card money" id="money" hidden>৳০<small>আজকের ভাড়া</small></div>
 <canvas id="mini" hidden></canvas>
+<div class="talk" id="talk" hidden role="dialog" aria-label="কমরেডের অজুহাত">
+  <div class="talk-top"><div class="talk-ph" id="talkPh"></div><div><b id="talkName"></b><p id="talkText"></p></div></div>
+  <div class="talk-bar"><i id="talkBar"></i></div>
+  <div class="talk-btns">
+    <button data-r="tea"><kbd>1</kbd>☕ চা খাওয়াবো<small id="talkTea"></small></button>
+    <button data-r="chips"><kbd>2</kbd>🍟 চিপস দিবো<small id="talkChips"></small></button>
+    <button data-r="emran"><kbd>3</kbd>📢 "এমরান ভাই আসতেছেন!"<small>চাপাবাজি, কাজ করতেও পারে</small></button>
+  </div>
+</div>
 <button id="horn" hidden>প্যাঁ-পোঁ!<small id="hornKey">Space</small></button>
 <div class="attrib">ম্যাপ © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
 
@@ -179,7 +224,8 @@
     <ul class="rules">
       <li><span>💤</span><span>ঘুমন্ত কমরেডের কাছে গিয়ে <b>প্যাঁ-পোঁ হর্ন</b> বাজাও। কারো কারো ঘুম ভাঙতে কয়েকবার লাগে।</span></li>
       <li><span>🛺</span><span>সিএনজির পেছনের সিটে একসাথে <b>৩ জন</b>। অফিসের লাল বৃত্তে গেলেই নামবে।</span></li>
-      <li><span>🏃</span><span>কেউ কেউ অজুহাত দিয়ে পালাবে। পিছু নাও, ধরো!</span></li>
+      <li><span>🗣️</span><span>কেউ কেউ ঘুম ভেঙে <b>অজুহাত</b> দেবে। অজুহাত শুনে ঠিক জবাব বাছো: চা, চিপস, নাকি "এমরান ভাই আসতেছেন!" ভুল হলে পালাবে, তখন পিছু নিয়ে ধরো।</span></li>
+      <li><span>☕</span><span><b>ভাইয়ার দোকানে</b> থামলে চা, তিন রাস্তার মোড়ে <b>রিয়েল মামুর দোকানে</b> থামলে চিপস (৳৫ করে, ৩টা পর্যন্ত)। সিএনজি থামিয়ে দাঁড়াও, মামা নিজেই দিয়ে দেবে।</span></li>
       <li><span>🐄</span><span>রাস্তায় গরু। ধাক্কা দিলে থেমে যাবে, হর্ন দিলে সরে যায়।</span></li>
       <li><span>🥟</span><span>সিঙ্গারার দোকানে ঢুকলে কিছুক্ষণ ডাবল স্পিড।</span></li>
       <li><span>⚠️</span><span><b>সামনে সাম ভাই!</b> রাস্তায় হাঁটছেন। গায়ে সিএনজি তুললে সাথে সাথে গেম ওভার। হর্ন দিলে সাইড দিবেন।</span></li>
@@ -188,6 +234,11 @@
       <li><span>⚡</span><span>সাবধান: মাঝপথে <b>লোডশেডিং</b> আর <b>ঝুম বৃষ্টি</b>! একসাথে ৩ জন নামালে <b>হ্যাটট্রিক</b>।</span></li>
     </ul>
     <p class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> বা <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> দিয়ে চালাও · <kbd>Space</kbd> = হর্ন<br>মোবাইলে: স্ক্রিনে আঙুল রেখে যেদিকে যেতে চাও সেদিকে টানো</p>
+    <div class="drivers" id="drivers">
+      <p class="sec">আজকে সিএনজি চালাবেন কে?</p>
+      <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু এক্সিডেন্টের ভয়ও বেশি।</small></button>
+      <button class="driver" data-d="muhon"><span class="ph" style="background-image:url('../assets/people/muhon.jpg')"></span><b>নেতা মুহন ভাই</b><small>✅ সব ঠিকঠাক, সাবধানে চালান।<br>📢 কিন্তু মিছিল দেখলে থেমে স্লোগান দিতে লেগে যান।</small></button>
+    </div>
     <div class="wallet" id="startWallet">পকেটে: ৳০</div>
     <div class="btns">
       <button class="btn" id="play" disabled>সিএনজি স্টার্ট দাও</button>
@@ -275,6 +326,25 @@ const EXCUSES = [
   "বাইকের তেল শেষ, আর হেঁটে যাওয়া পুঁজিবাদী ব্যায়াম।",
   "মেহমান আইছন, চা বানাইয়া খাওয়াইতে অইবো। পার্টির চা পরে।",
 ];
+// excuses that want something: tea, chips, or a big name ("Emran bhai is coming!")
+const TALKS = [
+  { w: "tea", t: "মাথাটা ধরছে মামা। এক কাপ কড়া চা না খাইলে চোখই খুলবে না।" },
+  { w: "tea", t: "দুপুরের ঘুম এখনো শেষ হয়নি। গরম কিছু পেটে পড়লে হয়তো শেষ হইতো..." },
+  { w: "tea", t: "শরীরটা ম্যাজম্যাজ করতেছে। দুধ-চিনি বেশি দিয়া কিছু একটা লাগবে।" },
+  { w: "tea", t: "মেহমানরে চা খাওয়াইলাম, নিজের কাপটাই খাওয়া হয় নাই।" },
+  { w: "chips", t: "খিদায় পেট চোঁ চোঁ করতেছে। খালি পেটে বিপ্লব হয় না মামা।" },
+  { w: "chips", t: "সভায় তো কোনো নাস্তা থাকে না। গিয়া কী লাভ?" },
+  { w: "chips", t: "মুখটা কেমন পানসে লাগতেছে, ঝাল-মচমচে কিছু হইলে..." },
+  { w: "chips", t: "বিকালে কিছু মুখে না দিলে আমার মাথা কাজ করে না।" },
+  { w: "emran", t: "আজকে ফিলিং নাই। বড় কেউ ডাকলে অবশ্য অন্য কথা।" },
+  { w: "emran", t: "রাস্তায় আছি, পাঁচ মিনিটে আসছি। (এখনো লুঙ্গি পরে বিছানায়)" },
+  { w: "emran", t: "সভায় তো খালি আমরা আমরা। নেতা-টেতা কেউ আসলে যাইতাম।" },
+  { w: "emran", t: "আজকে খেলা আছে। বাংলাদেশের না, কিন্তু খেলা তো খেলা।" },
+];
+const TALK_RIGHT = { tea: "আহ্‌, চা! চলো মামা, বিপ্লব শুরু। ☕", chips: "মচমচে! এইবার সভায় যাওয়া যায়। 🍟", emran: "কী! এমরান ভাই আসতেছেন? দৌড়াইয়া আসতেছি!" };
+const TALK_WRONG = { tea: "শুধু চা দিয়া কাম হইবো না মামা! আমি গেলাম।", chips: "চিপস দিয়া ভুলাইবা? আমি গেলাম!", emran: "হাহা, এমরান ভাই তো মিছিলে! আমারে বোকা বানাও? গেলাম!" };
+const TALK_OK = { tea: "এইটা চাইছিলাম না... আচ্ছা, চা-ই সই। চলো।", chips: "এইটা চাইছিলাম না... আচ্ছা, চলো।", emran: "সত্যি? আচ্ছা, যাই দেখি..." };
+const TALK_LEN = 9;
 const SNORES = ["উমম...", "আর পাঁচ মিনিট...", "আম্মা, আজকে শুক্রবার...", "কে রে?", "ঘুমাইতে দেও মামা..."];
 const WAKES = ["আসছি মামা!", "কে? ও, সভা? চলো।", "ঘুমটা মাত্র জমছিল...", "লুঙ্গিটা বদলাইয়া আসি... না থাক, চলো।", "চা আছে তো?"];
 
@@ -423,6 +493,13 @@ const mamuHouse = mamuAt(7.5, 10.8), mamuBack = mamuAt(-2.1, 17.5); // and the l
 const officeU = (() => { const dx = office.cx - door.x, dy = office.cy - door.y, L = Math.hypot(dx, dy) || 1; return { x: dx / L, y: dy / L }; })();
 const officeV = { x: -officeU.y, y: officeU.x };
 const DROP_R = 18;
+// stop the CNG in front of these two and the shopkeeper hands over the goods
+const SHOPS = [[dukan, "tea", "☕", "চা", "ভাইয়া", ["গরম চা নেন মামা! ☕", "চা রেডি, দুধ-চিনি বেশি।"], "মামা, এক কাপ চা খাইয়া যান!"],
+               [mamu, "chips", "🍟", "চিপস", "মামু", ["নেও মামা, মচমচে চিপস! 🍟", "চিপস নেও, রিয়েল জিনিস।"], "রিয়েল মামুর রিয়েল চিপস, থামেন মামা!"]]
+  .filter(([b]) => b).map(([b, item, ic, n, who, lines, call]) => {
+    const nr = nearestRoad(b.cx, b.cy);
+    return { item, ic, n, lines, call, x: nr.x, y: nr.y, keeper: { n: who, x: (b.cx + nr.x) / 2, y: (b.cy + nr.y) / 2 }, wait: 0, cd: 0 };
+  });
 
 // which land can be reached from the office without swimming (flood fill on a 4 m grid; roads act as bridges)
 const RS = 4, RW = Math.ceil((X1 - X0) / RS), RH = Math.ceil((Y1 - Y0) / RS);
@@ -601,7 +678,8 @@ const keys = new Set();
 addEventListener("keydown", e => {
   const k = e.key.toLowerCase();
   if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
-  if (k === " " && !e.repeat) { horn(); flashHorn(); }
+  if (k === " " && !e.repeat && !talk) { horn(); flashHorn(); }
+  if (talk && ["1", "2", "3"].includes(k)) answerTalk(["tea", "chips", "emran"][+k - 1]);
   if (k === "m") toggleMute();
   if (k === "enter" && (state === "menu" || state === "over") && !document.getElementById("play").disabled) startGame();
   keys.add(k);
@@ -682,12 +760,13 @@ const has = id => shop.owned.includes(id);
 const seatCount = () => has("up-seat4") ? 4 : 3;
 const hornRange = () => ({ "horn-bashi": 52, "horn-bus": 60, "horn-gaan": 55 })[shop.horn] || 42;
 const paintItem = () => SHOP.find(i => i.id === shop.paint) || SHOP[4];
-let run = { fare: 0, bonus: 0, fine: 0 };
-const runTotal = () => run.fare + run.bonus - run.fine;
-function earn(kind, amt, x, y, label) {
+let run = { fare: 0, bonus: 0, fine: 0, spend: 0 };
+const runTotal = () => run.fare + run.bonus - run.fine - run.spend;
+function earn(kind, amt, x, y, label) { // fare/bonus add, fine/spend (tea, chips, singara) take away
   run[kind] += amt;
-  floaty(x, y, `${kind === "fine" ? "−" : "+"}৳${bn(amt)}${label ? " " + label : ""}`, kind === "fine" ? C.red : "#2f8a4f");
-  if (kind !== "fine") sfx.cash();
+  const minus = kind === "fine" || kind === "spend";
+  floaty(x, y, `${minus ? "−" : "+"}৳${bn(amt)}${label ? " " + label : ""}`, kind === "fine" ? C.red : kind === "spend" ? "#8a5a2b" : "#2f8a4f");
+  if (!minus || kind === "spend") sfx.cash();
 }
 
 const sfx = {
@@ -824,7 +903,7 @@ let state = "menu", rand = Math.random;
 let P = null, comrades = [], cows = [], stalls = [], delivered = [], bubbles = [], floaties = [], rings = [], dust = [];
 let time = 0, lastTick = -1, shake = 0, sufanCd = 0, cam = null;
 let stats = {}, events = {}, shedLevel = 0, rainLevel = 0, banner = null, flash = 0, area = null, chatCd = 0, warned30 = false;
-let confetti = [], puffs = [], skids = [];
+let confetti = [], puffs = [], skids = [], talk = null;
 
 // neighbourhoods, each named after its mosque's pin (meters from the map pin, y points south)
 const PLACES = [
@@ -850,6 +929,18 @@ function posterFor(i) {
 }
 let sloganShown = new Set();
 const POSTER_LINES = ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই! 📢", "ভোটের মৌসুম! রাস্তায় শুধু পোস্টার আর পোস্টার।", "পোস্টার গুনতে গুনতে সভায় দেরি হয়ে যাবে!", "এই পোস্টার তো আগেও দেখছি!", "সিএনজির গায়েও কেউ পোস্টার লাগাইয়া দিবে মনে হয়।"];
+// who drives today: Ponki Vai is fast and reckless, Neta Muhon Vai is careful but can't pass a procession
+const DRIVERS = {
+  ponki: { n: "পংকি ভাই", label: "পংকি ভাইয়ের সিএনজি", speed: 1.18, turn: 1.15, crashy: true,
+    hello: "পংকি ভাই স্টিয়ারিংয়ে! শক্ত করে ধরেন, আজকে উড়াইয়া নিমু। প্যাঁ-পোঁ!" },
+  muhon: { n: "মুহন ভাই", label: "নেতা মুহন ভাই চালাচ্ছেন", speed: 1, turn: 1, rally: true,
+    hello: "মুহন ভাই স্টিয়ারিংয়ে। ধীরে চলি, নিরাপদে চলি। চলো কমরেডদের ঘুম ভাঙাই!" },
+};
+let driverId = "ponki";
+try { const d = localStorage.getItem("kcp-sim-driver"); if (DRIVERS[d]) driverId = d; } catch (e) {}
+const DRV = () => DRIVERS[driverId];
+const CRASH_LINES = ["আরে আরে! ব্রেক কই গেল!", "ধড়াম! কিছু হয় নাই, কিছু হয় নাই... 😵", "পংকি ভাই: এইটা গাড়ির দোষ, আমার না!", "রিকশার সাথে লাগলো! মাফ কইরা দেন ভাই!", "সিএনজি উল্টাইতে উল্টাইতে বাঁচলো! 😱"];
+const RALLY_LINES = ["মিছিল দেখলে আমি থামতে পারি না ভাই!", "এক মিনিট, একটা স্লোগান দিয়াই আসি!", "নেতা মানুষ, মিছিল ফালাইয়া যাই কেমনে?"];
 const CHANTS = ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই!", "এমরান ভাই এমরান ভাই!", "ধানের শীষে ভোট দিন!", "জিন্দাবাদ! জিন্দাবাদ!", "সমৃদ্ধির পথে বাংলাদেশ!", "ভোট দিন, ভোট দিন!"];
 let billboards = null, buntings = null, michils = [];
 // Sam Vai: a local representative out for a walk. Don't run him over.
@@ -997,19 +1088,21 @@ function newGame() {
   const s0 = roadSegs.reduce((b, s) => { const d = segD2(door.x, door.y, s.ax, s.ay, s.bx, s.by); return d < b.d ? { d, s } : b; }, { d: 1e18 }).s;
   const a0 = Math.atan2(s0.by - s0.ay, s0.bx - s0.ax);
   // park a little way down the road so the CNG isn't hidden under the office labels
-  P = { x: door.x + Math.cos(a0) * 24, y: door.y + Math.sin(a0) * 24, a: a0, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0 };
+  P = { x: door.x + Math.cos(a0) * 24, y: door.y + Math.sin(a0) * 24, a: a0, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0, tea: 0, chips: 0, rally: null };
   if (!onRoad(P.x, P.y)) { P.x = door.x; P.y = door.y; }
   delivered = []; bubbles = []; floaties = []; rings = []; dust = [];
   time = 0; lastTick = -1; shake = 0; sufanCd = 3;
-  run = { fare: 0, bonus: 0, fine: 0 };
-  stats = { cows: 0, honks: 0, singara: 0, caught: 0, hattricks: 0, walls: 0, posters: 0, michil: 0 };
+  run = { fare: 0, bonus: 0, fine: 0, spend: 0 };
+  stats = { cows: 0, honks: 0, singara: 0, caught: 0, hattricks: 0, walls: 0, posters: 0, michil: 0, tea: 0, chips: 0, talks: 0, emran: 0, crashes: 0, rallies: 0 };
+  for (const s of SHOPS) { s.wait = 0; s.cd = 6; }
+  closeTalk();
   const shedAt = 50 + rand() * 55; // load-shedding first, rain later, never overlapping
   events = { shed: { at: shedAt, dur: 9 }, rain: { at: Math.min(GAME_LEN - 40, shedAt + 40 + rand() * 30), dur: 16 } };
   shedLevel = 0; rainLevel = 0; banner = null; flash = 0; area = null; chatCd = 8; warned30 = false;
   confetti = []; puffs = []; skids = [];
   P.puffCd = 0;
   cam = { x: P.x, y: P.y, z: baseZoom() };
-  say(P, "পংক ভাইয়ের সিএনজি রেডি! চলো, কমরেডদের ঘুম ভাঙাই। প্যাঁ-পোঁ!", 3.2);
+  say(P, DRV().hello, 3.2);
 }
 
 const baseZoom = () => clamp(Math.min(W, H) / 135, 2.9, 6.2);
@@ -1021,7 +1114,7 @@ function say(who, text, dur = 3, delay = 0) {
 function floaty(x, y, text, color = C.red) { floaties.push({ x, y, text, color, t: 0 }); }
 
 function horn() {
-  if (state !== "play" || P.hornCd > 0) return;
+  if (state !== "play" || talk || P.hornCd > 0) return;
   P.hornCd = .32;
   rings.push({ x: P.x, y: P.y, t: 0 });
   sfx.horn();
@@ -1044,20 +1137,67 @@ function horn() {
   }
 }
 
+function flee(c, line) {
+  c.fled = true; c.state = "flee"; c.fleeT = 13;
+  const far = spots.filter(s => { const d = Math.hypot(s.x - c.x, s.y - c.y); return d > 70 && d < 170; });
+  const t = far.length ? far[(rand() * far.length) | 0] : { x: c.x + 60, y: c.y };
+  c.tx = t.x; c.ty = t.y;
+  say(c, line, 3.8);
+  sfx.scratch(); setTimeout(() => sfx.run(), 260);
+}
 function wake(c) {
-  if (!c.fled && rand() < .4) {
-    c.fled = true; c.state = "flee"; c.fleeT = 13;
-    const far = spots.filter(s => { const d = Math.hypot(s.x - c.x, s.y - c.y); return d > 70 && d < 170; });
-    const t = far.length ? far[(rand() * far.length) | 0] : { x: c.x + 60, y: c.y };
-    c.tx = t.x; c.ty = t.y;
-    say(c, EXCUSES[(rand() * EXCUSES.length) | 0], 3.8);
-    sfx.scratch(); setTimeout(() => sfx.run(), 260);
-  } else {
+  if (!c.fled && !talk && rand() < .45) openTalk(c);       // an excuse, and you pick the answer
+  else if (!c.fled && rand() < .12) flee(c, EXCUSES[(rand() * EXCUSES.length) | 0]); // some just run
+  else {
     c.state = "awake";
     say(c, WAKES[(rand() * WAKES.length) | 0], 2.4);
     sfx.pop();
   }
 }
+
+/* ---- excuses: the game waits while you pick an answer */
+const talkEl = document.getElementById("talk"), talkBtns = [...talkEl.querySelectorAll("button")];
+function openTalk(c) {
+  const tk = TALKS[(rand() * TALKS.length) | 0];
+  c.fled = true; c.state = "talk"; c.want = tk.w;
+  talk = { c, t: 0 };
+  el("talkPh").style.backgroundImage = c.a ? "" : `url('../assets/people/${c.id}.jpg')`;
+  el("talkPh").textContent = c.a || "";
+  el("talkName").innerHTML = `${c.n} <small>ঘুম থেকে উঠে বললো:</small>`;
+  el("talkText").textContent = `"${tk.t}"`;
+  const left = (k, where) => P[k] > 0 ? `সাথে আছে ${bn(P[k])}টা` : `নাই! ${where}`;
+  el("talkTea").textContent = left("tea", "ভাইয়ার দোকানে পাবে");
+  el("talkChips").textContent = left("chips", "মামুর দোকানে পাবে");
+  talkBtns[0].disabled = P.tea <= 0; talkBtns[1].disabled = P.chips <= 0;
+  talkEl.hidden = false; el("horn").hidden = true;
+  keys.clear(); stick = null; P.v = 0;
+  sfx.scratch();
+}
+function closeTalk() {
+  talk = null;
+  if (talkEl) talkEl.hidden = true;
+  if (state === "play") el("horn").hidden = false;
+}
+function answerTalk(r) {
+  if (!talk || state !== "play") return;
+  if ((r === "tea" || r === "chips") && P[r] <= 0) return;
+  const c = talk.c;
+  closeTalk();
+  if (r === "tea" || r === "chips") P[r]--;
+  const right = r === c.want;
+  if (right || rand() < (r === "emran" ? .25 : .35)) {
+    c.state = "awake";
+    say(c, right ? TALK_RIGHT[r] : TALK_OK[r], 2.6);
+    if (right) { stats.talks++; if (r === "emran") stats.emran++; earn("bonus", 5, c.x, c.y - 8, "খুশি"); sfx.chime(); }
+    else sfx.pop();
+  } else flee(c, TALK_WRONG[r]);
+}
+function tickTalk(dt) {
+  talk.t += dt;
+  el("talkBar").style.width = `${Math.max(0, 100 - talk.t / TALK_LEN * 100)}%`;
+  if (talk.t >= TALK_LEN) { const c = talk.c; closeTalk(); flee(c, "কিছু বলবা না? তাইলে আমি গেলাম!"); }
+}
+talkBtns.forEach(b => b.addEventListener("click", () => answerTalk(b.dataset.r)));
 
 function slotPos(i) {
   const row = Math.floor(i / 4), col = i % 4;
@@ -1105,12 +1245,18 @@ function update(dt) {
   // ---- CNG
   const inp = readInput();
   const road = onRoad(P.x, P.y);
-  const maxV = 18 * (road ? 1 : .42) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - (has("up-umbrella") ? 0 : .22) * rainLevel) * (has("up-engine") ? 1.12 : 1);
+  const maxV = 18 * DRV().speed * (road ? 1 : .42) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - (has("up-umbrella") ? 0 : .22) * rainLevel) * (has("up-engine") ? 1.12 : 1);
   P.hornCd -= dt; P.boost -= dt;
-  if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
+  const aWas = P.a;
+  if (P.rally) { // Muhon Vai has stopped to chant with the procession
+    P.rally.t -= dt; P.rally.cd -= dt; P.v *= Math.pow(.01, dt);
+    if (P.rally.cd <= 0) { P.rally.cd = 1.5; say(P, `মুহন ভাই: ${CHANTS[(rand() * CHANTS.length) | 0]} ✊`, 1.5); sfx.megaphone(); }
+    if (P.rally.t <= 0) { P.rally = null; say(P, "মুহন ভাই: আচ্ছা আচ্ছা, সভা আছে। চলো!", 1.8); }
+  }
+  else if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
   else if (inp.m > .12) {
     const da = wrapAng(Math.atan2(inp.iy, inp.ix) - P.a);
-    const tr = (P.v < 3 ? 6 : 4.2) * (1 - (has("up-umbrella") ? 0 : .35) * rainLevel) * dt;
+    const tr = (P.v < 3 ? 6 : 4.2) * DRV().turn * (1 - (has("up-umbrella") ? 0 : .35) * rainLevel) * dt;
     if (P.v > 10 && Math.abs(da) > 1.1) skids.push({ x: P.x, y: P.y, a: P.a, t: 0 });
     P.a = wrapAng(P.a + clamp(da, -tr, tr));
     const tv = maxV * inp.m * Math.max(.12, Math.cos(da));
@@ -1118,6 +1264,15 @@ function update(dt) {
   } else P.v += clamp(-P.v, -15 * dt, 15 * dt);
   if (P.v > maxV) P.v = Math.max(maxV, P.v - 22 * dt);
   P.x += Math.cos(P.a) * P.v * dt; P.y += Math.sin(P.a) * P.v * dt;
+  if (DRV().crashy && P.stun <= 0 && P.v > 13) { // Ponki Vai takes corners flat out, and sometimes it goes wrong
+    const turning = Math.abs(wrapAng(P.a - aWas)) / dt > .9;
+    if (rand() < dt * (turning ? .3 : .03) * (1 + rainLevel)) {
+      P.stun = 1.4; P.v = 0; shake = .5; stats.crashes++;
+      skids.push({ x: P.x, y: P.y, a: P.a, t: 0 }, { x: P.x, y: P.y, a: P.a + .6, t: 0 });
+      say(P, CRASH_LINES[(rand() * CRASH_LINES.length) | 0], 2.2); floaty(P.x, P.y, "ধড়াম!", C.red);
+      sfx.bonk(); sfx.scratch(); earn("fine", 10, P.x, P.y - 8, "এক্সিডেন্ট");
+    }
+  }
   const bump = pushOut(P, 2) | riverBlock(P, 2);
   if (bump) { P.v *= Math.pow(.15, dt); P.scrape += dt; } else P.scrape = Math.min(0, P.scrape + dt);
   if (P.scrape > 1.4) { say(P, "এই গলিতে সিএনজি ঢুকে না মামা!", 1.8); P.scrape = -4; stats.walls++; sfx.bonk(); earn("fine", 5, P.x, P.y, "জরিমানা"); }
@@ -1159,7 +1314,13 @@ function update(dt) {
     walkRoad(m, (m.scare > 0 ? 4.5 : 1.1) * dt);
     const d = dist(m, P);
     if (m.chantCd <= 0 && d < 70) { m.chantCd = 4 + rand() * 3; say(m, rand() < .45 ? CHANTS[0] : CHANTS[(rand() * CHANTS.length) | 0], 2.6); sfx.megaphone(); }
-    if (m.hitCd <= 0 && d < 7.5) {
+    m.rallyCd = (m.rallyCd || 0) - dt;
+    if (DRV().rally && !P.rally && m.rallyCd <= 0 && d < 24) { // Muhon Vai can't drive past a procession
+      m.rallyCd = 40; m.scare = 0; P.rally = { t: 5, cd: 1.2 }; stats.rallies++;
+      showBanner("মুহন ভাই মিছিলে!", "স্লোগান না দিয়া উনি নড়বেন না", "#ffe9a8", 1.8);
+      say(P, `মুহন ভাই: ${RALLY_LINES[(rand() * RALLY_LINES.length) | 0]}`, 1.4);
+    }
+    if (m.hitCd <= 0 && d < 7.5 && !P.rally) {
       m.hitCd = 3; P.v *= .25; stats.michil++;
       say(m, "মিছিলের রাস্তা আটকাইয়েন না ভাই!", 2); sfx.bonk(); floaty(m.x, m.y, "জ্যাম!", C.red);
     }
@@ -1176,10 +1337,25 @@ function update(dt) {
     if (d < 4) { P.v = 0; P.x -= Math.cos(P.a) * .5; P.y -= Math.sin(P.a) * .5; }
   }
 
+  // ---- tea at Vhaiyar Dukan, chips at Real Mamur Dukan: stop in front and the shopkeeper hands them over
+  for (const s of SHOPS) {
+    s.cd -= dt;
+    const d = dist(s, P), have = P[s.item];
+    if (d < 9 && Math.abs(P.v) < 2.5 && have < 3) {
+      if ((s.wait += dt) > .5) {
+        const n = 3 - have; P[s.item] = 3; s.wait = 0; stats[s.item] += n;
+        earn("spend", n * 5, s.x, s.y - 6, `${s.n} ×${bn(n)}`);
+        say(s.keeper, s.lines[(rand() * s.lines.length) | 0], 2.2);
+        if (s.item === "tea") { P.boost = Math.max(P.boost, 4); setTimeout(() => say(P, "পংক ভাইও এক কাপ মারলেন। চা পাওয়ার! ☕", 2), 900); sfx.boost(); }
+      }
+    } else s.wait = 0;
+    if (d < 32 && d > 12 && have < 3 && s.cd <= 0) { s.cd = 22; say(s.keeper, s.call, 2.2); }
+  }
+
   // ---- singara stalls
   for (const s of stalls) {
     s.cd -= dt;
-    if (s.cd <= 0 && dist(s, P) < 8) { s.cd = 25; P.boost = 6; say(P, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড ×২"); sfx.boost(); sfx.slide(); stats.singara++; earn("fine", 5, s.x, s.y - 8, "সিঙ্গারা"); }
+    if (s.cd <= 0 && dist(s, P) < 8) { s.cd = 25; P.boost = 6; say(P, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড ×২"); sfx.boost(); sfx.slide(); stats.singara++; earn("spend", 5, s.x, s.y - 8, "সিঙ্গারা"); }
   }
 
   // ---- comrades
@@ -1820,7 +1996,7 @@ function drawCNG(t) {
   ctx.restore();
 
   const px = sx(P.x), py = sy(P.y);
-  if (P.v < 3 && !P.riders.length) label("পংক ভাইয়ের সিএনজি", px, py + s * 2.2 + 12, C.yellow, C.ink, 10);
+  if (P.v < 3 && !P.riders.length) label(DRV().label, px, py + s * 2.2 + 12, C.yellow, C.ink, 10);
   // passengers ride on top, drawn big enough to recognise
   const n = P.riders.length;
   P.riders.forEach((c, i) => face(c, px + (i - (n - 1) / 2) * 23, py - s * 2.3 - 16 + Math.sin(t * 9 + i) * 1.5, 11, false));
@@ -1915,7 +2091,18 @@ function drawActors(t) {
   }
   { const x = sx(palace.tag[0]), y = sy(palace.tag[1]); if (onScreen(x, y, 120)) label("সুফান প্যালেস 🏠", x, y, "#a6e0dd", C.ink, 11); }
   if (dukan) { const x = sx(dukan.tag[0]), y = sy(dukan.tag[1]); if (onScreen(x, y, 120)) label("ভাইয়ার দোকান ☕", x, y, C.yellow, C.ink, 11); }
-  { const x = sx(mamu.tag[0]), y = sy(mamu.tag[1]); if (onScreen(x, y, 120)) label("রিয়েল মামুর দোকান 🍵", x, y, "#f6edca", C.ink, 11); }
+  { const x = sx(mamu.tag[0]), y = sy(mamu.tag[1]); if (onScreen(x, y, 120)) label("রিয়েল মামুর দোকান 🍟", x, y, "#f6edca", C.ink, 11); }
+  // where to stop for tea and chips
+  for (const s of SHOPS) {
+    if (P[s.item] >= 3) continue;
+    const x = sx(s.x), y = sy(s.y), r = 9 * cam.z; if (!onScreen(x, y, r)) continue;
+    const near = dist(s, P) < 9;
+    ctx.save(); ctx.setLineDash([7, 6]); ctx.lineDashOffset = -t * 18;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = near ? "rgba(245,197,24,.28)" : "rgba(245,197,24,.14)"; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = "#8a5a2b"; ctx.stroke(); ctx.restore();
+    ctx.font = `22px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(s.ic, x, y - 4 + Math.sin(t * 4) * 2);
+    label(near ? (Math.abs(P.v) < 2.5 ? "দিচ্ছে..." : "থামো!") : `থামো · ${s.n} ৳৫`, x, y + 16, "#ffe9a8", C.ink, 10);
+  }
   // stalls
   for (const s of stalls) {
     const x = sx(s.x), y = sy(s.y); if (!onScreen(x, y)) continue;
@@ -1999,7 +2186,7 @@ function drawActors(t) {
     if (c.state === "awake") bob = Math.abs(Math.sin(t * 5 + c.phase)) * 5;
     if (c.state === "flee") bob = Math.abs(Math.sin(t * 14)) * 4;
     const y = c.state === "sleep" ? (castShadow(x0, y0 + R * .9, .5, R * 1.6), y0) : body(c, x, y0 + R * .95, R, bob);
-    const ring = c.state === "sleep" ? "#5a6aa8" : c.state === "flee" ? "#e07a1f" : "#2f9a4a";
+    const ring = c.state === "sleep" ? "#5a6aa8" : c.state === "flee" ? "#e07a1f" : c.state === "talk" ? C.yellow : "#2f9a4a";
     ctx.beginPath(); ctx.arc(x, y, R + 3.5, 0, Math.PI * 2); ctx.fillStyle = ring; ctx.fill();
     face(c, x, y, R, c.state === "sleep");
     if (c.state === "sleep") {
@@ -2125,6 +2312,7 @@ function drawMini() {
   mctx.fillStyle = "#2f8a4f"; mctx.strokeStyle = C.ink; mctx.lineWidth = d;
   for (const pl of PLACES) { mctx.beginPath(); mctx.arc(X(pl.x), Y(pl.y), 2.6 * d, 0, 7); mctx.fill(); mctx.stroke(); }
   if (sam) { mctx.fillStyle = "#ffd2a6"; mctx.beginPath(); mctx.arc(X(sam.x), Y(sam.y), 3 * d, 0, 7); mctx.fill(); mctx.stroke(); }
+  for (const s of SHOPS) { mctx.fillStyle = P[s.item] >= 3 ? "rgba(138,90,43,.45)" : "#8a5a2b"; mctx.beginPath(); mctx.arc(X(s.x), Y(s.y), 2.8 * d, 0, 7); mctx.fill(); mctx.stroke(); }
   mctx.fillStyle = C.red;
   mctx.fillRect(X(door.x) - 4 * d, Y(door.y) - 4 * d, 8 * d, 8 * d); mctx.strokeRect(X(door.x) - 4 * d, Y(door.y) - 4 * d, 8 * d, 8 * d);
   for (const c of comrades) {
@@ -2146,7 +2334,7 @@ let hudCache = "";
 function gameClock() { const total = 25 + Math.min(35, Math.floor(time / GAME_LEN * 35)); return [4 + Math.floor(total / 60), total % 60]; }
 function drawHud() {
   const [hh, mm] = gameClock(), late = GAME_LEN - time < 30;
-  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}|${runTotal()}`;
+  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}|${runTotal()}|${P.tea}|${P.chips}`;
   if (key === hudCache) return;
   hudCache = key;
   hud.clock.innerHTML = `${bn(hh)}:${bn(String(mm).padStart(2, "0"))}<small>${late ? "তাড়াতাড়ি!" : "সভা ৫:০০ টায়"}</small>`;
@@ -2154,7 +2342,7 @@ function drawHud() {
   hud.count.textContent = `${bn(delivered.length)}/${bn(comrades.length)}`;
   [...hud.seats.children].forEach((s, i) => s.classList.toggle("on", i < P.riders.length));
   const m = runTotal();
-  hud.money.innerHTML = `${m < 0 ? "−" : ""}৳${bn(Math.abs(m))}<small>আজকের ভাড়া</small>`;
+  hud.money.innerHTML = `${m < 0 ? "−" : ""}৳${bn(Math.abs(m))}<small>আজকের ভাড়া</small><span class="bag">☕ ${bn(P.tea)} · 🍟 ${bn(P.chips)}</span>`;
   hud.money.classList.toggle("minus", m < 0);
 }
 
@@ -2166,7 +2354,8 @@ function loop(now) {
   const dt = Math.min(.05, (now - last) / 1000 || 0); last = now;
   if (paused) return;
   if (state === "menu") { attract(t); return; }
-  if (state === "play") update(dt);
+  if (state === "play" && talk) { tickTalk(dt); tickEffects(dt); }
+  else if (state === "play") update(dt);
   else tickEffects(dt);
   drawWorld(t); drawActors(t); drawCNG(t); drawBunting(t); drawConfetti(); drawSky(t); drawBubbles(); drawMarkers(); drawStick(); drawBanner();
   if (frame++ % 3 === 0) { drawMini(); engineUpdate(); }
@@ -2267,6 +2456,12 @@ function openShop(from) {
   if (!garage.on) { garage.on = true; garage.last = 0; requestAnimationFrame(drawGarage); }
 }
 el("shopFromStart").addEventListener("click", () => openShop("start"));
+const syncDrivers = () => document.querySelectorAll(".driver").forEach(b => b.classList.toggle("on", b.dataset.d === driverId));
+document.querySelectorAll(".driver").forEach(b => b.addEventListener("click", () => {
+  driverId = b.dataset.d; syncDrivers();
+  try { localStorage.setItem("kcp-sim-driver", driverId); } catch (e) {}
+}));
+syncDrivers();
 el("shopFromEnd").addEventListener("click", () => openShop("end"));
 el("shopBack").addEventListener("click", () => { garage.on = false; garage.preview = null; el("shop").classList.add("hidden"); syncWallet(); el(shopFrom).classList.remove("hidden"); });
 el("shopList").addEventListener("click", e => {
@@ -2300,7 +2495,7 @@ function samCrash() {
 }
 function endGame(all, reason) {
   if (state === "over") return;
-  state = "over"; stick = null; engineUpdate();
+  state = "over"; stick = null; closeTalk(); engineUpdate();
   const n = delivered.length, N = comrades.length;
   let best = 0;
   try { best = +(localStorage.getItem("kcp-sim-best") || 0); if (n > best) localStorage.setItem("kcp-sim-best", String(n)); } catch (e) {}
@@ -2341,6 +2536,11 @@ function endGame(all, reason) {
   if (stats.walls >= 3) aw.push("🧱 দেয়াল প্রেমিক");
   if (stats.posters >= 6) aw.push(`🗳️ পোস্টার গবেষক (${bn(stats.posters)}টা দেখছো)`);
   if (stats.michil >= 2) aw.push("📢 মিছিলে আটকা পড়া চালক");
+  if (stats.crashes) aw.push(`🚑 পংকি ভাইয়ের এক্সিডেন্ট ×${bn(stats.crashes)}`);
+  if (stats.rallies) aw.push(`✊ মুহন ভাইয়ের মিছিল-বিরতি ×${bn(stats.rallies)}`);
+  if (stats.talks >= 2) aw.push(`🤝 অজুহাত বিশেষজ্ঞ ×${bn(stats.talks)}`);
+  if (stats.emran) aw.push("📢 এমরান ভাইয়ের নামে চালবাজ");
+  if (stats.tea + stats.chips >= 6) aw.push("☕ চা-চিপসের পৃষ্ঠপোষক");
   el("endAwards").innerHTML = aw.map(x => `<span>${x}</span>`).join("");
   if (reason === "sam") { /* crash sounds already played */ }
   else if (all) { sfx.fanfare(); setTimeout(() => sfx.airhorn(), 700); burst(P.x, P.y, 80); }
@@ -2349,7 +2549,7 @@ function endGame(all, reason) {
   // pay day
   let total = Math.max(0, runTotal()), earnText;
   if (reason === "sam") { total = 0; earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} · <b>সাম ভাইয়ের চিকিৎসা খরচে সব শেষ!</b>`; }
-  else earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} − জরিমানা ৳${bn(run.fine)} = <b>৳${bn(total)}</b>`;
+  else earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} − জরিমানা ৳${bn(run.fine)}${run.spend ? ` − চা-নাস্তা ৳${bn(run.spend)}` : ""} = <b>৳${bn(total)}</b>`;
   shop.wallet += total; saveShop();
   el("endEarn").innerHTML = `💰 ${earnText}<br>পকেটে মোট: <b>৳${bn(shop.wallet)}</b>`;
   lastResult = n;
@@ -2369,7 +2569,7 @@ el("share").addEventListener("click", async () => {
 });
 
 // expose a tiny hook for automated play-testing
-window.__sim = { get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get door() { return door; }, get events() { return events; }, get stats() { return stats; }, get time() { return time; }, set time(v) { time = v; }, get michils() { return michils; }, get sam() { return sam; }, get billboards() { return billboards; }, sfx, end: endGame };
+window.__sim = { get driver() { return driverId; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS, get run() { return run; }, get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get door() { return door; }, get events() { return events; }, get stats() { return stats; }, get time() { return time; }, set time(v) { time = v; }, get michils() { return michils; }, get sam() { return sam; }, get billboards() { return billboards; }, sfx, end: endGame };
 
 resize();
 requestAnimationFrame(loop);
