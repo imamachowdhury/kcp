@@ -151,6 +151,12 @@
     { k: "bamboo", at: [98, 72.8] }, { k: "bamboo", at: [103, 73.3] }, { k: "bamboo", at: [108, 74.2] },
     { k: "bamboo", at: [113, 74.8] }, { k: "bamboo", at: [118, 75.6] }, { k: "bamboo", at: [123, 76.3] },
     { k: "banana", at: [[114, 88.4], [117, 89], [120, 89.6], [115.5, 90.8], [118.8, 91.3]] },
+    // round the primary school (the satellite, and Street View from the road at 24.836340, 91.954102 and 24.836863, 91.954271,
+    // Dec 2022; the lanes to the school have none): the field wall runs on past its north-east corner round a narrow strip,
+    // and by the path near the road a concrete drain, a bamboo clump and a sheet of rice drying on the stubble
+    { k: "bwall", col: "#e4e1d6", p: [[122, -18.9], [127.5, -18.9], [127.5, -10.8]] },
+    { k: "drain", p: [[136.2, 18.6], [141.2, 23.1]] }, { k: "bamboo", at: [139.2, 16.8] },
+    { k: "sheet", p: [[134, 13.8], [137.2, 13.8], [137.2, 15.6], [134, 15.6]] },
     { k: "tinfence", p: [[-9, 241.6], [-8, 233], [0.5, 233], [-0.1, 237.2]] },
     { k: "tinfence", p: [[-0.3, 239.4], [-0.6, 243], [-9, 241.6]] },
     { k: "epole", at: [-2.4, 243.9] },
@@ -184,7 +190,7 @@
   // keep trees off them
   M.fields = [
     [[45, -19.5], [145, -19.5], [145, -60], [45, -60]],
-    [[124, -19], [145, -19], [145, 18], [134, 18], [124, 9]],
+    [[131, -19], [145, -19], [145, 18], [134, 18], [131, 10]],
     // round the walled house south of the office: north of it up to the road, east of it, and south of it
     [[36, 77.5], [62, 79.8], [62, 112], [29.5, 112], [29.5, 107.2], [47.2, 107.2], [47.2, 87.4], [34.8, 87.4]]
   ];
@@ -197,6 +203,7 @@
     [[28, 106], [62, 110], [100, 126], [100, 178], [22, 178]],          // south of the house across the lane
     [[80, 100], [136, 96], [136, 178], [102, 178]],                     // south-east, past the east pond
     [[60, 13], [106, 12], [122, 24], [118, 48], [60, 48]],              // behind the school, to the south
+    [[108, 2], [111, -1.5], [123, -1.5], [130.5, -5], [131, 7], [120, 6.5]], // the trees off the field's open south-east corner (satellite)
     [[214, 102], [249, 102], [249, 136], [284, 136], [290, 128], [306, 150], [306, 225], [228, 225], [214, 170]] // round the mosque's yard and the long pond
   ];
 })(window.KOTALPUR);
