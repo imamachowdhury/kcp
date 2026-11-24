@@ -617,6 +617,25 @@ const trees = [];
     const open = [...(MAP.fields || []), ...(MAP.open || []), ...(SCHOOL ? [SCHOOL.yard] : [])], posts = SCHOOL ? [SCHOOL.flag, ...SCHOOL.hay] : [];
     for (let i = trees.length; i--;) { const t = trees[i]; if (open.some(p => pip(t.x, t.y, p)) || posts.some(([x, y]) => Math.hypot(t.x - x, t.y - y) < 3.5)) trees.splice(i, 1); }
   }
+  // where every tree was placed by hand from the satellite and Street View (MAP.exact), only those: MAP.trees is
+  // [x, y, crown radius, kind] with kind "p" a coconut palm, "d" a dark-leaved tree, "t" a tall roadside tree (a bare trunk, the crown high up)
+  for (let i = trees.length; i--;) if ((MAP.exact || []).some(p => pip(trees[i].x, trees[i].y, p))) trees.splice(i, 1);
+  for (const [x, y, r, kind] of MAP.trees || []) trees.push({ x, y, r, dark: kind === "d", palm: kind === "p", tall: kind === "t" });
+  { // and the woods traced there (MAP.woods): one tree per ~32 m², kept off roads, houses, the paddy and open ground
+    const WR = rng32(41), open = [...(MAP.fields || []), ...(MAP.open || [])];
+    for (const g of MAP.woods || []) {
+      let gx0 = 1e9, gy0 = 1e9, gx1 = -1e9, gy1 = -1e9, area = 0;
+      for (let i = 0, j = g.length - 1; i < g.length; j = i++) { const [x, y] = g[i]; gx0 = Math.min(gx0, x); gy0 = Math.min(gy0, y); gx1 = Math.max(gx1, x); gy1 = Math.max(gy1, y); area += (g[j][0] - x) * (g[j][1] + y) / 2; }
+      const want = Math.abs(area) / 32;
+      for (let k = 0, n = 0; k < want * 5 && n < want; k++) {
+        const x = gx0 + WR() * (gx1 - gx0), y = gy0 + WR() * (gy1 - gy0);
+        if (!pip(x, y, g) || roadGap(x, y) < 2.6 || blocked(x, y, 2.2) || open.some(p => pip(x, y, p))) continue;
+        if (trees.some(t => Math.abs(t.x - x) < 2.6 && Math.abs(t.y - y) < 2.6)) continue;
+        trees.push({ x, y, r: 2.2 + WR() * 2.6, dark: WR() < .55, palm: WR() < .1 });
+        n++;
+      }
+    }
+  }
 }
 function roadsidePoint(sg, f, gap) {
   const x = sg.ax + (sg.bx - sg.ax) * f, y = sg.ay + (sg.by - sg.ay) * f, L = Math.hypot(sg.bx - sg.ax, sg.by - sg.ay) || 1;
@@ -939,8 +958,8 @@ for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], 
       if (b !== office) {
         const v = i => b.p[i % b.p.length], at = (f, i) => [b.cx + (v(i)[0] - b.cx) * f, b.cy + (v(i)[1] - b.cy) * f];
         const tk = R() < .7, lk = b.look || {};
-        if (lk.tank || (tk && !lk.stair)) tanks.push({ p: lk.tank || at(.5, 0), h: b.h });
-        if (lk.stair) stairs.push({ p: lk.stair, h: b.h, a: ang }); else if (big && R() < .7) stairs.push({ p: at(.4, 2), h: b.h, a: ang });
+        if (lk.tank || (tk && !lk.stair && lk.tank !== false)) tanks.push({ p: lk.tank || at(.5, 0), h: b.h }); // tank: false = a bare roof
+        if (lk.stair) stairs.push({ p: lk.stair, h: b.h, a: ang }); else if (big && R() < .7 && lk.tank !== false) stairs.push({ p: at(.4, 2), h: b.h, a: ang });
       }
     }
   }
@@ -966,12 +985,12 @@ for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], 
   const canM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshLambertMaterial({ flatShading: true }), round.length);
   const R = rng32(99);
   trees.forEach((t, i) => {
-    const th = t.palm ? 7 + t.r * 1.2 : 1.6 + t.r * .5;
+    const th = t.palm ? 7 + t.r * 1.2 : t.tall ? 6 + t.r * .9 : 1.6 + t.r * .5;
     dummy.position.set(t.x, th / 2, t.y); dummy.rotation.set(t.palm ? (R() - .5) * .25 : 0, 0, t.palm ? (R() - .5) * .25 : 0); dummy.scale.set(1, th, 1); dummy.updateMatrix();
     trunkM.setMatrixAt(i, dummy.matrix); t.th = th;
   });
   round.forEach((t, i) => {
-    dummy.position.set(t.x, t.th + t.r * .75, t.y); dummy.rotation.set(R() * 3, R() * 3, R() * 3); dummy.scale.set(t.r * 1.15, t.r * .95, t.r * 1.15); dummy.updateMatrix();
+    dummy.position.set(t.x, t.th + t.r * .75, t.y); dummy.rotation.set(R() * 3, R() * 3, R() * 3); dummy.scale.set(t.r * 1.15, t.r * (t.tall ? .7 : .95), t.r * 1.15); dummy.updateMatrix();
     canM.setMatrixAt(i, dummy.matrix); canM.setColorAt(i, col.set(t.dark ? "#5f8c3e" : ["#76a24e", "#86ad55", "#6f9a45"][i % 3]));
   });
   // palm crowns: a star of drooping leaves
@@ -1949,10 +1968,94 @@ if (tinHouse.length === 4) {
         at(new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, 1.3, 5), bam), x, .2, y);
       }
       at(new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, 1.1, 5), bam), bx, 1.05, by); // a pole at the end to hold on to
+    } else if (pr.k === "archgate") { // a school gate: two square pillars, a stepped board on a beam with the school's name, a barred steel gate, a lamp on top
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), col = lam({ color: pr.col || "#2f6fc0" });
+      for (const [x, y] of pr.p) at(new THREE.Mesh(new THREE.BoxGeometry(.5, 3.1, .5), col), x, 1.55, y, ry);
+      const W = L + .5, t = pr.text, face = lam({ map: canvasTex(512, 160, (c2) => {
+        c2.fillStyle = pr.col || "#2f6fc0"; c2.fillRect(0, 0, 512, 160); c2.textAlign = "center"; c2.textBaseline = "middle";
+        c2.fillStyle = "#f3f1ea"; c2.font = '500 15px "Hind Siliguri", sans-serif'; c2.fillText(t[0] || "", 256, 14);
+        c2.font = '700 46px "Hind Siliguri", sans-serif'; c2.lineWidth = 5; c2.strokeStyle = "#b3261e"; c2.strokeText(t[1], 256, 56, 496); c2.fillStyle = "#f2b93a"; c2.fillText(t[1], 256, 56, 496);
+        c2.fillStyle = "#f3f1ea"; c2.font = '600 24px "Hind Siliguri", sans-serif'; c2.fillText(t[2] || "", 256, 100, 480);
+        c2.fillStyle = "#e0403a"; c2.font = '600 20px "Hind Siliguri", sans-serif'; c2.fillText(t[3] || "", 256, 134, 480);
+      }) });
+      const bx0 = (ax + bx) / 2, by0 = (ay + by) / 2;
+      at(new THREE.Mesh(new THREE.BoxGeometry(W, .3, .5), col), bx0, 3.1, by0, ry);                                   // the beam
+      for (const turn of [0, Math.PI]) { const m = at(new THREE.Mesh(new THREE.PlaneGeometry(W, W * 160 / 512), face), bx0, 3.25 + W * 80 / 512, by0, ry + turn); m.translateZ(.27); }
+      for (const [k, w] of [[0, W], [1, W * .62], [2, W * .3]]) at(new THREE.Mesh(new THREE.BoxGeometry(w, .14, .56), col), bx0, 3.3 + W * 160 / 512 + k * .14, by0, ry); // the stepped top
+      at(new THREE.Mesh(new THREE.SphereGeometry(.16, 8, 6), lam({ color: "#f4f1e4", emissive: "#3a3520" })), bx0, 3.62 + W * 160 / 512, by0);
+      const bars = lam({ color: "#6b4a34" });                                                                       // the steel gate, shut
+      for (const h of [.2, 1.0, 1.8]) at(new THREE.Mesh(new THREE.BoxGeometry(L - .5, .06, .06), bars), bx0, h, by0, ry);
+      for (let d = .3; d < L - .2; d += .22) at(new THREE.Mesh(new THREE.BoxGeometry(.04, 1.75, .04), bars), ax + (bx - ax) * d / L, 1.0, ay + (by - ay) * d / L, ry);
+    } else if (pr.k === "mural") { // a boundary wall painted with folk art: ringed suns, stripes and flowers in bright colours, a cream coping
+      const R = rng32(pr.seed || 91), base = lam({ color: "#d9d2bf" }), top = lam({ color: "#efe9d8" });
+      const t = canvasTex(512, 64, (c2) => {
+        const cols = ["#c8302a", "#2f5fb3", "#f2c418", "#2e8b3e", "#1d1a17", "#f08a24", "#f3f1ea"];
+        for (let k = 0; k < 8; k++) {
+          const x0 = k * 64; c2.fillStyle = cols[(R() * 7) | 0]; c2.fillRect(x0, 0, 64, 64);
+          if (k % 2) for (let r = 28; r > 4; r -= 7) { c2.fillStyle = cols[(R() * 7) | 0]; c2.beginPath(); c2.arc(x0 + 32, 32, r, 0, Math.PI * 2); c2.fill(); }
+          else for (let s = 0; s < 64; s += 10) { c2.fillStyle = cols[(R() * 7) | 0]; c2.fillRect(x0, s, 64, 5); }
+          c2.fillStyle = "#f3f1ea"; c2.fillRect(x0 + 62, 0, 2, 64);
+        }
+      }, true);
+      for (let i = 1; i < pr.p.length; i++) {
+        const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), tt = t.clone(); tt.repeat.set(L / 6, 1); tt.needsUpdate = true;
+        at(new THREE.Mesh(new THREE.BoxGeometry(L, 1.7, .22), [base, base, top, top, lam({ map: tt }), lam({ map: tt })]), (ax + bx) / 2, .85, (ay + by) / 2, ry);
+        at(new THREE.Mesh(new THREE.BoxGeometry(L + .2, .1, .32), top), (ax + bx) / 2, 1.75, (ay + by) / 2, ry);
+      }
+    } else if (pr.k === "market") { // a row of lock-up shops: shutters between pilasters, a name board along the top, a tin awning on thin
+      // posts and a low gabled tin roof. p runs along the front, which faces right of a→b; roof: false / awning: false leave those off
+      // (for a shop front on an existing building), gate: the bay that is a barred gate instead of a shutter, open: the bay left open
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), D = pr.d || 5, H = pr.h || 3.3;
+      const ux = (bx - ax) / L, uy = (by - ay) / L, nx = -uy, ny = ux, n = pr.n || Math.max(1, Math.round(L / 3)), cx = (ax + bx) / 2 - nx * D / 2, cy = (ay + by) / 2 - ny * D / 2;
+      const red = pr.band || "#a5473b", blue = pr.lower || "#c6d9df", white = pr.upper || "#eef0ea", shut = pr.shutter || "#8f938f";
+      const front = lam({ map: canvasTex(512, 128, (c) => {
+        c.fillStyle = blue; c.fillRect(0, 0, 512, 128); c.fillStyle = white; c.fillRect(0, 0, 512, 34);
+        const sh = 128 - 2.3 / H * 128, w = 512 / n, gap = pr.band === "" ? 3 : 10;
+        for (let k = 0; k < n; k++) {
+          const x0 = k * w + gap, ww = w - gap * 2;
+          if (k === pr.gate) { c.fillStyle = "#2c2622"; c.fillRect(x0, sh, ww, 128 - sh); c.fillStyle = "#6b4a34"; for (let x = x0 + 3; x < x0 + ww; x += 6) c.fillRect(x, sh, 2.5, 128 - sh); for (const y of [sh + 3, sh + 22, 124]) c.fillRect(x0, y - 2, ww, 4); continue; }
+          c.fillStyle = k === pr.open ? "#3a332c" : shut; c.fillRect(x0, sh, ww, 128 - sh);
+          if (k !== pr.open) { c.fillStyle = "rgba(0,0,0,.14)"; for (let y = sh + 4; y < 128; y += 5) c.fillRect(x0, y, ww, 1.5); c.fillRect(x0, sh, ww, 5); }
+        }
+        if (pr.band !== "") { c.fillStyle = red; c.fillRect(0, 34, 512, 6); for (let k = 0; k <= n; k++) c.fillRect(Math.min(k * w, 504) - (k && k < n ? 4 : 0), 34, 8, 94); }
+        if (pr.text) { c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#24408f"; c.font = '700 24px "Hind Siliguri", sans-serif'; c.fillText(pr.text, 256, 18, 490); }
+      }) });
+      const end = lam({ map: canvasTex(128, 96, (c) => {
+        c.fillStyle = blue; c.fillRect(0, 0, 128, 96); c.fillStyle = white; c.fillRect(0, 0, 128, 40); c.fillStyle = red; c.fillRect(0, 38, 128, 4); c.fillRect(60, 0, 6, 96); c.fillRect(0, 0, 5, 96); c.fillRect(123, 0, 5, 96);
+        if (pr.endText) { c.textAlign = "center"; c.textBaseline = "middle"; c.font = '700 17px "Hind Siliguri", sans-serif'; c.lineWidth = 3; c.strokeStyle = "#f2efe6"; c.strokeText(pr.endText, 64, 64, 118); c.fillStyle = "#e0a21c"; c.fillText(pr.endText, 64, 64, 118); c.fillStyle = "#2e8b3e"; c.fillText(pr.endText, 65, 63, 118); }
+      }) }), back = lam({ color: "#d6e0e0" });
+      at(new THREE.Mesh(new THREE.BoxGeometry(L, H, D), [back, end, back, back, front, back]), cx, H / 2, cy, ry);
+      if (pr.roof !== false) {
+        const tin = lam({ color: pr.roof || "#8d7a68", side: THREE.DoubleSide }), rise = .6, half = D / 2 + .35, sl = Math.atan2(rise, D / 2), w = half / Math.cos(sl);
+        for (const s of [1, -1]) { const m = at(new THREE.Mesh(new THREE.BoxGeometry(L + .5, .05, w), tin), cx + nx * s * half / 2, H + rise / 2, cy + ny * s * half / 2); m.rotation.set(s * sl, ry, 0, "YXZ"); }
+        const gab = new THREE.Shape([new THREE.Vector2(-D / 2, 0), new THREE.Vector2(D / 2, 0), new THREE.Vector2(0, rise)]), gm = lam({ color: white, side: THREE.DoubleSide });
+        for (const s of [-1, 1]) at(new THREE.Mesh(new THREE.ShapeGeometry(gab), gm), cx + ux * s * L / 2, H, cy + uy * s * L / 2, ry + Math.PI / 2);
+      }
+      if (pr.awning !== false) {
+        const aw = at(new THREE.Mesh(new THREE.BoxGeometry(L + .3, .04, 1.7), lam({ color: pr.awning || "#7d6a5a" })), (ax + bx) / 2 + nx * .8, 2.55, (ay + by) / 2 + ny * .8); aw.rotation.set(.16, ry, 0, "YXZ");
+        const post = lam({ color: "#9fb8c4" });
+        for (let k = 0; k <= n; k++) { const d = Math.min(Math.max(k * L / n, .1), L - .1); at(new THREE.Mesh(new THREE.BoxGeometry(.12, 2.4, .12), post), ax + ux * d + nx * 1.5, 1.2, ay + uy * d + ny * 1.5, ry); }
+      }
+    } else if (pr.k === "rebar") { // steel rods left sticking up from a flat roof for the next storey, a bunch over each column
+      const rod = lam({ color: "#4a3f38" }), g = new THREE.CylinderGeometry(.016, .016, 1.1, 4);
+      for (const [x, y] of pr.p) for (const [dx, dy] of [[-.1, -.1], [.1, -.1], [.1, .1], [-.1, .1]]) { const m = at(new THREE.Mesh(g, rod), x + dx, pr.h + .55, y + dy); m.rotation.z = dx * .5; m.castShadow = false; }
+    } else if (pr.k === "bigtree") { // an old landmark tree on a round brick platform, its trunk painted red at the foot
+      const [x, y] = pr.at, R = rng32(pr.seed || 7), leaf = lam({ color: pr.leaf || "#4a7a33", flatShading: true });
+      at(new THREE.Mesh(new THREE.CylinderGeometry(2, 2.1, .45, 18), lam({ color: "#9b5d45" })), x, .225, y);
+      at(new THREE.Mesh(new THREE.CylinderGeometry(2.02, 2.02, .06, 18), lam({ color: "#bdb5a6" })), x, .47, y);
+      at(new THREE.Mesh(new THREE.CylinderGeometry(.42, .55, 6.5, 9), lam({ color: "#6d6155" })), x, 3.25, y);
+      at(new THREE.Mesh(new THREE.CylinderGeometry(.58, .6, 1.1, 9), lam({ color: "#c4302b" })), x, 1.0, y);
+      for (const [a, l] of [[.6, 2.6], [2.5, 2.3], [4.3, 2.5]]) { const br = at(new THREE.Mesh(new THREE.CylinderGeometry(.14, .25, l, 6), lam({ color: "#6d6155" })), x + Math.cos(a) * .9, 6.6, y + Math.sin(a) * .9); br.rotation.set(Math.sin(a) * .7, 0, -Math.cos(a) * .7); }
+      for (let k = 0; k < 9; k++) { const a = k * 2.3 + R(), d = k ? 2 + R() * 2.2 : 0, r = 2.4 + R() * 1.3; at(new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), leaf), x + Math.cos(a) * d, 7.8 + R() * 1.6 - d * .25, y + Math.sin(a) * d, R() * 3); }
     } else if (pr.k === "parapet") { // a low culvert parapet painted in red and white bands
       const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax);
       const t = canvasTex(64, 16, (c) => { for (let k = 0; k < 4; k++) { c.fillStyle = k % 2 ? "#f2efe6" : "#c8302a"; c.fillRect(k * 16, 0, 16, 16); } }, true); t.repeat.set(L / 1.6, 1);
       at(new THREE.Mesh(new THREE.BoxGeometry(L, .45, .3), lam({ map: t })), (ax + bx) / 2, .225, (ay + by) / 2, ry);
+    } else if (pr.k === "banner") { // a faded white cloth banner strung high between two trees, its ropes running up to them
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), h = pr.h || 4.2, ux = (bx - ax) / L, uy = (by - ay) / L;
+      at(new THREE.Mesh(new THREE.BoxGeometry(L, .95, .03), lam({ color: "#e8eae4" })), (ax + bx) / 2, h - .48, (ay + by) / 2, ry);
+      const rope = lam({ color: "#4a4238" });
+      for (const s of [-1, 1]) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.015, .015, 1.6, 4), rope); m.rotation.z = -s * 1.1; at(m, (ax + bx) / 2 + s * ux * (L / 2 + .65), h + .3, (ay + by) / 2 + s * uy * (L / 2 + .65), ry); }
     } else if (pr.k === "ysign") { // a square yellow road sign with a black arrow on a thin post, facing `face`
       const [x, y] = pr.at, ry = Math.atan2(pr.face[0] - x, pr.face[1] - y);
       at(new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, 1.9, 6), lam({ color: "#8a8d8a" })), x, .95, y);
