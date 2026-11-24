@@ -1677,7 +1677,7 @@ let ac = null, muted = false;
 try { muted = localStorage.getItem("kcp-sim-muted") === "1"; } catch (e) {}
 const syncMute = () => { el("mute").textContent = muted ? "🔇" : "🔊"; };
 syncMute();
-function toggleMute() { muted = !muted; syncMute(); try { localStorage.setItem("kcp-sim-muted", muted ? "1" : "0"); } catch (e) {} if (musicGain) musicGain.gain.value = muted ? 0 : MUSIC_VOL; }
+function toggleMute() { muted = !muted; syncMute(); try { localStorage.setItem("kcp-sim-muted", muted ? "1" : "0"); } catch (e) {} if (muted && startSrc) { try { startSrc.stop(); } catch (e) {} startSrc = null; startEnd = 0; } musicLevel(); }
 el("mute").addEventListener("click", toggleMute);
 function tone(f, t0, dur, type, vol, f2) {
   const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t0);
@@ -1709,7 +1709,14 @@ function wobble(t, f1, f2, dur, vol, rate = 16, depth = 160) {
   g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
   o.connect(g).connect(ac.destination); o.start(t); l.start(t); o.stop(t + dur + .05); l.stop(t + dur + .05);
 }
-let hornBuf = null, musicBuf = null, musicGain = null, musicSrc = null;
+let hornBuf = null, susBuf = null, overBuf = null, startBuf = null, startPending = false, startEnd = 0, startSrc = null, musicBuf = null, musicGain = null, musicSrc = null;
+function musicLevel() { // full volume, silent when muted, or stepped back until the CNG's start tune ends
+  if (!ac || !musicGain) return;
+  const g = musicGain.gain, now = ac.currentTime; g.cancelScheduledValues(now);
+  if (muted) { g.setValueAtTime(0, now); return; }
+  if (now < startEnd) { g.setValueAtTime(MUSIC_VOL * .25, now); g.setValueAtTime(MUSIC_VOL * .25, Math.max(now, startEnd - .4)); g.linearRampToValueAtTime(MUSIC_VOL, startEnd + .6); }
+  else g.setValueAtTime(MUSIC_VOL, now);
+}
 const MUSIC_VOL = .3;
 function loadBuf(url) { return fetch(url).then(r => { if (!r.ok) throw new Error(url); return r.arrayBuffer(); }).then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no))); }
 const sfx = {
@@ -1728,6 +1735,20 @@ const sfx = {
   run() { this.play(t => [700, 560, 450].forEach((f, i) => tone(f, t + i * .07, .1, "square", .04))); },
   tick() { this.play(t => tone(1300, t, .06, "square", .04)); },
   vineBoom() { this.play(t => { tone(120, t, 1.1, "sine", .55, 34); tone(62, t, 1.1, "triangle", .35, 30); noiseHit(t, .18, .35, "lowpass", 500, 120); }); },
+  cngStart() { // the "hankie pankie" tune, once as a round starts in the CNG (../sim/cng-start.mp3, from the user); the music steps back for it
+    startPending = false; if (startSrc) { try { startSrc.stop(); } catch (e) {} startSrc = null; }
+    this.play(t => {
+      if (!startBuf) return; const s = startSrc = ac.createBufferSource(), g = ac.createGain(); s.buffer = startBuf; g.gain.value = .7; s.connect(g).connect(ac.destination); s.start(t);
+      startEnd = t + startBuf.duration; musicLevel();
+    });
+  },
+  gameOver() { // the "omaga" sting when a round ends (../sim/game-over.mp3, from the user); the music steps back for it
+    this.play(t => {
+      if (!overBuf) { this.sadTrombone(); return; } const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = overBuf; g.gain.value = .9; s.connect(g).connect(ac.destination); s.start(t);
+      startEnd = Math.max(startEnd, t + overBuf.duration); musicLevel();
+    });
+  },
+  sus() { this.play(t => { if (!susBuf) { this.scratch(); return; } const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = susBuf; g.gain.value = .9; s.connect(g).connect(ac.destination); s.start(t); }); }, // Sam Vai ahead: the "sus" meme sting (../sim/sus.mp3, from the user)
   scratch() { this.play(t => { noiseHit(t, .11, .4, "bandpass", 500, 2600); noiseHit(t + .11, .16, .4, "bandpass", 2600, 380); }); },
   boing() { this.play(t => wobble(t, 150, 620, .45, .22)); },
   bonk() { this.play(t => { tone(320, t, .14, "sine", .4, 85); noiseHit(t, .06, .3, "bandpass", 1800); }); },
@@ -1746,7 +1767,7 @@ const sfx = {
 // background music: "Happy Adventure (Loop)" by TinyWorlds, opengameart.org, CC0
 function startMusic() {
   if (!ac || !musicBuf || musicSrc) return;
-  musicGain = ac.createGain(); musicGain.gain.value = muted ? 0 : MUSIC_VOL; musicGain.connect(ac.destination);
+  musicGain = ac.createGain(); musicGain.connect(ac.destination); musicLevel();
   musicSrc = ac.createBufferSource(); musicSrc.buffer = musicBuf; musicSrc.loop = true;
   musicSrc.connect(musicGain); musicSrc.start();
 }
@@ -2106,7 +2127,7 @@ function update(dt) {
   if (sam) {
     sam.scare -= dt; sam.talkCd -= dt; samWarnCd -= dt; walkRoad(sam, (sam.scare > 0 ? 4 : 1.2) * dt);
     const d = dist(sam, P);
-    if (d < 30 && samWarnCd <= 0) { samWarnCd = 14; showBanner("সামনে সাম ভাই!", "সাবধান! হর্ন দাও, সাইড দিবেন", 1.6); sfx.scratch(); }
+    if (d < 30 && samWarnCd <= 0) { samWarnCd = 14; showBanner("সামনে সাম ভাই!", "সাবধান! হর্ন দাও, সাইড দিবেন", 1.6); sfx.sus(); }
     if (d < 22 && sam.talkCd <= 0) { sam.talkCd = 6; say(sam, SAM_LINES[(rand() * SAM_LINES.length) | 0].replace("পংকি", DRV().n.split(" ")[0]), 2.2); }
     if (d < 2.8 && Math.abs(P.v) > 3) { samCrash(); return; }
     if (d < 2.8) { P.v = 0; P.x -= Math.cos(P.a) * .5; P.y -= Math.sin(P.a) * .5; }
@@ -2164,7 +2185,7 @@ function update(dt) {
 
 function samCrash() {
   state = "ending"; P.v = 0; shakeT = .8; flash = .7;
-  sfx.vineBoom(); setTimeout(() => sfx.sadTrombone(), 600);
+  sfx.vineBoom(); setTimeout(() => sfx.gameOver(), 600);
   showBanner("গেম ওভার!", "সাম ভাইয়ের উপর সিএনজি!", 3); say(sam, `আহ্‌! ${DRV().n.split(" ")[0]}!! 😵`, 2);
   sam.mesh.rotation.z = Math.PI / 2; sam.mesh.position.y = .4;
   const g = gid; setTimeout(() => g === gid && endGame(false, "sam"), 1800);
@@ -2180,6 +2201,7 @@ el("share").addEventListener("click", () => {
 function endGame(all, reason) {
   if (state === "over") return;
   if (paused) setPause(false);
+  const g0 = gid;
   state = "over"; stick = null; stickEl.style.display = "none"; closeTalk(); engineUpdate();
   const n = delivered.length, N = comrades.length;
   const verdicts = [[N, "ঐতিহাসিক সভা! কোরাম পূর্ণ। কেসিপির ইতিহাসে প্রথমবার সবাই সময়মতো।"], [8, "সভা হলো! কয়েকজন যদিও 'পাঁচ মিনিটে আসছি' বলে এখনো আসছেন।"], [4, "অর্ধেক কমিটি। সভা মুলতবি, কিন্তু চা চলবে।"], [1, "কোরাম নাই। সভায় আছেন তুমি, সুফান, আর চায়ের কাপ।"], [0, "সভা বাতিল। কতোয়ালপুর এখনো দুপুরের ঘুমে।"]];
@@ -2202,7 +2224,9 @@ function endGame(all, reason) {
   lastCard = { mode: "৩ডি", path: "sim3d", kicker: el("endKicker").textContent, title: el("endTitle").textContent, n, N, verdict: el("endVerdict").textContent,
     driver: { id: driverId, n: DRV().n }, vehicle: VEH().n, earn: total, sam: reason === "sam", awards: [],
     faces: comrades.map(c => ({ id: c.id, n: c.n, emoji: c.emoji, ok: c.state === "done" })) };
-  if (reason !== "sam") { if (all || n >= 8) sfx.fanfare(); else if (n === 0) sfx.sadTrombone(); }
+  if (reason !== "sam") { // every round ends on the "omaga" sting; a good result gets the fanfare first
+    if (all || n >= 8) { sfx.fanfare(); setTimeout(() => g0 === gid && state === "over" && sfx.gameOver(), 1000); } else sfx.gameOver();
+  }
   ["hud", "mini", "horn", "stickZone", "keys", "target"].forEach(id => el(id).hidden = true);
   arrow.visible = false;
   const g = gid; setTimeout(() => { if (g === gid && state === "over") el("end").classList.remove("hidden"); }, 400);
@@ -2397,6 +2421,8 @@ function ensureAudio() {
     if (!ac) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ac = new AC(); }
     if (ac && ac.state === "suspended") ac.resume();
     if (ac && !hornBuf) loadBuf("../sim/horn.mp3").then(b => hornBuf = b).catch(() => {});
+    if (ac && !susBuf) loadBuf("../sim/sus.mp3").then(b => susBuf = b).catch(() => {});
+    if (ac && !overBuf) loadBuf("../sim/game-over.mp3").then(b => overBuf = b).catch(() => {});
   } catch (e) {}
 }
 function syncWallet() {
@@ -2511,6 +2537,9 @@ function startGame() {
     if (!ac) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ac = new AC(); }
     if (ac && ac.state === "suspended") ac.resume();
     if (ac && !hornBuf) loadBuf("../sim/horn.mp3").then(b => hornBuf = b).catch(() => {});
+    if (ac && !susBuf) loadBuf("../sim/sus.mp3").then(b => susBuf = b).catch(() => {});
+    if (ac && !overBuf) loadBuf("../sim/game-over.mp3").then(b => overBuf = b).catch(() => {});
+    if (ac && !startBuf) loadBuf("../sim/cng-start.mp3").then(b => { startBuf = b; if (startPending && state === "play" && time < 2) sfx.cngStart(); }).catch(() => {});
     if (ac && !musicBuf) loadBuf("music.mp3").then(b => { musicBuf = b; startMusic(); }).catch(() => {});
   } catch (e) {}
   if (garage) { garage = null; camera.clearViewOffset(); resize(); el("shop").classList.add("hidden"); }
@@ -2518,6 +2547,7 @@ function startGame() {
   ["hud", "mini", "horn"].forEach(id => el(id).hidden = false);
   if (mobile) el("stickZone").hidden = false; else el("keys").hidden = false;
   camMode = 0; newGame(); state = "play"; hudKey = ""; last = performance.now();
+  startPending = vehId === "cng"; if (startPending && startBuf) sfx.cngStart(); // the CNG's start tune, once per round
 }
 el("play").addEventListener("click", startGame);
 el("again").addEventListener("click", startGame);

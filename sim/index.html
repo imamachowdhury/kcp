@@ -836,7 +836,7 @@ try { muted = localStorage.getItem("kcp-sim-muted") === "1"; } catch (e) {}
 const muteBtn = document.getElementById("mute");
 const syncMute = () => { muteBtn.textContent = muted ? "🔇" : "🔊"; };
 syncMute();
-function toggleMute() { muted = !muted; syncMute(); engineUpdate(); try { localStorage.setItem("kcp-sim-muted", muted ? "1" : "0"); } catch (e) {} }
+function toggleMute() { muted = !muted; syncMute(); engineUpdate(); if (muted && startSrc) { try { startSrc.stop(); } catch (e) {} startSrc = null; } try { localStorage.setItem("kcp-sim-muted", muted ? "1" : "0"); } catch (e) {} }
 muteBtn.addEventListener("click", toggleMute);
 function tone(f, t0, dur, type, vol, f2) {
   const o = ac.createOscillator(), g = ac.createGain();
@@ -884,6 +884,9 @@ function earn(kind, amt, x, y, label) { // fare/bonus add, fine/spend (tea, chip
 
 const sfx = {
   play(fn) { if (!ac || muted) return; try { fn(ac.currentTime); } catch (e) { console.warn("sfx", e); } },
+  cngStart() { startPending = false; if (startSrc) { try { startSrc.stop(); } catch (e) {} startSrc = null; } this.play(t => { if (!startBuf) return; const s = startSrc = ac.createBufferSource(), g = ac.createGain(); s.buffer = startBuf; g.gain.value = .7; s.connect(g).connect(ac.destination); s.start(t); }); },
+  gameOver() { this.play(t => { if (!overBuf) { this.sadTrombone(); return; } const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = overBuf; g.gain.value = .9; s.connect(g).connect(ac.destination); s.start(t); }); },
+  sus() { this.play(t => { if (!susBuf) { this.scratch(); return; } const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = susBuf; g.gain.value = .9; s.connect(g).connect(ac.destination); s.start(t); }); },
   horn() {
     this.play(t => {
       if (shop.horn === "horn-bashi") { wobble(t, 1300, 2000, .32, .13, 22, 140); wobble(t + .3, 2000, 1250, .38, .13, 22, 140); return; }
@@ -963,15 +966,19 @@ function wobble(t, f1, f2, dur, vol, rate = 16, depth = 160) {
   o.connect(g).connect(ac.destination); o.start(t); l.start(t); o.stop(t + dur + .05); l.stop(t + dur + .05);
 }
 
-// Horn: two honks cut from "Car Horn.wav" (Wikimedia Commons, CC0), pitched up to sound like a CNG
-let hornBuf = null, hornLoading = false;
+// Horn: two honks cut from "Car Horn.wav" (Wikimedia Commons, CC0), pitched up to sound like a CNG.
+// Sus: the "sus" meme sting that plays when Sam Vai turns up ahead (sus.mp3, from the user).
+// CNG start: the "hankie pankie" tune, once as a round starts in the CNG (cng-start.mp3, from the user)
+// Game over: the "omaga" sting when a round ends (game-over.mp3, from the user)
+let hornBuf = null, hornLoading = false, susBuf = null, overBuf = null, startBuf = null, startPending = false, startSrc = null;
+const loadBuf = url => fetch(url).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no)));
 function loadHorn() {
   if (!ac || hornBuf || hornLoading) return;
   hornLoading = true;
-  fetch("horn.mp3").then(r => r.arrayBuffer())
-    .then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no)))
-    .then(buf => { hornBuf = buf; })
-    .catch(() => { hornLoading = false; }); // keep the synthesized horn
+  loadBuf("horn.mp3").then(buf => { hornBuf = buf; }).catch(() => { hornLoading = false; }); // keep the synthesized horn
+  loadBuf("sus.mp3").then(buf => { susBuf = buf; }).catch(() => {});                       // keep the scratch
+  loadBuf("game-over.mp3").then(buf => { overBuf = buf; }).catch(() => {});             // keep the sad trombone
+  loadBuf("cng-start.mp3").then(buf => { startBuf = buf; if (startPending && state === "play" && time < 2) sfx.cngStart(); }).catch(() => {}); // first round: play it as soon as it arrives
 }
 
 // CNG engine putt-putt: a low sawtooth chopped by a square LFO; pitch and chop rate follow speed
@@ -1466,7 +1473,7 @@ function update(dt) {
     sam.scare -= dt; sam.talkCd -= dt; samWarnCd -= dt;
     walkRoad(sam, (sam.scare > 0 ? 4 : 1.2) * dt);
     const d = dist(sam, P);
-    if (d < 30 && samWarnCd <= 0) { samWarnCd = 14; showBanner("সামনে সাম ভাই!", "সাবধান! হর্ন দাও, সাইড দিবেন", "#ffd2a6", 1.6); sfx.scratch(); }
+    if (d < 30 && samWarnCd <= 0) { samWarnCd = 14; showBanner("সামনে সাম ভাই!", "সাবধান! হর্ন দাও, সাইড দিবেন", "#ffd2a6", 1.6); sfx.sus(); }
     if (d < 22 && sam.talkCd <= 0) { sam.talkCd = 6; say(sam, SAM_LINES[(rand() * SAM_LINES.length) | 0].replace("পংকি", DRV().n.split(" ")[0]), 2.2); }
     if (d < 4 && Math.abs(P.v) > 3) { samCrash(); return; }
     if (d < 4) { const sg = P.v < 0 ? -1 : 1; P.v = 0; P.x -= Math.cos(P.a) * .5 * sg; P.y -= Math.sin(P.a) * .5 * sg; }
@@ -2653,6 +2660,7 @@ function startGame() {
   resize();
   newGame(); hudCache = "";
   state = "play";
+  startPending = vehId === "cng"; if (startPending && startBuf) sfx.cngStart(); // the CNG's start tune, once per round
 }
 /* ================= shop screen ================= */
 let shopFrom = "start";
@@ -2778,7 +2786,7 @@ el("again").addEventListener("click", startGame);
 let lastResult = 0, lastCard = null;
 function samCrash() {
   state = "ending"; P.v = 0; shake = .8; flash = .7;
-  sfx.vineBoom(); setTimeout(() => sfx.sadTrombone(), 600);
+  sfx.vineBoom(); setTimeout(() => sfx.gameOver(), 600);
   showBanner("গেম ওভার!", "সাম ভাইয়ের উপর সিএনজি!", C.red, 3);
   say(sam, `আহ্‌! ${DRV().n.split(" ")[0]}!! 😵`, 2);
   setTimeout(() => endGame(false, "sam"), 1600);
@@ -2834,9 +2842,9 @@ function endGame(all, reason) {
   if (stats.tea + stats.chips >= 6) aw.push("☕ চা-চিপসের পৃষ্ঠপোষক");
   el("endAwards").innerHTML = aw.map(x => `<span>${x}</span>`).join("");
   if (reason === "sam") { /* crash sounds already played */ }
-  else if (all) { sfx.fanfare(); setTimeout(() => sfx.airhorn(), 700); burst(P.x, P.y, 80); }
-  else if (n >= 8) sfx.fanfare();
-  else sfx.sadTrombone();
+  else if (all) { sfx.fanfare(); setTimeout(() => sfx.airhorn(), 700); setTimeout(() => state === "over" && sfx.gameOver(), 1600); burst(P.x, P.y, 80); }
+  else if (n >= 8) { sfx.fanfare(); setTimeout(() => state === "over" && sfx.gameOver(), 1000); }
+  else sfx.gameOver(); // every round ends on the "omaga" sting
   // pay day
   let total = Math.max(0, runTotal()), earnText;
   if (reason === "sam") { total = 0; earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} · <b>সাম ভাইয়ের চিকিৎসা খরচে সব শেষ!</b>`; }
