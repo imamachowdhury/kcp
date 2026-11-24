@@ -17,7 +17,7 @@
     [[53.7, 67.8], [70.3, 70.3], [72.1, 57.9], [55.6, 55.4]],   // flat-roofed house east of Vhaiyar Dukan, set along the road
     [[22, 45.5], [32, 45.5], [32, 50.5], [22, 50.5]],           // the white tin-roofed house on the north pond's bank
     [[-20.5, 2.5], [-9.5, 2.5], [-9.5, 16], [-20.5, 16]],       // Ujan Vati Stur, up the lane to the north
-    [[37, 75.6], [39.6, 75.6], [39.6, 78], [37, 78]]            // the little tin shed at the mouth of the lane to the office
+    [[24.5, 71], [27, 71], [27, 73.4], [24.5, 73.4]]            // the little tin shed between Sufan Bikash Ghor and the lane
   );
   M.water.push(
     // behind Vhaiyar Dukan, between the white house and the red-roofed building
@@ -47,7 +47,7 @@
     { at: [166, 40], h: 3.3, tin: false, roof: "#c9c4b8", wall: "#e6d47a", trim: "#a8432e", tank: [173, 43], stair: [167.5, 42] },
     { at: [186, 40], h: 3.4, tin: true, roof: "#6e4636" },
     { at: [160.6, 31], h: 2.6, tin: true, roof: "#4f9e86", wall: "#efece0", shop: true },
-    { at: [38.3, 76.8], h: 2.3, tin: true, roof: "#7a5a44", wall: "#b9b2a2" }   // the shed at the office lane's mouth
+    { at: [25.7, 72.2], h: 2.3, tin: true, roof: "#7a5a44", wall: "#b9b2a2" }   // the tin shed by Sufan Bikash Ghor
   ];
   // small things on the ground the games draw: benches, bamboo fences, a concrete gate frame, a brick ring well, patches
   // of red earth (dirt) and concrete (slab), a brick-lined drain, a brick wall, a log pile and bamboo clumps; `open` is ground the games keep
@@ -58,8 +58,8 @@
     { k: "posts", p: [[164.6, 32.4], [169.6, 32.4]] },
     { k: "well", at: [173.5, 31.4] },
     { k: "dirt", p: [[163.6, 28.6], [170.6, 28.6], [169.4, 34.3], [164.8, 34.3]] },
-    // the open drain between the office lane and Sufan Bikash Ghor, lined with low brick walls, from the main road down
-    { k: "drain", p: [[29.8, 73.4], [27, 78.7], [25, 86.5], [24.2, 90]] },
+    // the open drain along the north side of that concrete lane, lined with low brick walls
+    { k: "drain", p: [[30.3, 64.3], [14.1, 54.3]] },
     // the concrete lane off the road along Sufan Palace's north side (the third street photo): a concrete apron at the
     // road, red earth on to a brick compound wall with logs piled at its foot, a bit of bamboo fence and bamboo on the right
     { k: "slab", p: [[135.4, 31.8], [128, 31.9], [128, 34.7], [135.2, 34.6]] },
@@ -78,10 +78,15 @@
     flag: [90.5, -12.5],
     hay: [[127, 2], [130, 4.6]]
   };
-  // the lane south from Vhaiyar Dukan's junction past Sufan Bikash Ghor (street photos, 24.835951, 91.952983): a strip of
-  // concrete about 3 m wide with grass either side. The games keep the road's full width for driving and draw only
-  // `concrete` meters each side of the line as concrete
-  M.roads[38].concrete = 1.5;
+  // the lane north-west from the junction by Sufan Bikash Ghor (street photos taken at 24.835951, 91.952983, looking west):
+  // a strip of concrete about 3 m wide with grass either side, as far as the next junction. Road 27 is split there so only
+  // that stretch is concrete; the game keeps the road's full width for driving and draws only `concrete` meters each
+  // side of the line as concrete
+  {
+    const r = M.roads[27], at = (x, y) => r.p.findIndex(q => q[0] === x && q[1] === y), a = at(-40.9, 28.5), b = at(34, 69.7);
+    M.roads[27] = { k: r.k, p: r.p.slice(0, a + 1) };
+    M.roads.push({ k: r.k, p: r.p.slice(a, b + 1), concrete: 1.5 }, { k: r.k, p: r.p.slice(b) });
+  }
   // the footpath from the field's corner across the paddy to the road (2 m wide each side of the line)
   M.roads.push({ k: "track", p: [[108, 1], [120, 11], [134, 20.8], [142.6, 28.6]] });
   // paddy around the school, north of it and east of the field; the games draw them and keep trees off them
