@@ -574,6 +574,11 @@ const dukan = buildings.filter(b => b !== office).reduce((m, b) => { const d = p
 // the cream house with the tin roof behind Mamur Dukan's compound wall
 const mamuAt = (a, o) => { const [x, y] = MAMU_AT(a, o); return buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b; };
 const mamuHouse = mamuAt(7.5, 10.8), mamuBack = mamuAt(-2.1, 17.5); // and the low grey-tin house seen over the gate
+// Kotalpur Central Jame Mosque in Maijpara, after the photo: the cream prayer hall and the rusty tin shed beside it are both in
+// the map; a red brick wall closes the yard, with the tiled gate on the lane to the north
+const nearB = (x, y) => buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b;
+const mosque = nearB(259.6, 122.2), mosqueShed = nearB(275.9, 130.1);
+const MOSQUE_YARD = [[249.5, 104], [257.9, 104.6], [261.3, 104.85], [271, 105.5], [281, 114], [283.5, 135], [249.5, 135]]; // the gate is the 2nd edge
 const officeU = (() => { const dx = office.cx - door.x, dy = office.cy - door.y, L = Math.hypot(dx, dy) || 1; return { x: dx / L, y: dy / L }; })();
 const officeV = { x: -officeU.y, y: officeU.x };
 const DROP_R = 18;
@@ -636,6 +641,7 @@ const trees = [];
     if (Math.hypot(x - door.x, y - door.y) < 26) continue;
     trees.push({ x, y, r: 2 + R() * 2.8, dark: R() < .45 });
   }
+  for (let i = trees.length; i--;) if (pip(trees[i].x, trees[i].y, MOSQUE_YARD)) trees.splice(i, 1); // keep the mosque yard clear
 }
 
 /* ================= 2.5D: heights, wall colours and lit faces ================= */
@@ -667,7 +673,7 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
       if (R() < .4) b.cloth = [ctr(.6, 1), ctr(.6, 3), R() * 6];
       if (R() < .3) b.dish = ctr(.55, b.p.length - 1);
     }
-    const wall = hexRgb(b === office ? "#86d6bf" : b === dukan ? "#ece8de" : b === palace ? "#efe3b0" : b === brick ? "#b8603f" : b === mamu ? "#d9d2c2" : b === mamuHouse ? (R(), "#efe3b8") : WALLS[(R() * WALLS.length) | 0]);
+    const wall = hexRgb(b === office ? "#86d6bf" : b === dukan ? "#ece8de" : b === palace ? "#efe3b0" : b === brick ? "#b8603f" : b === mamu ? "#d9d2c2" : b === mamuHouse ? (R(), "#efe3b8") : b === mosque ? (R(), "#f1e6c6") : b === mosqueShed ? (R(), "#9a6446") : WALLS[(R() * WALLS.length) | 0]);
     b.edges = b.p.map((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dy = n[1] - q[1], L = Math.hypot(dx, dy) || 1;
       const nx = dy / L * b.sgn, ny = -dx / L * b.sgn;          // outward normal
@@ -718,6 +724,13 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     mamu.gate = [MAMU_AT(-1.55, 5.2), MAMU_AT(1.75, 5.2)];
     if (mamuBack) { mamuBack.h = 3.0; mamuBack.floors = 1; mamuBack.tin = true; mamuBack.roof = "#a8adb0"; mamuBack.tank = mamuBack.stair = mamuBack.cloth = mamuBack.dish = null; }
     if (mamuHouse) { mamuHouse.h = 3.4; mamuHouse.floors = 1; mamuHouse.tin = true; mamuHouse.roof = "#9a6a50"; mamuHouse.tank = mamuHouse.stair = mamuHouse.cloth = mamuHouse.dish = null; }
+  }
+  { // the mosque: one tall storey with a flat roof, the tin shed low and windowless
+    const m = mosque; m.h = 4.6; m.floors = 1; m.tin = false; m.roof = "#d3cbb8"; m.tank = m.stair = m.cloth = m.dish = null; m.ips = true;
+    m.front = m.edges.reduce((a, e, i) => -e.ny > a.d ? { i, d: -e.ny } : a, { i: 0, d: -2 }).i; // the side facing the gate
+    m.yard = MOSQUE_YARD.map((q, i) => [q, MOSQUE_YARD[(i + 1) % MOSQUE_YARD.length]]).filter((_, i) => i !== 1);
+    m.gate = [MOSQUE_YARD[1], MOSQUE_YARD[2]]; m.speaker = [264, 106.6];
+    const s = mosqueShed; if (s) { s.h = 3.0; s.floors = 1; s.tin = true; s.roof = "#9c5a3c"; s.tank = s.stair = s.cloth = s.dish = null; s.ips = false; for (const e of s.edges) e.win = 0; }
   }
   if (dukan) { // one long storey under grey tin, open to the road
     dukan.h = 3.2; dukan.floors = 1; dukan.tin = true; dukan.roof = "#9aa3a8"; dukan.tank = dukan.stair = dukan.cloth = dukan.dish = null; dukan.ips = true;
@@ -1007,7 +1020,7 @@ let confetti = [], puffs = [], skids = [], talk = null;
 
 // neighbourhoods, each named after its mosque's pin (meters from the map pin, y points south)
 const PLACES = [
-  { n: "মাইজপাড়া", x: 258, y: 110, r: 150, mosque: "কেন্দ্রীয় জামে মসজিদ" },   // 24.835614, 91.955255
+  { n: "মাইজপাড়া", x: 258, y: 110, r: 150, mosque: "কেন্দ্রীয় জামে মসজিদ", real: true },   // 24.835614, 91.955255; real: the mosque is modelled
   { n: "পশ্চিমপাড়া", x: -354, y: 15, r: 160, mosque: "পশ্চিমপাড়া জামে মসজিদ" }, // 24.836464, 91.949192
 ];
 const RIDE_LINES = [
@@ -1731,6 +1744,52 @@ function drawCity(t) {
     ctx.fillStyle = "#5d8f2e"; ctx.strokeStyle = C.ink; ctx.lineWidth = .06;   // green coconuts
     for (const [u, o] of [[.82, .45], [.9, .6], [.76, .65], [.88, .35]]) { const [x, y] = at(u, o, .15); ctx.beginPath(); ctx.arc(x, y, .18, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
   }
+  // the mosque gate, after the photo: green-tiled pillars, a blue-and-white tiled arch over the steel gate, a green dome on top,
+  // and the loudspeakers on their pole beside it
+  function mosqueGate(m) {
+    const [g0, g1] = m.gate, dx = g1[0] - g0[0], dy = g1[1] - g0[1], L = Math.hypot(dx, dy), ex = dx / L, ey = dy / L, nx = ey, ny = -ex;
+    const P = (u, o) => [g0[0] + ex * u + nx * o, g0[1] + ey * u + ny * o];        // u metres along the gate, o toward the lane
+    const sq = (u0, u1, o0, o1) => [P(u0, o0), P(u1, o0), P(u1, o1), P(u0, o1)];
+    const { at, wall } = faceOf({ a: g0, b: g1, nx, ny });
+    wall(0, 1, 0, 2.3, "#a9b1b6", .1);                                          // steel gate leaves
+    ctx.strokeStyle = "#6f777c"; ctx.lineWidth = .09; ctx.beginPath();
+    for (let u = .07; u < .97; u += .075) { const [x0, y0] = at(u, 0, .15), [x1, y1] = at(u, 0, 2.2); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); }
+    ctx.stroke(); wall(.49, .51, 0, 2.3, "#6f777c");
+    wall(0, 1, 2.3, 3.9, "#2f6fc4", .1);                                          // the tiled arch
+    ctx.fillStyle = "#f4f1ea"; ctx.beginPath();                                   // white tiles in a lattice
+    for (let r = 0; r < 4; r++) for (let k = 0; k < 8; k++) { if ((r + k) % 2) continue; const u = .02 + k * .12, h = 2.38 + r * .38, q = [at(u, 0, h), at(u + .07, 0, h), at(u + .07, 0, h + .2), at(u, 0, h + .2)]; q.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); }
+    ctx.fill();
+    ctx.fillStyle = "#a9b1b6"; ctx.strokeStyle = C.ink; ctx.lineWidth = .08; ctx.beginPath(); // the pointed arch over the opening
+    [at(.1, 0, 2.3), at(.1, 0, 2.75), at(.5, 0, 3.55), at(.9, 0, 2.75), at(.9, 0, 2.3)].forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .18;
+    prism(sq(-.1, L + .1, -.3, .3), 3.9, 4.25, "#f4f1ea", "#2f6fc4");            // the arch's top, tiled blue and white
+    { const lid = (u0, u1, o0, o1) => [P(u0, o0), P(u1, o0), P(u1, o1), P(u0, o1)].map(([x, y]) => lift(x, y, 4.25));
+      ctx.fillStyle = "#f4f1ea"; ctx.beginPath();
+      for (let k = 0; k < 7; k++) { const u = k * (L / 7); if (k % 2) continue; lid(u, u + L / 7, -.3, .3).forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); }
+      ctx.fill(); }
+    for (const u0 of [-.85, L]) {                                                 // green-tiled pillars with little domes
+      prism(sq(u0, u0 + .85, -.45, .45), 0, 4.5, "#2f9a6a", "#4cb184");
+      const [px, py] = P(u0 + .425, 0), c0 = lift(px, py, 4.75), r = .42 * (1 + kOf(4.75));
+      ctx.fillStyle = "#3aa874"; ctx.beginPath(); ctx.arc(c0[0], c0[1], r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      const t0 = lift(px, py, 5.2); ctx.fillStyle = "#e0b83a"; ctx.beginPath(); ctx.arc(t0[0], t0[1], .12, 0, Math.PI * 2); ctx.fill();
+    }
+    const [cx0, cy0] = P(L / 2, 0);                                                // the green dome on a short drum
+    prism(sq(L / 2 - .65, L / 2 + .65, -.3, .3), 4.25, 4.6, "#2f6fc4", "#2f6fc4");
+    const dc = lift(cx0, cy0, 5.3), dr = .85 * (1 + kOf(5.3));
+    ctx.fillStyle = "#2e9560"; ctx.beginPath(); ctx.arc(dc[0], dc[1], dr, 0, Math.PI * 2); ctx.fill(); ctx.lineWidth = .2; ctx.stroke();
+    ctx.fillStyle = "#56be86"; ctx.beginPath(); ctx.arc(dc[0] - SUN.x * dr * .3, dc[1] - SUN.y * dr * .3, dr * .55, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,230,.45)"; ctx.beginPath(); ctx.arc(dc[0] - SUN.x * dr * .45, dc[1] - SUN.y * dr * .45, dr * .2, 0, Math.PI * 2); ctx.fill();
+    const f0 = lift(cx0, cy0, 6.1), f1 = lift(cx0, cy0, 6.9);                     // brass finial
+    ctx.strokeStyle = "#c9a227"; ctx.lineWidth = .14; ctx.beginPath(); ctx.moveTo(f0[0], f0[1]); ctx.lineTo(f1[0], f1[1]); ctx.stroke();
+    ctx.fillStyle = "#e0b83a"; ctx.beginPath(); ctx.arc(f1[0], f1[1], .2, 0, Math.PI * 2); ctx.fill();
+    const [sx0, sy0] = m.speaker, s0 = lift(sx0, sy0, 0), s1 = lift(sx0, sy0, 6.8);  // the loudspeaker pole
+    ctx.strokeStyle = "#5d6267"; ctx.lineWidth = .16; ctx.beginPath(); ctx.moveTo(s0[0], s0[1]); ctx.lineTo(s1[0], s1[1]); ctx.stroke();
+    for (const [ox, oy] of [[-.45, -.2], [.45, -.2], [0, .35]]) {
+      const h0 = lift(sx0 + ox * .3, sy0 + oy * .3, 6.5), h1 = lift(sx0 + ox, sy0 + oy, 6.3);
+      ctx.strokeStyle = "#c9ccce"; ctx.lineWidth = .32; ctx.beginPath(); ctx.moveTo(h0[0], h0[1]); ctx.lineTo(h1[0], h1[1]); ctx.stroke();
+      ctx.fillStyle = "#4a4f54"; ctx.beginPath(); ctx.arc(h1[0], h1[1], .17, 0, Math.PI * 2); ctx.fill();
+    }
+  }
   function officeFront(b, facing) {
     const { at, quad, wall } = faceOf(b.edges[b.front]);
     quad(-.03, 1.03, 0, .9, .25, .25, "#b9b4a6", .15);                     // concrete plinth
@@ -1784,6 +1843,20 @@ function drawCity(t) {
     quad(0, cw, 0, 1); quad(1 - cw, 1, 0, 1); if (!front) quad(.5 - cw / 2, .5 + cw / 2, 0, 1);
     quad(0, 1, .47, .51); quad(0, 1, .965, 1);
     ctx.fill(); ctx.stroke();
+  }
+  function mosqueFace(b, e, i, ta, tb) { // cream wall, green pointed-arch windows, the green door toward the gate, brown parapet band
+    const P2 = (u, v) => { const bx = e.a[0] + (e.b[0] - e.a[0]) * u, by = e.a[1] + (e.b[1] - e.a[1]) * u, tx = ta[0] + (tb[0] - ta[0]) * u, ty = ta[1] + (tb[1] - ta[1]) * u; return [bx + (tx - bx) * v, by + (ty - by) * v]; };
+    const arch = (u0, u1, v0, v1) => { [P2(u0, v0), P2(u1, v0), P2(u1, v1), P2((u0 + u1) / 2, v1 + .13), P2(u0, v1)].forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); };
+    const n = Math.max(1, Math.floor(e.len / 2.6)), front = i === b.front;
+    ctx.beginPath();
+    for (let k = 0; k < n; k++) { const u0 = (k + .28) / n, u1 = (k + .72) / n; if (front && u1 > .4 && u0 < .6) continue; arch(u0, u1, .2, .6); }
+    ctx.fillStyle = "#f4f1ea"; ctx.fill();                                     // white frames, then the green glass inside
+    ctx.beginPath();
+    for (let k = 0; k < n; k++) { const w = .44 / n, u0 = (k + .28) / n + w * .12, u1 = (k + .72) / n - w * .12; if (front && (k + .72) / n > .4 && (k + .28) / n < .6) continue; arch(u0, u1, .23, .58); }
+    ctx.fillStyle = "#2f8a4f"; ctx.fill();
+    if (front) { ctx.beginPath(); arch(.43, .57, 0, .58); ctx.fillStyle = "#1f6b3f"; ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .1; ctx.stroke(); }
+    ctx.beginPath(); [P2(0, .8), P2(1, .8), P2(1, 1), P2(0, 1)].forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+    ctx.fillStyle = "#7a4a30"; ctx.fill(); ctx.strokeStyle = "rgba(29,26,23,.5)"; ctx.lineWidth = .1; ctx.stroke();
   }
   function roofBits(b, t) {
     if (b.tin) { // corrugated sheets with a ridge down the middle
@@ -1848,6 +1921,16 @@ function drawCity(t) {
       seg([g0, gm], 2.0, "#2f6fd6"); seg([gm, g1], 2.0, "#2a63c4");
     }
   }
+  if (mosque.x1 > cx - hw - 30 && mosque.x0 < cx + hw + 30 && mosque.y1 > cy - hh - 30 && mosque.y0 < cy + hh + 30) { // the mosque's red brick yard wall
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .2;
+    for (const [a, c] of mosque.yard) {
+      const A = lift(a[0], a[1], 1.7), B = lift(c[0], c[1], 1.7);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(B[0], B[1]); ctx.lineTo(A[0], A[1]); ctx.closePath(); ctx.fillStyle = "#b5553a"; ctx.fill(); ctx.stroke();
+      ctx.save(); ctx.strokeStyle = "rgba(70,30,20,.35)"; ctx.lineWidth = .06; ctx.beginPath();
+      for (let k = 1; k < 6; k++) { const f = k / 6, p0 = lift(a[0], a[1], 1.7 * f), p1 = lift(c[0], c[1], 1.7 * f); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); }
+      ctx.stroke(); ctx.strokeStyle = "#d98a64"; ctx.lineWidth = .4; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); ctx.restore();
+    }
+  }
   // buildings, far ones first so the nearer ones overlap them
   vb.sort((a, b) => Math.hypot(b.cx - cx, b.cy - cy) - Math.hypot(a.cx - cx, a.cy - cy));
   ctx.lineJoin = "round";
@@ -1855,6 +1938,8 @@ function drawCity(t) {
     const top = b.p.map(([x, y]) => lift(x, y, b.h));
     const frontSeen = b === office && (() => { const e = b.edges[b.front], mx = (e.a[0] + e.b[0]) / 2, my = (e.a[1] + e.b[1]) / 2; return e.nx * (cx - mx) + e.ny * (cy - my) > 0; })();
     if (b === office && !frontSeen) officeFront(b, false); // balcony behind the building: draw it first
+    const gateNear = b === mosque && cy < (b.gate[0][1] + b.gate[1][1]) / 2;   // drone on the lane side: the gate is in front
+    if (b === mosque && !gateNear) mosqueGate(b);
     if (b === brick) { // bricks and sand waiting by the road
       ctx.strokeStyle = C.ink; ctx.lineWidth = .12; prism(b.heap, 0, .55, "#b8603f", "#c96f4b");
       const [sx0, sy0] = b.sand, tp = lift(sx0, sy0, .6);
@@ -1869,6 +1954,12 @@ function drawCity(t) {
       ctx.moveTo(e.a[0], e.a[1]); ctx.lineTo(e.b[0], e.b[1]); ctx.lineTo(tb[0], tb[1]); ctx.lineTo(ta[0], ta[1]); ctx.closePath();
       ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .35; ctx.stroke();
       if (b === brick) { brickFace(b, e, i, ta, tb); return; }
+      if (b === mosque) { mosqueFace(b, e, i, ta, tb); return; }
+      if (b === mosqueShed) { // corrugated tin walls
+        ctx.save(); ctx.strokeStyle = "rgba(60,30,18,.35)"; ctx.lineWidth = .08; ctx.beginPath();
+        for (let u = .03; u < 1; u += .4 / e.len) { const x0 = e.a[0] + (e.b[0] - e.a[0]) * u, y0 = e.a[1] + (e.b[1] - e.a[1]) * u, x1 = ta[0] + (tb[0] - ta[0]) * u, y1 = ta[1] + (tb[1] - ta[1]) * u; ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); }
+        ctx.stroke(); ctx.restore(); return;
+      }
       if (!e.win || (b === office && i === b.front)) return;
       // windows: one row per storey
       const P2 = (u, v) => { const bx = e.a[0] + (e.b[0] - e.a[0]) * u, by = e.a[1] + (e.b[1] - e.a[1]) * u, tx = ta[0] + (tb[0] - ta[0]) * u, ty = ta[1] + (tb[1] - ta[1]) * u; return [bx + (tx - bx) * v, by + (ty - by) * v]; };
@@ -1891,8 +1982,14 @@ function drawCity(t) {
     ctx.beginPath(); ctx.moveTo(top[0][0], top[0][1]); for (const q of top) ctx.lineTo(q[0], q[1]); ctx.closePath();
     ctx.fillStyle = b.roof; ctx.fill();
     ctx.strokeStyle = C.ink; ctx.lineWidth = .45; ctx.stroke();
-    if (b !== brick) { ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = .9; ctx.stroke(); ctx.restore(); }
+    if (b === mosque) { // weathered slab inside the brown parapet
+      ctx.save(); ctx.clip(); const R = rng32(91); ctx.fillStyle = "rgba(90,80,60,.07)";
+      for (let k = 0; k < 14; k++) { const [x, y] = lift(b.cx + (R() - .5) * 10, b.cy + (R() - .5) * 17, b.h); ctx.beginPath(); ctx.arc(x, y, .4 + R() * .9, 0, Math.PI * 2); ctx.fill(); }
+      ctx.beginPath(); top.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+      ctx.strokeStyle = "#7a4a30"; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore(); ctx.strokeStyle = C.ink; ctx.lineWidth = .45; ctx.stroke();
+    } else if (b !== brick) { ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = .9; ctx.stroke(); ctx.restore(); }
     roofBits(b, t);
+    if (gateNear) mosqueGate(b);
     if (b === mamuHouse) { // the black water tank on its stand by the west end, like the 3D house
       const e = b.edges.reduce((m, e2) => e2.nx < m.nx ? e2 : m, b.edges[0]), x = (e.a[0] + e.b[0]) / 2 + e.nx * 1.0, y = (e.a[1] + e.b[1]) / 2 + e.ny * 1.0;
       prism([[x - .6, y - .6], [x + .6, y - .6], [x + .6, y + .6], [x - .6, y + .6]], 0, 2.6, "#cfc6ae", "#bdb49c");
@@ -2214,6 +2311,7 @@ function drawActors(t) {
     ctx.save(); ctx.globalAlpha = .28; ctx.font = `${Math.round(clamp(cam.z * 14, 34, 64))}px Galada, ${FONT}`;
     ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = C.ink;
     ctx.fillText(pl.n, x, y - 70); ctx.restore();
+    if (pl.real) { label(`🕌 ${pl.mosque}`, sx(mosque.cx), sy(mosque.cy), "#dff3e4", C.ink, 10); continue; } // the building itself is drawn
     ctx.font = `${Math.round(R * 1.6)}px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("🕌", x, y);
     label(pl.mosque, x, y + R + 6, "#dff3e4", C.ink, 10);

@@ -423,7 +423,7 @@ const CHANTS = ["আমার ভাই তোমার ভাই, এমরা�
 const SAM_LINES = ["সাবধানে চালাও বাবা!", "আস্তে, আস্তে! রাস্তা কারো বাপের না।", "এলাকার উন্নয়ন চলছে, সাইড দাও।", "সালাম দিয়া যাও, পংকি!"];
 const POSTER_SRC = ["../sim/poster.jpg", "../sim/poster2.jpg"];
 const PLACES = [
-  { n: "মাইজপাড়া", x: 258, y: 110, r: 150, mosque: "কেন্দ্রীয় জামে মসজিদ" },
+  { n: "মাইজপাড়া", x: 258, y: 110, r: 150, mosque: "কেন্দ্রীয় জামে মসজিদ", real: true }, // real: the mosque is modelled
   { n: "পশ্চিমপাড়া", x: -354, y: 15, r: 160, mosque: "পশ্চিমপাড়া জামে মসজিদ" },
 ];
 const GAME_LEN = 210; // real seconds = 35 game minutes (4:25 → 5:00), same as the 2D game
@@ -539,6 +539,11 @@ const dukan = buildings.filter(b => b !== office).reduce((m, b) => { const d = p
 // the cream house with the tin roof behind Mamur Dukan's compound wall
 const mamuAt = (a, o) => { const [x, y] = MAMU_AT(a, o); return buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b; };
 const mamuHouse = mamuAt(7.5, 10.8), mamuBack = mamuAt(-2.1, 17.5); // and the low grey-tin house seen over the gate
+// Kotalpur Central Jame Mosque in Maijpara, after the photo: the cream prayer hall and the rusty tin shed beside it are both in
+// the map; a red brick wall closes the yard, with the tiled gate on the lane to the north
+const nearB = (x, y) => buildings.reduce((m, b) => { const d = pip(x, y, b.p) ? -1 : Math.hypot(b.cx - x, b.cy - y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b;
+const mosque = nearB(259.6, 122.2), mosqueShed = nearB(275.9, 130.1);
+const MOSQUE_YARD = [[249.5, 104], [257.9, 104.6], [261.3, 104.85], [271, 105.5], [281, 114], [283.5, 135], [249.5, 135]]; // the gate is the 2nd edge
 // a building's frame: u points from its road into it, v along the road; w and d are its size along v and u
 function frameOf(b) {
   const nr = nearestRoad(b.cx, b.cy), L = Math.hypot(b.cx - nr.x, b.cy - nr.y) || 1, u = { x: (b.cx - nr.x) / L, y: (b.cy - nr.y) / L }, v = { x: -u.y, y: u.x };
@@ -589,6 +594,7 @@ const trees = [];
     if (roadGap(x, y) < 3 || blocked(x, y, 2.5) || Math.hypot(x - door.x, y - door.y) < 26) continue;
     trees.push({ x, y, r: 2 + R() * 2.8, dark: R() < .45, palm: R() < .12 });
   }
+  for (let i = trees.length; i--;) if (pip(trees[i].x, trees[i].y, MOSQUE_YARD)) trees.splice(i, 1); // keep the mosque yard clear
 }
 function roadsidePoint(sg, f, gap) {
   const x = sg.ax + (sg.bx - sg.ax) * f, y = sg.ay + (sg.by - sg.ay) * f, L = Math.hypot(sg.bx - sg.ax, sg.by - sg.ay) || 1;
@@ -847,7 +853,7 @@ const tanks = [], stairs = [];
     b.ips = R() < .3;
     const wall = rgb(b === office ? "#f5c518" : WALLS[(R() * WALLS.length) | 0]);
     const tin = b !== office && b.h < 4 && R() < .7;
-    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack) continue; // these have their own models below
+    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack || b === mosque || b === mosqueShed) continue; // these have their own models below
     let cum = 0;
     b.p.forEach((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dz = n[1] - q[1], L = Math.hypot(dx, dz); if (L < .01) return;
@@ -1290,8 +1296,101 @@ if (mamuHouse) {
   box(1.2, 2.6, 1.2, W / 2 + .55, 1.3, -.4, lam({ color: "#cfc6ae" }));                     // the brick stand it sits on
 }
 
-// mosques: a small white prayer hall, green dome and a minaret at each neighbourhood
+// Kotalpur Central Jame Mosque, after the photo: a cream hall with green pointed-arch windows under a brown parapet, the
+// rusty tin shed, the red brick yard wall and on the lane the gate: green-tiled pillars, a blue-and-white tiled arch over a
+// steel gate, a green dome on top, and the loudspeakers on their pole
+{
+  const arch = (c, x0, x1, yb, ys, yt) => { c.beginPath(); c.moveTo(x0, yb); c.lineTo(x0, ys); c.quadraticCurveTo(x0, (ys + yt) / 2, (x0 + x1) / 2, yt); c.quadraticCurveTo(x1, (ys + yt) / 2, x1, ys); c.lineTo(x1, yb); c.closePath(); };
+  const winM = lam({ transparent: true, alphaTest: .5, map: canvasTex(64, 128, (c) => {
+    c.fillStyle = "#f4f1ea"; arch(c, 3, 61, 126, 46, 3); c.fill(); c.fillStyle = "#2f8a4f"; arch(c, 11, 53, 118, 50, 15); c.fill();
+    c.strokeStyle = "#f4f1ea"; c.lineWidth = 3; c.beginPath(); c.moveTo(32, 16); c.lineTo(32, 118); c.moveTo(11, 78); c.lineTo(53, 78); c.stroke();
+  }) });
+  const doorM = lam({ transparent: true, alphaTest: .5, map: canvasTex(96, 160, (c) => {
+    c.fillStyle = "#f4f1ea"; arch(c, 2, 94, 160, 58, 2); c.fill(); c.fillStyle = "#1f6b3f"; arch(c, 10, 86, 160, 62, 14); c.fill();
+    c.strokeStyle = "#124a2a"; c.lineWidth = 3; c.beginPath(); c.moveTo(48, 22); c.lineTo(48, 160); c.stroke(); for (const y of [78, 118]) { c.strokeRect(17, y, 24, 30); c.strokeRect(55, y, 24, 30); }
+  }) });
+  const polyFrame = b => { // a rectangle's own frame: w along its first edge, d along the second, +z toward the first edge (the lane)
+    const [a, c, d] = b.p, w = Math.hypot(c[0] - a[0], c[1] - a[1]), dd = Math.hypot(d[0] - c[0], d[1] - c[1]);
+    return { x: b.p.reduce((t, q) => t + q[0], 0) / 4, y: b.p.reduce((t, q) => t + q[1], 0) / 4, w, d: dd, u: { x: (d[0] - c[0]) / dd, y: (d[1] - c[1]) / dd } };
+  };
+  { // the prayer hall
+    const f = polyFrame(mosque), { box, plane } = landmark(f), W = f.w, D = f.d, hw = W / 2, F = D / 2, H = 4.3;
+    mosque.h = H + .7;
+    const cream = lam({ color: "#f1e6c6" }), brown = lam({ color: "#7a4a30" });
+    box(W + .5, .35, D + .5, 0, .175, 0, lam({ color: "#c9c2b2" }));                      // plinth
+    box(W, H, D, 0, H / 2, 0, cream);
+    box(W + .06, .45, D + .06, 0, H - .26, 0, brown);                                      // brown band under the roof
+    for (const z of [-F, F]) box(W + .2, .7, .22, 0, H + .35, z, brown);                    // and the parapet around it
+    for (const x of [-hw, hw]) box(.22, .7, D, x, H + .35, 0, brown);
+    const face = (n, len, at) => { for (let k = 0; k < n; k++) at(-len / 2 + (k + .5) * len / n); };
+    face(4, W, x => { if (Math.abs(x) > 1.2) plane(1.05, 2.1, winM, x, 2.15, F + .02); }); // the lane side: the door in the middle
+    plane(1.7, 2.85, doorM, 0, 1.78, F + .02);
+    face(3, W, x => plane(1.05, 2.1, winM, x, 2.15, -F - .02, Math.PI));
+    const n = Math.max(2, Math.floor(D / 2.8));
+    for (const s of [-1, 1]) face(n, D, z => plane(1.05, 2.1, winM, s * (hw + .02), 2.15, z, s * Math.PI / 2));
+  }
+  if (mosqueShed) { // the rusty tin shed
+    const f = polyFrame(mosqueShed), { box, slope } = landmark(f), W = f.w, D = f.d;
+    mosqueShed.h = 3.1;
+    const wallT = sheetTex([140, 92, 66], true, 73); wallT.wrapS = wallT.wrapT = THREE.RepeatWrapping; wallT.repeat.set(W / 3, 1);
+    box(W, 2.6, D, 0, 1.3, 0, lam({ map: wallT }));
+    const t = slope(W + .5, -D / 2 - .35, 3.05, D / 2 + .35, 2.6, lam({ map: sheetTex([150, 104, 80], true, 71) })); t.material.map.wrapS = t.material.map.wrapT = THREE.RepeatWrapping;
+  }
+  const yard = new THREE.Group(); scene.add(yard);
+  const yBox = (w, hh, d, x, y, z, ry, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), mat); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; yard.add(m); return m; };
+  const coping = lam({ color: "#d98a64" });
+  MOSQUE_YARD.forEach((a, i) => { // the red brick wall, all round but the gate
+    if (i === 1) return;
+    const c = MOSQUE_YARD[(i + 1) % MOSQUE_YARD.length], len = Math.hypot(c[0] - a[0], c[1] - a[1]), ry = -Math.atan2(c[1] - a[1], c[0] - a[0]);
+    const t = canvasTex(128, 64, (g2) => {
+      g2.fillStyle = "#c9b8a2"; g2.fillRect(0, 0, 128, 64); const R = rng32(80 + i);
+      for (let r = 0; r < 8; r++) for (let k = -1; k < 9; k++) { const v = .85 + R() * .3; g2.fillStyle = `rgb(${[178, 84, 58].map(q => Math.round(q * v)).join(",")})`; g2.fillRect(k * 16 + (r % 2) * 8 + 1, r * 8 + 1, 14, 6); }
+    }, true);
+    t.repeat.set(len / 2.2, 1.7 / 1.1);
+    yBox(len, 1.7, .25, (a[0] + c[0]) / 2, .85, (a[1] + c[1]) / 2, ry, lam({ map: t }));
+    yBox(len + .1, .1, .36, (a[0] + c[0]) / 2, 1.75, (a[1] + c[1]) / 2, ry, coping);
+  });
+  { // the gate
+    const [g0, g1] = [MOSQUE_YARD[1], MOSQUE_YARD[2]], dx = g1[0] - g0[0], dy = g1[1] - g0[1], L = Math.hypot(dx, dy), ex = dx / L, ey = dy / L;
+    const { g, box, plane } = landmark({ x: (g0[0] + g1[0]) / 2, y: (g0[1] + g1[1]) / 2, u: { x: -ey, y: ex } }), hl = L / 2;
+    const tileT = canvasTex(128, 160, (c) => { // blue and white tiles, with the pointed arch cut out of them
+      c.fillStyle = "#2f6fc4"; c.fillRect(0, 0, 128, 160);
+      for (let r = 0; r < 20; r++) for (let k = 0; k < 16; k++) { if ((r + k) % 2) continue; c.fillStyle = "#f4f1ea"; c.fillRect(k * 8 + 1, r * 8 + 1, 6, 6); }
+      c.strokeStyle = "#f4f1ea"; c.lineWidth = 5; arch(c, 12, 116, 162, 70, 26); c.stroke();
+      c.globalCompositeOperation = "destination-out"; arch(c, 14, 114, 162, 72, 30); c.fill();
+    });
+    plane(L, 4.2, lam({ map: tileT, transparent: true, alphaTest: .5, side: THREE.DoubleSide }), 0, 2.1, 0);
+    const steelT = canvasTex(128, 96, (c) => { c.strokeStyle = "#9aa3a8"; c.lineWidth = 4; c.strokeRect(2, 2, 60, 92); c.strokeRect(66, 2, 60, 92); for (let x = 10; x < 128; x += 9) { c.beginPath(); c.moveTo(x, 4); c.lineTo(x, 92); c.stroke(); } c.beginPath(); c.moveTo(0, 48); c.lineTo(128, 48); c.stroke(); });
+    plane(L - .1, 2.3, lam({ map: steelT, transparent: true, alphaTest: .4, side: THREE.DoubleSide }), 0, 1.15, -.05);
+    const pillarT = canvasTex(64, 256, (c) => { // green tiles with a white minaret drawn on them
+      c.fillStyle = "#2f9a6a"; c.fillRect(0, 0, 64, 256); c.strokeStyle = "rgba(255,255,255,.35)"; c.lineWidth = 1;
+      for (let y = 0; y < 256; y += 12) { c.beginPath(); c.moveTo(0, y); c.lineTo(64, y); c.stroke(); } for (let x = 0; x < 64; x += 12) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, 256); c.stroke(); }
+      c.fillStyle = "#f4f1ea"; c.fillRect(26, 70, 12, 120); c.fillRect(22, 110, 20, 5); c.fillRect(22, 150, 20, 5); c.beginPath(); c.moveTo(24, 70); c.lineTo(32, 50); c.lineTo(40, 70); c.closePath(); c.fill(); c.fillRect(31, 40, 2, 10);
+    });
+    const pillarM = lam({ map: pillarT }), green = lam({ color: "#2e9560" }), gold = lam({ color: "#d9b23a", emissive: "#3a2a00" });
+    for (const s of [-1, 1]) {
+      box(.85, 4.5, .9, s * (hl + .42), 2.25, 0, pillarM);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(.42, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), green); cap.position.set(s * (hl + .42), 4.5, 0); cap.castShadow = true; g.add(cap);
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(.09, 8, 6), gold); ball.position.set(s * (hl + .42), 5.0, 0); g.add(ball);
+    }
+    box(L + .2, .3, .7, 0, 4.35, 0, lam({ color: "#f4f1ea" }));                          // white band over the arch
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(.72, .72, .4, 18), lam({ color: "#2f6fc4" })); drum.position.y = 4.7; drum.castShadow = true; g.add(drum);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(.85, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), green); dome.position.y = 4.9; dome.scale.y = 1.15; dome.castShadow = true; g.add(dome);
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, .7, 6), gold); rod.position.y = 6.15; g.add(rod);
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(.1, 8, 6), gold); knob.position.y = 6.5; g.add(knob);
+  }
+  { // the loudspeakers on their pole beside the gate
+    const [sx, sy] = [264, 106.6], pole = new THREE.Mesh(new THREE.CylinderGeometry(.06, .08, 6.8, 6), lam({ color: "#5d6267" }));
+    pole.position.set(sx, 3.4, sy); pole.castShadow = true; yard.add(pole);
+    for (const a of [0, 2.1, 4.2]) {
+      const horn = new THREE.Mesh(new THREE.CylinderGeometry(.24, .06, .55, 10, 1, true), lam({ color: "#c9ccce", side: THREE.DoubleSide }));
+      horn.rotation.z = Math.PI / 2; const hg = new THREE.Group(); hg.add(horn); horn.position.x = .3; hg.rotation.set(0, a, -.25); hg.position.set(sx, 6.4, sy); yard.add(hg);
+    }
+  }
+}
+// mosques: a small white prayer hall, green dome and a minaret at each neighbourhood without a model of its own
 for (const pl of PLACES) {
+  if (pl.real) { pl.mx = mosque.cx; pl.my = mosque.cy; continue; }
   const g = new THREE.Group();
   const base = new THREE.Mesh(new THREE.BoxGeometry(7, 4, 7), lam({ color: "#f3f1ea" }));
   base.position.y = 2; const dome = new THREE.Mesh(new THREE.SphereGeometry(2.6, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), lam({ color: "#5fae7a" })); dome.position.y = 4;
