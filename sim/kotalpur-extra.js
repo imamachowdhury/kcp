@@ -27,7 +27,7 @@
     [[82.5, 6.8], [82.5, 11.2], [76, 11.2], [76, 6.8]],         // the small wash block behind the school's south end
     [[177, 34.4], [194.7, 34.4], [194.7, 46], [177, 46]],       // across the road from Sufan Palace: the brown-tin house
     [[158.9, 29.2], [162.4, 29.2], [162.4, 32.8], [158.9, 32.8]],   // and the little green-tin shop on the corner
-    [[53.7, 67.8], [70.3, 70.3], [72.1, 57.9], [55.6, 55.4]],   // flat-roofed house east of Vhaiyar Dukan, set along the road
+    [[63.5, 57.8], [63.5, 63.6], [72.2, 63.6], [72.2, 57.8]],   // the white room with a tank east of Vhaiyar Dukan; the rest of its plot is a walled site
     [[22, 45.5], [32, 45.5], [32, 50.5], [22, 50.5]],           // the white tin-roofed house on the north pond's bank
     [[-20.5, 2.5], [-9.5, 2.5], [-9.5, 16], [-20.5, 16]],       // Ujan Vati Stur, up the lane to the north
     [[24.5, 71], [27, 71], [27, 73.4], [24.5, 73.4]]            // the little tin shed between Sufan Bikash Ghor and the lane
@@ -47,9 +47,6 @@
   // how the houses near the office really look from above (one storey, mostly tin); the games override their random
   // height and roof for the building that contains `at`
   M.looks = [
-    { at: [26.5, 48], h: 3.3, tin: true, roof: "#c4c9cc" },   // the white tin house on the north pond
-    { at: [46.5, 45.4], h: 3.4, tin: true, roof: "#8a3a2c" }, // the long red-tin building behind Vhaiyar Dukan
-    { at: [63, 63], h: 3.4, tin: false, roof: "#d6ccb6" },    // the flat-roofed house east of Vhaiyar Dukan
     { at: [-15, 9], h: 3.3, tin: true, roof: "#7c4b3a" },     // Ujan Vati Stur, rusty tin
     { at: [79.2, 9], h: 2.7, tin: true, roof: "#8e989e" },    // the school's wash block
     // across the road from Sufan Palace, after the street photos: the yellow house (red trim along the roof, red sunshades
@@ -58,13 +55,17 @@
     // stair at a point, shop (open front toward the nearest road)
     { at: [166, 40], h: 3.3, tin: false, roof: "#c9c4b8", wall: "#e6d47a", trim: "#a8432e", tank: [173, 43], stair: [167.5, 42] },
     { at: [186, 40], h: 3.4, tin: true, roof: "#6e4636" },
-    { at: [160.6, 31], h: 2.6, tin: true, roof: "#4f9e86", wall: "#efece0", shop: true },
-    { at: [25.7, 72.2], h: 2.3, tin: true, roof: "#7a5a44", wall: "#b9b2a2" }   // the tin shed by Sufan Bikash Ghor
+    { at: [160.6, 31], h: 2.6, tin: true, roof: "#4f9e86", wall: "#efece0", shop: true }
   ];
+  // round Vhaiyar Dukan, after the Street View panoramas at the junction and east of the shop (Dec 2022); the game
+  // gives each its own model: the plank kiosk against Sufan Bikash Ghor's north wall, the cream house across the
+  // concrete lane with a banner frame on its roof, the long bare-brick shed under rusty tin behind the shop, and the
+  // white room with a water tank at the back of the brick-walled building site east of the shop
+  M.dukanArea = { kiosk: [25.7, 72.2], banner: [27, 48], brickShed: [46.5, 45.4], site: [67.8, 60.7] };
   // small things on the ground the game draws: benches, bamboo fences, a concrete gate frame, a brick ring well, patches
   // of red earth (dirt) and concrete (slab), a brick-lined drain, brick walls, boundary walls (bwall; `jali` is how many
   // meters from the start carry the pierced band, `col` and `base` recolour it), metal gates (gate, and tingate under a
-  // tin roof), barbed wire, a haystack, a drying sheet, a brick-heaped tank lid, electric poles, a tin-sheet fence,
+  // tin roof), barbed wire, a haystack, a drying sheet, a brick-heaped tank lid, electric poles, a signboard, a tin-sheet fence,
   // areca palms, papaya trees, a log pile and bamboo clumps; `open` is
   // ground the game keeps trees off
   M.props = [
@@ -103,6 +104,13 @@
     { k: "tank", p: [[16.8, 180.3], [18.1, 180.3], [18.1, 182.7], [16.8, 182.7]] }, { k: "epole", at: [16.3, 184.1] },
     // where the lane meets the road (street photos at 24.834345, 91.952744): a fence of old tin sheets on wooden legs
     // round a plot of areca palms, a gap for a gate in its lane side, a pole at its south-east corner
+    // round Vhaiyar Dukan: the building site's low bare-brick walls (open on the road side) and its heaps of sand, the
+    // electric poles at the junction, and the school's yellow signboard on the lane past Sufan Bikash Ghor
+    { k: "wall", h: 1.3, p: [[58.5, 68.1], [54.8, 67.6], [54.8, 57.8], [63.5, 57.8]] },
+    { k: "wall", h: 1.3, p: [[64.5, 69], [72.4, 70.2], [72.2, 63.6]] },
+    { k: "hay", at: [60.2, 64.2], col: "#c8b07e", s: .8 }, { k: "hay", at: [57.6, 60.6], col: "#b9a57c", s: .6 },
+    { k: "epole", at: [47.5, 76.8] }, { k: "epole", at: [28, 71.2] },
+    { k: "sign", p: [[18.86, 93.57], [21.14, 94.83]], text: ["প্রভাতী বিদ্যানিকেতন", "ভর্তি চলছে"] },
     { k: "tinfence", p: [[-9, 241.6], [-8, 233], [0.5, 233], [-0.1, 237.2]] },
     { k: "tinfence", p: [[-0.3, 239.4], [-0.6, 243], [-9, 241.6]] },
     { k: "epole", at: [-2.4, 243.9] },
