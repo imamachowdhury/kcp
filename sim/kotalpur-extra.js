@@ -70,7 +70,7 @@
   // of red earth (dirt) and concrete (slab), a brick-lined drain, brick walls, boundary walls (bwall; `jali` is how many
   // meters from the start carry the pierced band, `col` and `base` recolour it), metal gates (gate, tingate under a
   // tin roof, roofgate under a concrete canopy), barbed wire, a haystack, a drying sheet, a brick-heaped tank lid, electric poles, a signboard, a tin-sheet fence,
-  // areca palms, papaya trees, a log pile, bamboo clumps, a creeper over a fence, a gourd trellis (macha), a triangular road sign (rsign) and a bamboo jetty into a pond; `open` is
+  // areca palms, papaya trees, a log pile, bamboo clumps, banana plants, a creeper over a fence, a red-and-white culvert parapet, a gourd trellis (macha), a triangular road sign (rsign), a yellow arrow sign (ysign) and a bamboo jetty into a pond; `open` is
   // ground the game keeps trees off
   M.props = [
     { k: "bench", p: [[154.6, 31.6], [156.4, 33.2]] },
@@ -131,7 +131,7 @@
     { k: "bwall", col: "#ece4c8", p: [[162, 56.9], [144.2, 56.9], [144.2, 59.8]] },
     { k: "roofgate", p: [[144.2, 59.8], [144.2, 62.8]] },
     { k: "bwall", col: "#e9ede6", base: "#2f7a5a", jali: 14, p: [[144.2, 62.8], [144.2, 70.5], [150, 76.5]] },
-    { k: "fence", p: [[133.2, 49], [132.4, 80]] },
+    { k: "fence", p: [[133.2, 49], [132.5, 76.4]] },
     { k: "bamboo", at: [130.5, 58] }, { k: "bamboo", at: [129.5, 64] }, { k: "bamboo", at: [131, 70] }, { k: "bamboo", at: [128.5, 76] },
     // from the bend north-east of the Palace (Street View at 24.836340, 91.954102): bamboo fence posts on the east side of
     // the road going south, a creeper smothering the bamboo fence at the corner, a bamboo clump over a heap of cut logs
@@ -140,6 +140,17 @@
     { k: "creeper", p: [[150, 34.5], [154.8, 33.8]] },
     { k: "bamboo", at: [148, 38.2] }, { k: "logs", p: [[148.2, 40.2], [150.6, 39.4]] },
     { k: "epole", at: [150.3, 12] }, { k: "epole", at: [150.4, -4] },
+    // round Mamur Dukan's junction (Street View at 24.835934, 91.954038 and west along the lane at 24.835952, 91.953793):
+    // the road north crosses the drain on a little culvert with red-and-white parapets, a yellow arrow sign by the east one
+    // and a tall pole; a gourd trellis in the plot on the north-east corner; the drain runs on along the north side of the
+    // lane under thick bamboo to the west, and banana plants stand on the south side west of the grey wall
+    { k: "parapet", p: [[132.2, 77], [132.2, 80.1]] }, { k: "parapet", p: [[142.1, 78.4], [142.1, 81.4]] },
+    { k: "ysign", at: [142.6, 81.5], face: [137, 85.2] }, { k: "epole", at: [142.5, 77.4] },
+    { k: "macha", p: [[143.2, 76.9], [149.6, 77.6], [149.4, 80.2], [143.1, 79.9]] },
+    { k: "drain", p: [[97, 74.4], [131.3, 79.4]] }, { k: "drain", p: [[143.4, 81.1], [150.5, 82.1]] },
+    { k: "bamboo", at: [98, 72.8] }, { k: "bamboo", at: [103, 73.3] }, { k: "bamboo", at: [108, 74.2] },
+    { k: "bamboo", at: [113, 74.8] }, { k: "bamboo", at: [118, 75.6] }, { k: "bamboo", at: [123, 76.3] },
+    { k: "banana", at: [[114, 88.4], [117, 89], [120, 89.6], [115.5, 90.8], [118.8, 91.3]] },
     { k: "tinfence", p: [[-9, 241.6], [-8, 233], [0.5, 233], [-0.1, 237.2]] },
     { k: "tinfence", p: [[-0.3, 239.4], [-0.6, 243], [-9, 241.6]] },
     { k: "epole", at: [-2.4, 243.9] },
