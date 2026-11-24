@@ -3,8 +3,10 @@
 // field, the paddy round it, the yellow house and corner shop across from Sufan Palace, and the concrete lane beside it. Same units as the map: meters from the map pin,
 // y points south. Loaded right after kotalpur-map.js by both games (2D and 3D).
 (function (M) {
-  // the house south of the office, across the lane: OpenStreetMap only has a 4 m box for it
-  M.buildings[235] = [[32.2, 90.7], [43.3, 93.6], [40.3, 105.2], [29.1, 102.3]];
+  // the walled house south of the office, across the lane (street photos at 24.83573, 91.953079): one storey with a
+  // second over its south half, its front (the first edge) facing west onto the lane. OpenStreetMap only has a 4 m box
+  M.buildings[235] = [[33, 90], [33, 103.5], [45.5, 103.5], [45.5, 90]];
+  M.walled = { at: [39.2, 96.7] }; // the game gives it a model of its own
   // Kotalpur Government Primary School, as the satellite shows it: one long storey, the veranda (the first edge) facing
   // east onto the walled playing field. OpenStreetMap has it a little narrower and tilted
   M.buildings[95] = [[85.3, 5.8], [85.5, -18.6], [74.4, -18.8], [74.2, 5.6]];
@@ -37,7 +39,6 @@
     { at: [26.5, 48], h: 3.3, tin: true, roof: "#c4c9cc" },   // the white tin house on the north pond
     { at: [46.5, 45.4], h: 3.4, tin: true, roof: "#8a3a2c" }, // the long red-tin building behind Vhaiyar Dukan
     { at: [63, 63], h: 3.4, tin: false, roof: "#d6ccb6" },    // the flat-roofed house east of Vhaiyar Dukan
-    { at: [36.5, 98], h: 3.4, tin: true, roof: "#a7acae" },   // the grey-tin house across the lane from the office
     { at: [-15, 9], h: 3.3, tin: true, roof: "#7c4b3a" },     // Ujan Vati Stur, rusty tin
     { at: [79.2, 9], h: 2.7, tin: true, roof: "#8e989e" },    // the school's wash block
     // across the road from Sufan Palace, after the street photos: the yellow house (red trim along the roof, red sunshades
@@ -49,9 +50,10 @@
     { at: [160.6, 31], h: 2.6, tin: true, roof: "#4f9e86", wall: "#efece0", shop: true },
     { at: [25.7, 72.2], h: 2.3, tin: true, roof: "#7a5a44", wall: "#b9b2a2" }   // the tin shed by Sufan Bikash Ghor
   ];
-  // small things on the ground the games draw: benches, bamboo fences, a concrete gate frame, a brick ring well, patches
-  // of red earth (dirt) and concrete (slab), a brick-lined drain, a brick wall, a log pile and bamboo clumps; `open` is ground the games keep
-  // trees off
+  // small things on the ground the game draws: benches, bamboo fences, a concrete gate frame, a brick ring well, patches
+  // of red earth (dirt) and concrete (slab), a brick-lined drain, brick walls, boundary walls (bwall; `jali` is how many
+  // meters from the start carry the pierced band), a metal gate, papaya trees, a log pile and bamboo clumps; `open` is
+  // ground the game keeps trees off
   M.props = [
     { k: "bench", p: [[154.6, 31.6], [156.4, 33.2]] },
     { k: "fence", p: [[157.5, 33.4], [150, 34.5], [146.8, 40], [146.5, 52]] },
@@ -69,7 +71,17 @@
     { k: "fence", p: [[127.5, 31.2], [119.5, 31.4]] },
     { k: "bamboo", at: [130.6, 29] }, { k: "bamboo", at: [123.8, 29.2] }, { k: "bamboo", at: [116.6, 29.6] }
   ];
-  M.open = [[[150, 27.5], [195, 27.5], [195, 34.4], [150, 34.4]], [[112.4, 27], [135, 27], [135, 35.2], [112.4, 35.2]]];
+  // the walled house's grounds: its boundary wall (pale blue below, a pierced jali band on top along the front), the
+  // white gate in front of the veranda, the opening in front of the garage, and papaya trees in the yard
+  M.props.push(
+    { k: "bwall", p: [[31.8, 95.6], [31.8, 88], [46.5, 88]], jali: 9 },
+    { k: "bwall", p: [[46.5, 88], [46.5, 106.5], [31.8, 106.5], [31.8, 103.3]] },
+    { k: "bwall", p: [[31.8, 98.4], [31.8, 99.3]], jali: 1 },
+    { k: "gate", p: [[31.8, 95.6], [31.8, 98.4]] },
+    { k: "papaya", at: [32.4, 92.2] }, { k: "papaya", at: [32.5, 94.6] }, { k: "papaya", at: [46, 105.6] }
+  );
+  M.open = [[[150, 27.5], [195, 27.5], [195, 34.4], [150, 34.4]], [[112.4, 27], [135, 27], [135, 35.2], [112.4, 35.2]],
+            [[31.6, 87.8], [46.7, 87.8], [46.7, 106.7], [31.6, 106.7]]];
   // the school's grounds: the white-walled playing field in front (yard; edge `gate` is the open corner where the path
   // leaves), the flag pole, and two haystacks out by the paddy
   M.school = {
@@ -89,10 +101,13 @@
   }
   // the footpath from the field's corner across the paddy to the road (2 m wide each side of the line)
   M.roads.push({ k: "track", p: [[108, 1], [120, 11], [134, 20.8], [142.6, 28.6]] });
-  // paddy around the school, north of it and east of the field; the games draw them and keep trees off them
+  // paddy around the school (north of it and east of the field) and round the walled house; the games draw them and
+  // keep trees off them
   M.fields = [
     [[45, -19.5], [145, -19.5], [145, -60], [45, -60]],
-    [[124, -19], [145, -19], [145, 18], [134, 18], [124, 9]]
+    [[124, -19], [145, -19], [145, 18], [134, 18], [124, 9]],
+    // round the walled house south of the office: north of it up to the road, east of it, and south of it
+    [[36, 77.5], [62, 79.8], [62, 112], [29.5, 112], [29.5, 107.2], [47.2, 107.2], [47.2, 87.4], [34.8, 87.4]]
   ];
   // thick village woods around the office (the satellite is mostly treetops here); the games plant extra trees inside
   // these, skipping roads, houses, ponds and the open ground in front of the office. The paddy fields east of the

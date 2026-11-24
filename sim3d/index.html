@@ -538,6 +538,8 @@ const mosque = nearB(259.6, 122.2), mosqueShed = nearB(275.9, 130.1);
 const MOSQUE_YARD = [[249.5, 104], [257.9, 104.6], [261.3, 104.85], [271, 105.5], [281, 114], [283.5, 135], [249.5, 135]]; // the gate is the 2nd edge
 // Kotalpur Government Primary School and its walled field (MAP.school, from kotalpur-extra.js)
 const SCHOOL = MAP.school, school = SCHOOL ? nearB(SCHOOL.at[0], SCHOOL.at[1]) : null;
+// the walled house south of Sufan Bikash Ghor, across the lane (MAP.walled)
+const walled = MAP.walled ? nearB(MAP.walled.at[0], MAP.walled.at[1]) : null;
 // a building's frame: u points from its road into it, v along the road; w and d are its size along v and u
 function frameOf(b) {
   const nr = nearestRoad(b.cx, b.cy), L = Math.hypot(b.cx - nr.x, b.cy - nr.y) || 1, u = { x: (b.cx - nr.x) / L, y: (b.cy - nr.y) / L }, v = { x: -u.y, y: u.x };
@@ -890,7 +892,7 @@ for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], 
     const wall = rgb(b === office ? "#f5c518" : (w => b.look && b.look.wall || w)(WALLS[(R() * WALLS.length) | 0]));
     let tin = b !== office && b.h < 4 && R() < .7;
     if (b.look) { b.h = b.look.h; tin = b.look.tin; } // as seen on the satellite (MAP.looks)
-    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack || b === mosque || b === mosqueShed || b === school) continue; // these have their own models below
+    if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack || b === mosque || b === mosqueShed || b === school || b === walled) continue; // these have their own models below
     let cum = 0;
     b.p.forEach((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dz = n[1] - q[1], L = Math.hypot(dx, dz); if (L < .01) return;
@@ -1504,6 +1506,55 @@ if (school) {
   const straw = lam({ color: "#c4a352" });
   for (const [x, y] of SCHOOL.hay) { const h = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.5, 12), straw); h.position.set(x, 1.25, y); h.castShadow = h.receiveShadow = true; scene.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .8, 5), lam({ color: "#6b4a2b" })); t.position.set(x, 2.7, y); scene.add(t); }
 }
+// the walled house (MAP.walled), after the street photos: white walls under a deep slab edge with a maroon band, a second
+// storey over the south half with a railing on its roof, pink sunshades with a green lip over the windows, a veranda of
+// pale brick tiles and blue glass, and a dark garage shutter at the south end of the front
+if (walled) {
+  const [a, c, d] = walled.p, W = Math.hypot(c[0] - a[0], c[1] - a[1]), D = Math.hypot(d[0] - c[0], d[1] - c[1]);
+  const f = { x: walled.p.reduce((t, q) => t + q[0], 0) / 4, y: walled.p.reduce((t, q) => t + q[1], 0) / 4, u: { x: (d[0] - c[0]) / D, y: (d[1] - c[1]) / D } };
+  const { g, box } = landmark(f), hw = W / 2, F = D / 2, PL = .3, H1 = 3.1, T1 = PL + H1; // +x runs south, +z faces the lane
+  const white = lam({ color: "#ecebe3" }), edge = lam({ color: "#d3cfc4" }), maroon = lam({ color: "#7e2f3e" }), grey = lam({ color: "#b9b4a8" });
+  const pink = lam({ color: "#d8697c" }), green = lam({ color: "#2f9a4a" });
+  const tileT = (rw, rh) => { const t = canvasTex(64, 32, (c2) => { c2.fillStyle = "#b9b2a2"; c2.fillRect(0, 0, 64, 32); for (let r = 0; r < 4; r++) for (let k = -1; k < 5; k++) { c2.fillStyle = (r + k) % 3 ? "#ddd6c6" : "#d2cab8"; c2.fillRect(k * 16 + (r % 2) * 8 + 1, r * 8 + 1, 14, 6); } }, true); t.repeat.set(rw, rh); return lam({ map: t }); };
+  const winM = lam({ map: canvasTex(64, 80, (c2) => { c2.fillStyle = "#6b5a3a"; c2.fillRect(0, 0, 64, 80); c2.fillStyle = "#1f2a38"; c2.fillRect(5, 5, 54, 70); c2.fillStyle = "rgba(150,190,230,.35)"; c2.fillRect(8, 8, 20, 30); c2.strokeStyle = "#cfd2cc"; c2.lineWidth = 2; for (let x = 13; x < 59; x += 8) { c2.beginPath(); c2.moveTo(x, 5); c2.lineTo(x, 75); c2.stroke(); } }) });
+  walled.h = T1 + .5 + 2.9 + .5;
+  box(W + .3, PL, D + .3, 0, PL / 2, 0, grey);                          // plinth
+  box(W, H1, D, 0, PL + H1 / 2, 0, white);                              // ground floor
+  const band = (w, dd, x, z, y) => { box(w + .5, .5, dd + .5, x, y + .25, z, edge); box(w + .56, .18, dd + .56, x, y + .41, z, maroon); }; // slab edge, maroon on top
+  const ring = (w, dd, x, z, y, hh, m) => { // four thin walls round a w x dd rectangle
+    box(w, hh, .14, x, y + hh / 2, z + dd / 2 - .07, m); box(w, hh, .14, x, y + hh / 2, z - dd / 2 + .07, m);
+    box(.14, hh, dd, x + w / 2 - .07, y + hh / 2, z, m); box(.14, hh, dd, x - w / 2 + .07, y + hh / 2, z, m);
+  };
+  band(W, D, 0, 0, T1); ring(W + .5, D + .5, 0, 0, T1 + .5, .45, grey);
+  // the second storey, over the south half and set back from the front, with a railing round its roof
+  const ux0 = .2, uz1 = 1.2, UW = hw - ux0, UD = uz1 + F, ucx = (ux0 + hw) / 2, ucz = (uz1 - F) / 2, T2 = T1 + .5 + 2.9;
+  box(UW, 2.9, UD, ucx, T1 + .5 + 1.45, ucz, white); band(UW, UD, ucx, ucz, T2);
+  ring(UW + .5, UD + .5, ucx, ucz, T2 + .5, .12, grey); ring(UW + .5, UD + .5, ucx, ucz, T2 + 1.35, .06, grey);
+  for (let k = 0; k <= 8; k++) for (const [px, pz] of [[ucx - UW / 2 - .18 + (UW + .36) * k / 8, ucz + UD / 2 + .18], [ucx - UW / 2 - .18 + (UW + .36) * k / 8, ucz - UD / 2 - .18]]) box(.05, .85, .05, px, T2 + .5 + .45, pz, grey);
+  // a wall face as its own group: ry turns local +z out of that face, `depth` is how far the face stands from the middle
+  const face = (ry) => { const q = new THREE.Group(); q.rotation.y = ry; g.add(q); return q; };
+  const put = (q, geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; q.add(m); return m; };
+  const shade = (q, x, y, z, w) => { put(q, new THREE.BoxGeometry(w, .05, .72), pink, x, y, z + .34).rotation.x = .35; put(q, new THREE.BoxGeometry(w, .1, .04), green, x, y - .16, z + .7); };
+  const win = (q, x, y, z, w = 1.6, h = 1.5) => { put(q, new THREE.PlaneGeometry(w, h), winM, x, y, z + .01); shade(q, x, y + h / 2 + .3, z, w + .5); };
+  const front = face(0), back = face(Math.PI), north = face(-Math.PI / 2), south = face(Math.PI / 2);
+  const Y1 = PL + 1.6, Y2 = T1 + .5 + 1.55;
+  win(front, -4.7, Y1, F);
+  // the veranda: pale brick tiles below, blue glass above, and a little sunshade over its door by the gate
+  put(front, new THREE.PlaneGeometry(4.2, 1.0), tileT(4, 1.6), -.6, PL + .5, F + .01);
+  put(front, new THREE.PlaneGeometry(4.2, 1.5), lam({ map: canvasTex(128, 48, (c2) => { c2.fillStyle = "#f1efe8"; c2.fillRect(0, 0, 128, 48); for (let k = 0; k < 4; k++) { c2.fillStyle = "#1d3f8a"; c2.fillRect(4 + k * 31, 6, 27, 38); c2.fillStyle = "rgba(170,200,240,.4)"; c2.fillRect(6 + k * 31, 8, 9, 16); } }) }), -.6, PL + 1.75, F + .01);
+  shade(front, .9, PL + 2.75, F, 1.2);
+  // the garage: brick-tile pillars either side of a dark brown shutter, a wide sunshade over it
+  const gx = 4.3, gw = 3.4;
+  for (const s of [-1, 1]) box(.5, H1, .3, gx + s * (gw / 2 + .25), PL + H1 / 2, F + .1, tileT(.5, 4));
+  put(front, new THREE.PlaneGeometry(gw, 2.45), lam({ map: canvasTex(96, 72, (c2) => { c2.fillStyle = "#3b2a22"; c2.fillRect(0, 0, 96, 72); c2.strokeStyle = "#251a15"; c2.lineWidth = 2; for (let x = 8; x < 96; x += 11) { c2.beginPath(); c2.moveTo(x, 0); c2.lineTo(x, 72); c2.stroke(); } c2.fillStyle = "#4a372c"; c2.fillRect(0, 34, 96, 3); }) }), gx, PL + 1.23, F + .01);
+  shade(front, gx, PL + 2.8, F + .2, gw + .9);
+  for (const x of [-4.4, -1.4]) win(north, x, Y1, hw);
+  for (const x of [-4, 0, 4]) win(back, x, Y1, F);
+  for (const x of [-3.5, 1]) win(south, x, Y1, hw);
+  // up on the second storey: two windows to the front, one to the south and one over the low roof to the north
+  for (const x of [ucx - 1.6, ucx + 1.6]) win(front, x, Y2, uz1, 1.4, 1.3);
+  win(south, -ucz, Y2, hw, 1.4, 1.3); win(north, ucz, Y2, -ux0, 1.4, 1.3);
+}
 // little roadside shops (MAP.looks `shop`): the open front toward the road, hung with chips over a white counter
 {
   const shopT = canvasTex(128, 96, (c2) => {
@@ -1521,10 +1572,27 @@ if (school) {
     const step = new THREE.Mesh(new THREE.BoxGeometry(L + .2, .2, .7), lam({ color: "#b9b4a6" })); step.position.set(best.mx + ox / oL * .35, .1, best.my + oy / oL * .35); step.rotation.y = Math.atan2(ox, oy); step.receiveShadow = true; scene.add(step);
   }
 }
-// fences, benches, gate posts, wells, bare earth, concrete, walls, logs and bamboo (MAP.props)
+// fences, benches, gate posts, wells, bare earth, concrete, drains, walls, boundary walls, a gate, logs, bamboo and papaya (MAP.props)
 {
   const at = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; scene.add(m); return m; };
   const bamboo = lam({ color: "#a08a55" }), conc = lam({ color: "#a9a59a" }), wood = lam({ color: "#a89478" });
+  const blueW = lam({ color: "#d3dfe3" }), wallTop = lam({ color: "#a9aaa3" });
+  const jaliM = (L) => { // a pierced concrete band: hearts and leaves cut through, red rings set in, repeating every 0.8 m
+    const t = canvasTex(64, 40, (c2) => {
+      c2.fillStyle = "#d9dcd6"; c2.fillRect(0, 0, 64, 40); c2.globalCompositeOperation = "destination-out";
+      for (const [x, y, rx, ry2] of [[16, 12, 5, 6], [48, 12, 5, 6], [16, 30, 4, 5], [48, 30, 4, 5], [32, 21, 3, 9], [0, 21, 3, 9], [64, 21, 3, 9]]) { c2.beginPath(); c2.ellipse(x, y, rx, ry2, 0, 0, Math.PI * 2); c2.fill(); }
+      c2.globalCompositeOperation = "source-over"; c2.strokeStyle = "#a33a4c"; c2.lineWidth = 3;
+      for (const x of [16, 48]) { c2.beginPath(); c2.arc(x, 22, 4.5, 0, Math.PI * 2); c2.stroke(); }
+      c2.fillStyle = "#c9ccc5"; c2.fillRect(0, 0, 64, 3); c2.fillRect(0, 37, 64, 3);
+    }, true);
+    t.repeat.set(L / .8, 1); return lam({ map: t, alphaTest: .5, side: THREE.DoubleSide });
+  };
+  const gateM = lam({ map: canvasTex(128, 96, (c2) => { // white bars: a frame, an X in each leaf, close uprights along the bottom
+    c2.clearRect(0, 0, 128, 96); c2.strokeStyle = "#eef0ec"; c2.lineWidth = 4;
+    c2.strokeRect(2, 2, 124, 92); c2.beginPath(); c2.moveTo(64, 2); c2.lineTo(64, 94); c2.stroke();
+    for (const x0 of [2, 64]) { c2.beginPath(); c2.moveTo(x0, 2); c2.lineTo(x0 + 62, 70); c2.moveTo(x0 + 62, 2); c2.lineTo(x0, 70); c2.stroke(); }
+    c2.lineWidth = 2; c2.beginPath(); c2.moveTo(0, 70); c2.lineTo(128, 70); for (let x = 6; x < 128; x += 6) { c2.moveTo(x, 70); c2.lineTo(x, 94); } c2.stroke();
+  }), alphaTest: .5, side: THREE.DoubleSide });
   for (const pr of MAP.props || []) {
     if (pr.k === "fence") for (let i = 1; i < pr.p.length; i++) {
       const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax);
@@ -1542,6 +1610,29 @@ if (school) {
       const [x, y] = pr.at, ring = at(new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.25, .8, 18, 1, true), lam({ color: "#8a4a32", side: THREE.DoubleSide })), x, .4, y);
       at(new THREE.Mesh(new THREE.CircleGeometry(1.15, 18), lam({ color: "#3d3a2a" })), x, .5, y).rotation.x = -Math.PI / 2;
       at(new THREE.Mesh(new THREE.SphereGeometry(.5, 8, 6), lam({ color: "#6f8f3a" })), x - .5, .75, y + .3);
+    } else if (pr.k === "bwall") { // a boundary wall: pale blue below, a pierced jali band on top for its first `jali` meters, a coping
+      let run = 0;
+      for (let i = 1; i < pr.p.length; i++) {
+        const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), ux = (bx - ax) / L, uy = (by - ay) / L;
+        const j = Math.max(0, Math.min(L, (pr.jali || 0) - run)); run += L;
+        at(new THREE.Mesh(new THREE.BoxGeometry(L + .2, 1.0, .2), blueW), (ax + bx) / 2, .5, (ay + by) / 2, ry);
+        if (j > 0) at(new THREE.Mesh(new THREE.BoxGeometry(j, .5, .12), jaliM(j)), ax + ux * j / 2, 1.25, ay + uy * j / 2, ry);
+        if (L - j > 0) at(new THREE.Mesh(new THREE.BoxGeometry(L - j + .2, .5, .2), blueW), ax + ux * (j + L) / 2, 1.25, ay + uy * (j + L) / 2, ry);
+        at(new THREE.Mesh(new THREE.BoxGeometry(L + .3, .1, .3), wallTop), (ax + bx) / 2, 1.55, (ay + by) / 2, ry);
+        for (let s2 = 0; s2 <= L + .01; s2 += L / Math.max(1, Math.round(L / 3))) at(new THREE.Mesh(new THREE.BoxGeometry(.32, 1.6, .32), blueW), ax + ux * s2, .8, ay + uy * s2, ry);
+      }
+    } else if (pr.k === "gate") { // a white metal gate in an X pattern between two pillars with ball tops
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax);
+      for (const [x, y] of pr.p) { at(new THREE.Mesh(new THREE.BoxGeometry(.42, 1.9, .42), blueW), x, .95, y); at(new THREE.Mesh(new THREE.SphereGeometry(.17, 10, 8), wallTop), x, 2.05, y); }
+      at(new THREE.Mesh(new THREE.PlaneGeometry(L - .42, 1.7), gateM), (ax + bx) / 2, .9, (ay + by) / 2, ry);
+    } else if (pr.k === "papaya") { // a papaya tree: a thin grey trunk, a crown of big lobed leaves, green fruit under it
+      const [x, y] = pr.at, tw = lam({ color: "#9a958a" }), leafM = lam({ color: "#4f8f34" }), fruitM = lam({ color: "#6f9f2a" });
+      at(new THREE.Mesh(new THREE.CylinderGeometry(.08, .13, 3.6, 7), tw), x, 1.8, y);
+      for (let k = 0; k < 8; k++) {
+        const a2 = k * Math.PI / 4 + .3, l = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 4), leafM);
+        l.scale.set(.75, .07, .45); l.position.set(x + Math.cos(a2) * .75, 3.55 - (k % 2) * .15, y + Math.sin(a2) * .75); l.rotation.set(0, -a2, (k % 2 ? -.35 : -.2)); l.castShadow = true; scene.add(l);
+      }
+      for (let k = 0; k < 5; k++) at(new THREE.Mesh(new THREE.SphereGeometry(.14, 7, 6), fruitM), x + Math.cos(k * 1.3) * .17, 3.15 - (k % 2) * .15, y + Math.sin(k * 1.3) * .17);
     } else if (pr.k === "drain") for (let i = 1; i < pr.p.length; i++) { // an open drain between two low brick walls
       const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), nx = -(by - ay) / L, ny = (bx - ax) / L;
       at(new THREE.Mesh(new THREE.BoxGeometry(L + .3, .04, .8), lam({ color: "#45513f" })), (ax + bx) / 2, .02, (ay + by) / 2, ry);
@@ -2786,7 +2877,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
   get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
-  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
+  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };
