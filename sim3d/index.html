@@ -250,16 +250,7 @@
   <div class="panel">
     <p class="kicker">কেসিপির খেলা · শুক্রবার, বিকাল ৪:২৫</p>
     <h1>সভায় আনো!<span class="three">৩ডি</span></h1>
-    <ol class="steps" aria-label="ধাপ"><li>ভার্সন</li><li>নিয়ম</li><li>গাড়ি</li><li>চালক</li></ol>
-
-    <section class="step" data-step="0">
-      <div class="drivers">
-        <p class="sec">কোনটা খেলবা? একটাতে চাপ দাও</p>
-        <a class="driver" data-mode="2d" href="../sim/#rules"><span class="ph ic">🗺️</span><b>২ডি ম্যাপ</b><small>উপর থেকে দেখা কতোয়ালপুরের ম্যাপ। যেকোনো ফোনে হালকা চলে।</small></a>
-        <button class="driver on" data-mode="3d" data-go="1"><span class="ph ic">🧊</span><b>৩ডি 🆕</b><small>রাস্তায় নেমে চালানো, পুরো ৩ডি। নতুন ফোন বা কম্পিউটারে ভালো চলে।</small></button>
-      </div>
-      <div class="btns"><a class="btn ghost" href="../">KCP তে ফিরে যান</a></div>
-    </section>
+    <ol class="steps" aria-label="ধাপ"><li>নিয়ম</li><li>গাড়ি</li><li>চালক</li></ol>
 
     <section class="step" data-step="1" hidden>
       <p class="lead">পংকি ভাইয়ের সিএনজি এবার ৩ডিতে। কতোয়ালপুরের আসল রাস্তায় ঘুরে ঘুমন্ত কমরেডদের ৫টার আগে সুফান বিকাশ ঘরে আনো।</p>
@@ -269,9 +260,9 @@
       <li><span>🗣️</span><span>কেউ কেউ ঘুম ভেঙে <b>অজুহাত</b> দেবে। শুনে ঠিক জবাব বাছো: চা, চিপস, নাকি "এমরান ভাই আসতেছেন!" ভুল হলে পালাবে।</span></li>
       <li><span>☕</span><span><b>ভাইয়ার দোকানে</b> থামলে চা, তিন রাস্তার মোড়ে <b>রিয়েল মামুর দোকানে</b> থামলে চিপস (৳৫ করে, ৩টা পর্যন্ত)।</span></li>
       <li><span>🐄</span><span>রাস্তায় গরু আর মিছিল। ধাক্কা খেলে জরিমানা। আর <b>সাম ভাইয়ের</b> গায়ে গাড়ি তুললেই গেম ওভার!</span></li>
-      <li><span>💰</span><span>প্রতি কমরেডের ভাড়া পাবে। জমানো টাকায় <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো। ২ডি আর ৩ডি খেলার পকেট একটাই।</span></li>
+      <li><span>💰</span><span>প্রতি কমরেডের ভাড়া পাবে। জমানো টাকায় <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।</span></li>
     </ul>
-      <div class="btns"><button class="btn ghost" data-go="0">← পিছনে</button><button class="btn" data-go="2">বুঝছি, গাড়ি বাছি →</button></div>
+      <div class="btns"><a class="btn ghost" href="../">KCP তে ফিরে যান</a><button class="btn" data-go="2">বুঝছি, গাড়ি বাছি →</button></div>
     </section>
 
     <section class="step" data-step="2" hidden>
@@ -479,7 +470,7 @@ const wrapAng = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI
 function rng32(seed) { return () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 const HW = { tertiary: 6, unclassified: 4.5, residential: 4, track: 2 };
-const roads = MAP.roads.map(r => ({ hw: HW[r.k] || 3.5, p: r.p, k: r.k }));
+const roads = MAP.roads.map(r => ({ hw: HW[r.k] || 3.5, p: r.p, k: r.k, concrete: r.concrete }));
 const roadSegs = [];
 for (const r of roads) for (let i = 1; i < r.p.length; i++) {
   const [ax, ay] = r.p[i - 1], [bx, by] = r.p[i], m = r.hw + 4, s = { ax, ay, bx, by, hw: r.hw };
@@ -828,8 +819,14 @@ function ribbon(lines, y, color, widen, map, offset) {
 }
 ribbon(rivers, .02, "#3f7f9e", 1.2, null, 1);
 ribbon(rivers, .04, "#6fb0d3", 0, null, 2);
-ribbon(roads, .06, "#6b6255", .9, null, 3);
-ribbon(roads, .08, "#ffffff", 0, roadTex, 4);
+// concrete village lanes drive full width but show only a strip of concrete with worn grass either side (MAP.roads[].concrete);
+// they sit a little lower so the full roads cover their junctions
+const lanes = roads.filter(r => r.concrete).map(r => ({ p: r.p, hw: r.concrete }));
+ribbon(roads.filter(r => r.concrete), .03, "#a9b874", 0, null, 2);
+ribbon(lanes, .05, "#8e8a7f", .25, null, 3);
+ribbon(lanes, .07, "#ffffff", 0, speckle("#d6d3c8", ["#c4c0b4", "#e4e1d8", "#b8b4a8"], 5), 4);
+ribbon(roads.filter(r => !r.concrete), .06, "#6b6255", .9, null, 3);
+ribbon(roads.filter(r => !r.concrete), .08, "#ffffff", 0, roadTex, 4);
 // dashed centre line on the main roads
 {
   const B = Builder(), c = rgb("#fff7da");
@@ -1524,7 +1521,7 @@ if (school) {
     const step = new THREE.Mesh(new THREE.BoxGeometry(L + .2, .2, .7), lam({ color: "#b9b4a6" })); step.position.set(best.mx + ox / oL * .35, .1, best.my + oy / oL * .35); step.rotation.y = Math.atan2(ox, oy); step.receiveShadow = true; scene.add(step);
   }
 }
-// fences, benches, gate posts, wells and bare earth (MAP.props)
+// fences, benches, gate posts, wells, bare earth, concrete, walls, logs and bamboo (MAP.props)
 {
   const at = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; scene.add(m); return m; };
   const bamboo = lam({ color: "#a08a55" }), conc = lam({ color: "#a9a59a" }), wood = lam({ color: "#a89478" });
@@ -1545,8 +1542,31 @@ if (school) {
       const [x, y] = pr.at, ring = at(new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.25, .8, 18, 1, true), lam({ color: "#8a4a32", side: THREE.DoubleSide })), x, .4, y);
       at(new THREE.Mesh(new THREE.CircleGeometry(1.15, 18), lam({ color: "#3d3a2a" })), x, .5, y).rotation.x = -Math.PI / 2;
       at(new THREE.Mesh(new THREE.SphereGeometry(.5, 8, 6), lam({ color: "#6f8f3a" })), x - .5, .75, y + .3);
-    } else if (pr.k === "dirt") {
-      const B = Builder(), c = rgb("#c08a5a"), tris = THREE.ShapeUtils.triangulateShape(pr.p.map(([x, z]) => new THREE.Vector2(x, z)), []), ids = pr.p.map(([x, z]) => B.v(x, .04, z, UP, 0, 0, c));
+    } else if (pr.k === "drain") for (let i = 1; i < pr.p.length; i++) { // an open drain between two low brick walls
+      const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax), nx = -(by - ay) / L, ny = (bx - ax) / L;
+      at(new THREE.Mesh(new THREE.BoxGeometry(L + .3, .04, .8), lam({ color: "#45513f" })), (ax + bx) / 2, .02, (ay + by) / 2, ry);
+      for (const sd of [-.5, .5]) at(new THREE.Mesh(new THREE.BoxGeometry(L + .3, .35, .22), lam({ color: "#a4553b" })), (ax + bx) / 2 + nx * sd, .17, (ay + by) / 2 + ny * sd, ry);
+    } else if (pr.k === "wall") for (let i = 1; i < pr.p.length; i++) { // brick compound wall with a paler coping
+      const [ax, ay] = pr.p[i - 1], [bx, by] = pr.p[i], L = Math.hypot(bx - ax, by - ay), ry = -Math.atan2(by - ay, bx - ax);
+      at(new THREE.Mesh(new THREE.BoxGeometry(L, pr.h, .28), lam({ color: "#a4553b" })), (ax + bx) / 2, pr.h / 2, (ay + by) / 2, ry);
+      at(new THREE.Mesh(new THREE.BoxGeometry(L + .05, .08, .34), lam({ color: "#b9715a" })), (ax + bx) / 2, pr.h + .04, (ay + by) / 2, ry);
+    } else if (pr.k === "logs") { // cut logs stacked at the foot of a wall: two on the ground, one on top
+      const [[ax, ay], [bx, by]] = pr.p, L = Math.hypot(bx - ax, by - ay), nx = -(by - ay) / L, ny = (bx - ax) / L, ry = -Math.atan2(by - ay, bx - ax);
+      const bark = lam({ color: "#8a6a45" }), cut = lam({ color: "#d4b27e" });
+      for (const [o, h, s] of [[0, .2, 0], [.45, .2, .3], [.22, .55, -.2]]) {
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, L - .3 * Math.abs(s), 9, 1, false), [bark, cut, cut]);
+        m.rotation.z = Math.PI / 2; at(m, (ax + bx) / 2 + nx * o, h, (ay + by) / 2 + ny * o + s, ry);
+      }
+    } else if (pr.k === "bamboo") { // a clump of bamboo: thin culms leaning out, leaves bunched at the top
+      const [x, y] = pr.at, culm = lam({ color: "#7f9a3c" }), leaf = [lam({ color: "#6f9a3a" }), lam({ color: "#5d8a31" })];
+      for (let k = 0; k < 9; k++) {
+        const a = k * 2.4, r = .25 + (k % 3) * .15, h = 6 + (k % 4) * .7, bx = x + Math.cos(a) * r, by = y + Math.sin(a) * r, tx = bx + Math.cos(a) * 1.4, ty = by + Math.sin(a) * 1.4;
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(.05, .08, Math.hypot(h, 1.4), 5), culm);
+        c.position.set((bx + tx) / 2, h / 2, (by + ty) / 2); c.lookAt(tx, h, ty); c.rotateX(Math.PI / 2); c.castShadow = true; scene.add(c);
+        const l = new THREE.Mesh(new THREE.SphereGeometry(1, 7, 5), leaf[k % 2]); l.scale.set(1.1, .7, 1.1); at(l, tx, h - .2, ty, a);
+      }
+    } else if (pr.k === "dirt" || pr.k === "slab") {
+      const B = Builder(), c = rgb(pr.k === "slab" ? "#cdc9bd" : "#c08a5a"), tris = THREE.ShapeUtils.triangulateShape(pr.p.map(([x, z]) => new THREE.Vector2(x, z)), []), ids = pr.p.map(([x, z]) => B.v(x, .04, z, UP, 0, 0, c));
       for (const [a, b2, c2] of tris) B.tri(ids[a], ids[b2], ids[c2], UP);
       const m = new THREE.Mesh(B.build(), lam({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); m.receiveShadow = true; scene.add(m);
     }
@@ -2656,15 +2676,15 @@ function closeShop() {
 }
 el("shopFromStart").addEventListener("click", () => { ensureAudio(); openShop("start"); });
 // start screen in steps: version → rules → vehicle → driver and start
-let startStep = 0;
+let startStep = 1;
 function goStep(n) {
   startStep = n;
   document.querySelectorAll("#start .step").forEach(x => { x.hidden = +x.dataset.step !== n; });
-  document.querySelectorAll("#start .steps li").forEach((li, i) => { li.classList.toggle("on", i === n); li.classList.toggle("done", i < n); });
+  document.querySelectorAll("#start .steps li").forEach((li, i) => { li.classList.toggle("on", i === n - 1); li.classList.toggle("done", i < n - 1); }); // the menu starts at step 1, the rules
   const scr = el("start"); scr.scrollTop = 0; scr.querySelector(".panel").scrollTop = 0;
 }
 document.querySelectorAll("#start [data-go]").forEach(b => b.addEventListener("click", () => goStep(+b.dataset.go)));
-goStep(location.hash === "#rules" ? 1 : 0);
+goStep(1);
 const syncDrivers = () => {
   document.querySelectorAll(".driver[data-d]").forEach(b => b.classList.toggle("on", b.dataset.d === driverId));
   document.querySelectorAll(".driver[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === vehId));
