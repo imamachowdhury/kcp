@@ -1,0 +1,1740 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>সভায় আনো! · কতোয়াল পুর কমিউনিস্ট পার্টি</title>
+<meta name="description" content="পংক ভাইয়ের সিএনজি নিয়ে কতোয়ালপুরের আসল রাস্তায় ঘুরে ঘুমন্ত কমরেডদের শুক্রবারের সভায় আনো। KCP-এর খেলা।">
+<meta name="theme-color" content="#c8102e">
+<meta property="og:title" content="সভায় আনো! · KCP">
+<meta property="og:description" content="বিকাল ৫টার সভা। কমরেডরা ঘুমাচ্ছে। পংক ভাইয়ের সিএনজি তোমার হাতে।">
+<meta property="og:image" content="https://joinkcp.com/assets/og-card.jpg">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Galada&family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #c8102e; --red-dark: #8f0b20; --yellow: #f5c518; --yellow-soft: #ffe27a;
+    --paper: #f6efe1; --paper-2: #efe4cc; --ink: #1d1a17; --ink-soft: #4a433b;
+    --shadow: 4px 4px 0 var(--ink);
+    --font-display: "Galada", "Hind Siliguri", cursive;
+    --font-body: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #b9cb87;
+    font-family: var(--font-body); color: var(--ink);
+    -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+    touch-action: none; overscroll-behavior: none;
+  }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .hud {
+    position: fixed; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px;
+    display: flex; gap: 8px; align-items: flex-start; pointer-events: none; z-index: 2;
+  }
+  .hud[hidden], #mini[hidden], #horn[hidden] { display: none; }
+  .card {
+    background: var(--paper); border: 2.5px solid var(--ink); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 5px 12px 6px;
+  }
+  .clock { font-size: 26px; font-weight: 700; line-height: 1.05; min-width: 92px; }
+  .clock small, .count small { display: block; font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+  .clock.late { background: var(--red); color: var(--paper); animation: pulse .6s infinite alternate; }
+  .clock.late small { color: var(--yellow-soft); }
+  @keyframes pulse { to { transform: scale(1.05); } }
+  .count { font-size: 22px; font-weight: 700; line-height: 1.05; }
+  .seats { display: inline-flex; gap: 4px; vertical-align: middle; margin-left: 6px; }
+  .seats i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper-2); }
+  .seats i.on { background: var(--red); }
+  .spacer { flex: 1; }
+  .icon-btn {
+    pointer-events: auto; width: 42px; height: 42px; display: grid; place-items: center;
+    background: var(--paper); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: var(--shadow);
+    font-size: 19px; cursor: pointer; color: var(--ink); text-decoration: none; padding: 0;
+  }
+  .icon-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+
+  #mini {
+    position: fixed; right: 10px; top: calc(max(10px, env(safe-area-inset-top)) + 58px);
+    width: 150px; height: 130px; border: 2.5px solid var(--ink); border-radius: 10px;
+    box-shadow: var(--shadow); background: #c3d394; z-index: 2; pointer-events: none;
+  }
+
+  #horn {
+    position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom));
+    width: 88px; height: 88px; border-radius: 50%; z-index: 2;
+    background: var(--yellow); border: 3px solid var(--ink); box-shadow: var(--shadow);
+    font: 700 16px/1 var(--font-body); color: var(--ink); cursor: pointer; touch-action: none;
+  }
+  #horn small { display: block; font-size: 11px; font-weight: 600; margin-top: 3px; color: var(--ink-soft); }
+  #horn:active, #horn.hit { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+
+  .attrib { position: fixed; left: 8px; bottom: max(4px, env(safe-area-inset-bottom)); font-size: 10px; color: rgba(29,26,23,.7); z-index: 2; }
+  .attrib a { color: inherit; }
+
+  .screen {
+    position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; padding: 16px;
+    background: rgba(29, 26, 23, .55); overflow: auto; touch-action: pan-y;
+  }
+  .screen.hidden { display: none; }
+  .panel {
+    background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 8px 8px 0 var(--ink);
+    width: 100%; max-width: 470px; padding: 20px 20px 18px; text-align: center;
+  }
+  .panel h1 { font-family: var(--font-display); font-weight: 400; color: var(--red); font-size: 54px; line-height: 1.1; margin: 0; }
+  .panel h2 { font-family: var(--font-display); font-weight: 400; color: var(--red); font-size: 36px; line-height: 1.15; margin: 0 0 4px; }
+  .kicker { font-weight: 700; font-size: 13px; letter-spacing: .02em; color: var(--ink-soft); margin: 0 0 4px; }
+  .lead { font-size: 16px; line-height: 1.55; margin: 8px 0 12px; }
+  .rules { list-style: none; padding: 12px 14px; margin: 0 0 14px; text-align: left; display: grid; gap: 7px;
+    font-size: 15px; line-height: 1.4; background: var(--paper-2); border: 2px dashed var(--ink-soft); border-radius: 12px; }
+  .rules li { display: flex; gap: 9px; }
+  .rules b { white-space: nowrap; }
+  .keys { font-size: 13px; color: var(--ink-soft); margin: 0 0 14px; line-height: 1.5; }
+  kbd { font: 700 12px var(--font-body); border: 1.5px solid var(--ink); border-bottom-width: 3px; border-radius: 5px; padding: 0 5px; background: var(--paper); }
+  .btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    font: 700 18px var(--font-body); background: var(--red); color: var(--paper); text-decoration: none;
+    border: 3px solid var(--ink); border-radius: 12px; box-shadow: var(--shadow); padding: 9px 22px; cursor: pointer;
+  }
+  .btn.alt { background: var(--yellow); color: var(--ink); }
+  .btn.ghost { background: var(--paper); color: var(--ink); }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .score { font-size: 46px; font-weight: 700; line-height: 1; margin: 6px 0 2px; }
+  .verdict { font-size: 16px; line-height: 1.5; margin: 6px 0 12px; }
+  .faces { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 4px 0 12px; }
+  .faces figure { margin: 0; width: 58px; font-size: 11px; line-height: 1.2; font-weight: 600; }
+  .faces .ph { width: 46px; height: 46px; margin: 0 auto 3px; border-radius: 50%; border: 2.5px solid var(--ink);
+    background: var(--paper-2) center/cover; display: grid; place-items: center; font-size: 22px; }
+  .faces .miss .ph { filter: grayscale(1); opacity: .55; }
+  .faces .miss { color: var(--ink-soft); }
+  .bill { background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; font-weight: 600; margin: 0 0 14px; font-size: 15px; }
+  .best { font-size: 13px; color: var(--ink-soft); margin: -6px 0 12px; }
+  .loading { font-size: 14px; color: var(--ink-soft); }
+  .awards { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 0 0 12px; }
+  .awards span { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 700; }
+
+  @media (max-width: 560px) {
+    .clock { font-size: 21px; min-width: 76px; }
+    .count { font-size: 18px; }
+    .card { padding: 4px 9px 5px; }
+    #mini { width: 112px; height: 98px; top: calc(max(10px, env(safe-area-inset-top)) + 52px); }
+    .panel h1 { font-size: 44px; }
+    .icon-btn { width: 38px; height: 38px; font-size: 17px; }
+  }
+  @media (hover: hover) and (pointer: fine) { #horn { width: 80px; height: 80px; } }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="কতোয়ালপুরের ম্যাপে সিএনজি খেলা"></canvas>
+
+<div class="hud" id="hud" hidden>
+  <div class="card clock" id="clock">৪:২৫<small>সভা ৫:০০ টায়</small></div>
+  <div class="card count"><span id="count">০/১১</span><span class="seats" id="seats"><i></i><i></i><i></i></span><small>কমরেড সভায় · সিএনজির সিট</small></div>
+  <div class="spacer"></div>
+  <button class="icon-btn" id="mute" aria-label="শব্দ বন্ধ/চালু">🔊</button>
+  <a class="icon-btn" href="../" aria-label="KCP হোমপেজে ফিরে যান">🏠</a>
+</div>
+<canvas id="mini" hidden></canvas>
+<button id="horn" hidden>প্যাঁ-পোঁ!<small id="hornKey">Space</small></button>
+<div class="attrib">ম্যাপ © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+
+<div class="screen" id="start">
+  <div class="panel">
+    <p class="kicker">কেসিপি আড্ডা জোন · নতুন খেলা</p>
+    <h1>সভায় আনো!</h1>
+    <p class="lead">শুক্রবার, বিকাল ৪টা ২৫। ৫টায় <b>সুফান বিকাশ ঘরে</b> কেন্দ্রীয় কমিটির সভা। কিন্তু কমরেডরা সবাই দুপুরের ঘুমে। <b>পংক ভাইয়ের সিএনজি</b> নিয়ে কতোয়ালপুর ঘুরে সবাইকে সভায় আনো।</p>
+    <ul class="rules">
+      <li><span>💤</span><span>ঘুমন্ত কমরেডের কাছে গিয়ে <b>প্যাঁ-পোঁ হর্ন</b> বাজাও। কারো কারো ঘুম ভাঙতে কয়েকবার লাগে।</span></li>
+      <li><span>🛺</span><span>সিএনজির পেছনের সিটে একসাথে <b>৩ জন</b>। অফিসের লাল বৃত্তে গেলেই নামবে।</span></li>
+      <li><span>🏃</span><span>কেউ কেউ অজুহাত দিয়ে পালাবে। পিছু নাও, ধরো!</span></li>
+      <li><span>🐄</span><span>রাস্তায় গরু। ধাক্কা দিলে থেমে যাবে, হর্ন দিলে সরে যায়।</span></li>
+      <li><span>🥟</span><span>সিঙ্গারার দোকানে ঢুকলে কিছুক্ষণ ডাবল স্পিড।</span></li>
+      <li><span>⚠️</span><span><b>সামনে সাম ভাই!</b> রাস্তায় হাঁটছেন। গায়ে সিএনজি তুললে সাথে সাথে গেম ওভার। হর্ন দিলে সাইড দিবেন।</span></li>
+      <li><span>🗳️</span><span>ভোটের মৌসুম! রাস্তায় পোস্টার আর <b>মিছিল</b>। মিছিলে আটকালে হর্ন দাও, সাইড দিবে।</span></li>
+      <li><span>⚡</span><span>সাবধান: মাঝপথে <b>লোডশেডিং</b> আর <b>ঝুম বৃষ্টি</b>! একসাথে ৩ জন নামালে <b>হ্যাটট্রিক</b>।</span></li>
+    </ul>
+    <p class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> বা <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> দিয়ে চালাও · <kbd>Space</kbd> = হর্ন<br>মোবাইলে: স্ক্রিনে আঙুল রেখে যেদিকে যেতে চাও সেদিকে টানো</p>
+    <div class="btns">
+      <button class="btn" id="play" disabled>সিএনজি স্টার্ট দাও</button>
+      <a class="btn ghost" href="../">KCP তে ফিরে যান</a>
+    </div>
+    <p class="loading" id="loading">ম্যাপ লোড হচ্ছে...</p>
+  </div>
+</div>
+
+<div class="screen hidden" id="end">
+  <div class="panel">
+    <p class="kicker" id="endKicker">বিকাল ৫টা · সভা শুরু</p>
+    <h2 id="endTitle">সভা হলো!</h2>
+    <div class="score" id="endScore">০/১১</div>
+    <p class="verdict" id="endVerdict"></p>
+    <div class="faces" id="endFaces"></div>
+    <div class="awards" id="endAwards"></div>
+    <p class="bill" id="endBill"></p>
+    <p class="best" id="endBest"></p>
+    <div class="btns">
+      <button class="btn" id="again">আবার খেলো</button>
+      <button class="btn alt" id="share">শেয়ার করো</button>
+      <a class="btn ghost" href="../">KCP</a>
+    </div>
+  </div>
+</div>
+
+<script src="kotalpur-map.js"></script>
+<script>
+(() => {
+"use strict";
+
+/* ================= data ================= */
+const MAP = window.KOTALPUR;
+const BN = "০১২৩৪৫৬৭৮৯";
+const bn = v => String(v).replace(/\d/g, d => BN[d]);
+const FONT = '"Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif';
+const EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+const C = {
+  red: "#c8102e", redDark: "#8f0b20", yellow: "#f5c518", paper: "#f6efe1", paper2: "#efe4cc",
+  ink: "#1d1a17", inkSoft: "#4a433b", grass: "#c3d394", grassOut: "#aebf7c",
+  tree: "#76a24e", tree2: "#5f8c3e", water: "#7fb6d8", water2: "#a9d0e8", road: "#efe4cc",
+};
+const ROOFS = ["#a3aeb6", "#bcc4c9", "#c8714f", "#ddd2ba", "#8f9ca5", "#b9a58a"];
+
+// From the main site's committee (script.js). b = line when picked up, q = line at the meeting.
+const COMRADES = [
+  { id: "tanim",   n: "তানিম",    b: "সবাই চলে আসো, আমি পাঁচ মিনিটে আসছি।", q: "আজকের সভার একমাত্র এজেন্ডা: চা কে খাওয়াবে?" },
+  { id: "jihan",   n: "জিহান",    b: "মামা হেভ্বি লাঞ্চ অইবো!", q: "সিনিয়র মানে বোঝো? চায়ের কাপ আগে আমার হাতে আসবে।" },
+  { id: "tahmin",  n: "তাহমিন",   b: "মামা ফিলিং আইতে অইবো!", q: "গ্রুপে মেসেজ দিয়েছি, সবাই সিন করেছে, কেউ আসেনি।" },
+  { id: "milad",   n: "মিলাদ",    b: "দূর… দূর… দূর…", q: "ইনকিলাব! (বাকিরা: জিন্দাবাদ... আস্তে)" },
+  { id: "ohbab",   n: "অহবাব",    b: "উফ, মামা খানি অইলে আইতাম!", q: "আমি এসেছি, বাকি দুই যুগ্ম কোথায়?" },
+  { id: "koyes",   n: "কয়েস",     b: "মামা কার ভেন আ দি!", q: "উপস্থিতি নিচ্ছি: যারা আসোনি, হাত তোলো।" },
+  { id: "ikramul", n: "ইকরামুল",  b: "আরাফ মামা!", q: "সিদ্ধান্ত লিখে রেখেছি: 'আগামী সভায় সিদ্ধান্ত হবে।'" },
+  { id: "kayif",   n: "কায়িফ",    b: "ইসসস!", q: "কমরেড, ফোন ধরো! আড্ডা শুরু হয়ে গেছে (এখনো হয়নি)।" },
+  { id: "safayat", n: "সাফায়াত",  b: "সাংগঠনিক সম্পাদক যা বলবেন, আমি তার অর্ধেক করব।", q: "বেঞ্চে জায়গা নেই? আন্দোলন করে আরেকটা বেঞ্চ আনব।" },
+  { id: "minhaz",  n: "মিনহাজ",   b: "সবাই একটু চেপে বসো, সিএনজিতে সেলফি তুলব।", q: "ফেসবুকে পোস্ট দিচ্ছি: 'ঐতিহাসিক সভা সম্পন্ন'।" },
+  { id: "imam",    n: "ইমাম",     a: "🧠", b: "উপদেশ দিলাম, মানা না-মানা তোমাদের বিপ্লব।", q: "পার্টির ওয়েবসাইট বানিয়ে দিয়েছি, এবার বিপ্লব অটোমেটিক হবে।" },
+];
+const SUFAN = { id: "sufan", n: "সুফান", lines: ["মামা সার্ভার ডাউন!", "পার্টির কাছে আমার পাওনা ৪৭ টাকা, ভুলি নাই।", "নেটওয়ার্ক নাই কমরেড, বিপ্লব বিকালে আসেন।", "চা রেডি, কমরেড কই?"] };
+const EXCUSES = [
+  "আম্মা বাজারে পাঠাইছেন। আলু না নিয়া ফিরলে বিপ্লব না, আমার বিচার হবে।",
+  "রাস্তায় আছি, পাঁচ মিনিটে আসছি। (এখনো লুঙ্গি পরে বিছানায়)",
+  "হেভ্বি লাঞ্চ করছি মামা, এখন নড়লে পেট ফেটে যাবে।",
+  "মামা, আজকে ফিলিং নাই।",
+  "সুফান বিকাশ ঘরে আমার বাকি আছে, ওই রাস্তা দিয়ে যাওয়া আপাতত নিষেধ।",
+  "দুপুরের ঘুম এখনো শেষ হয়নি। সন্ধ্যায় শেষ হবে, ইনশাআল্লাহ।",
+  "আজকে খেলা আছে — বাংলাদেশের না, কিন্তু খেলা তো খেলা।",
+  "পরীক্ষা সামনে। (তিন মাস পরে, কিন্তু সামনে তো)",
+  "বাইকের তেল শেষ, আর হেঁটে যাওয়া পুঁজিবাদী ব্যায়াম।",
+  "মেহমান আইছন, চা বানাইয়া খাওয়াইতে অইবো। পার্টির চা পরে।",
+];
+const SNORES = ["উমম...", "আর পাঁচ মিনিট...", "আম্মা, আজকে শুক্রবার...", "কে রে?", "ঘুমাইতে দেও মামা..."];
+const WAKES = ["আসছি মামা!", "কে? ও, সভা? চলো।", "ঘুমটা মাত্র জমছিল...", "লুঙ্গিটা বদলাইয়া আসি... না থাক, চলো।", "চা আছে তো?"];
+
+/* ================= geometry ================= */
+const [X0, Y0, X1, Y1] = MAP.bounds;
+const CELL = 32;
+const GW = Math.ceil((X1 - X0) / CELL) + 1, GH = Math.ceil((Y1 - Y0) / CELL) + 1;
+const mkGrid = () => Array.from({ length: GW * GH }, () => []);
+const G = { road: mkGrid(), solid: mkGrid(), river: mkGrid() };
+const cellOf = (x, y) => {
+  const cx = Math.floor((x - X0) / CELL), cy = Math.floor((y - Y0) / CELL);
+  return (cx < 0 || cy < 0 || cx >= GW || cy >= GH) ? -1 : cy * GW + cx;
+};
+function addBox(grid, x0, y0, x1, y1, item) {
+  const a = Math.max(0, Math.floor((x0 - X0) / CELL)), b = Math.min(GW - 1, Math.floor((x1 - X0) / CELL));
+  const c = Math.max(0, Math.floor((y0 - Y0) / CELL)), d = Math.min(GH - 1, Math.floor((y1 - Y0) / CELL));
+  for (let j = c; j <= d; j++) for (let i = a; i <= b; i++) grid[j * GW + i].push(item);
+}
+let NX = 0, NY = 0; // nearest point from the last segD2 call
+function segD2(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+  let t = L ? ((px - ax) * dx + (py - ay) * dy) / L : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  NX = ax + t * dx; NY = ay + t * dy;
+  const ex = NX - px, ey = NY - py;
+  return ex * ex + ey * ey;
+}
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const wrapAng = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
+function rng32(seed) {
+  return () => {
+    seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// roads
+const HW = { tertiary: 6, unclassified: 4.5, residential: 4 };
+const roads = MAP.roads.map(r => ({ hw: HW[r.k] || 3.5, p: r.p, k: r.k }));
+const roadSegs = [];
+for (const r of roads) for (let i = 1; i < r.p.length; i++) {
+  const [ax, ay] = r.p[i - 1], [bx, by] = r.p[i], m = r.hw + 4;
+  const s = { ax, ay, bx, by, hw: r.hw };
+  roadSegs.push(s);
+  addBox(G.road, Math.min(ax, bx) - m, Math.min(ay, by) - m, Math.max(ax, bx) + m, Math.max(ay, by) + m, s);
+}
+function roadGap(x, y) { // distance outside the nearest road edge (negative = on the road), within the grid padding
+  const c = cellOf(x, y); if (c < 0) return 99;
+  let best = 99;
+  for (const s of G.road[c]) {
+    const g = Math.sqrt(segD2(x, y, s.ax, s.ay, s.bx, s.by)) - s.hw;
+    if (g < best) best = g;
+  }
+  return best;
+}
+const onRoad = (x, y) => roadGap(x, y) < 0.6;
+function nearestRoad(x, y) {
+  let best = 1e18, bx = 0, by = 0, hw = 4;
+  for (const s of roadSegs) { const d = segD2(x, y, s.ax, s.ay, s.bx, s.by); if (d < best) { best = d; bx = NX; by = NY; hw = s.hw; } }
+  return { d: Math.sqrt(best), x: bx, y: by, hw };
+}
+
+// buildings and ponds are solid
+const roofRng = rng32(11);
+function poly(pts, kind) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, cx = 0, cy = 0;
+  for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); cx += x; cy += y; }
+  return { p: pts, x0, y0, x1, y1, cx: cx / pts.length, cy: cy / pts.length, kind, roof: ROOFS[(roofRng() * ROOFS.length) | 0] };
+}
+const buildings = MAP.buildings.map(p => poly(p, "b"));
+const ponds = MAP.water.map(p => poly(p, "w"));
+for (const b of [...buildings, ...ponds]) addBox(G.solid, b.x0 - 3, b.y0 - 3, b.x1 + 3, b.y1 + 3, b);
+function pip(x, y, p) {
+  let ins = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const xi = p[i][0], yi = p[i][1], xj = p[j][0], yj = p[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins;
+  }
+  return ins;
+}
+function pushOut(o, r) { // slide a circle out of buildings and ponds
+  const c = cellOf(o.x, o.y); if (c < 0) return false;
+  let hit = false;
+  for (const b of G.solid[c]) {
+    if (o.x < b.x0 - r || o.x > b.x1 + r || o.y < b.y0 - r || o.y > b.y1 + r) continue;
+    const p = b.p; let best = 1e18, bx = 0, by = 0;
+    for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+      const d = segD2(o.x, o.y, p[j][0], p[j][1], p[i][0], p[i][1]);
+      if (d < best) { best = d; bx = NX; by = NY; }
+    }
+    const d = Math.sqrt(best) || 1e-4;
+    if (pip(o.x, o.y, p)) { o.x = bx + (bx - o.x) / d * r; o.y = by + (by - o.y) / d * r; hit = true; }
+    else if (d < r) { o.x = bx + (o.x - bx) / d * r; o.y = by + (o.y - by) / d * r; hit = true; }
+  }
+  return hit;
+}
+
+// rivers block everything except roads (bridges)
+const rivers = MAP.rivers.map(r => ({ hw: r.p.length > 50 ? 8 : 4, p: r.p }));
+for (const r of rivers) for (let i = 1; i < r.p.length; i++) {
+  const [ax, ay] = r.p[i - 1], [bx, by] = r.p[i], m = r.hw + 4;
+  addBox(G.river, Math.min(ax, bx) - m, Math.min(ay, by) - m, Math.max(ax, bx) + m, Math.max(ay, by) + m, { ax, ay, bx, by, hw: r.hw });
+}
+function riverBlock(o, r) {
+  const c = cellOf(o.x, o.y); if (c < 0 || !G.river[c].length || onRoad(o.x, o.y)) return false;
+  let hit = false;
+  for (const s of G.river[c]) {
+    const lim = s.hw + r, d2 = segD2(o.x, o.y, s.ax, s.ay, s.bx, s.by);
+    if (d2 < lim * lim) {
+      const d = Math.sqrt(d2) || 1e-4;
+      o.x = NX + (o.x - NX) / d * lim; o.y = NY + (o.y - NY) / d * lim; hit = true;
+    }
+  }
+  return hit;
+}
+const blocked = (x, y, r) => { const t = { x, y }; return pushOut(t, r) || riverBlock(t, r); };
+
+// party office = Sufan Bikash Ghor, at 24.835843, 91.952955 (meters from the map pin, y points south)
+const OFFICE_AT = { x: 25.7, y: 84.2 };
+let office = null, door = null;
+{
+  let best = 1e18;
+  for (const b of buildings) {
+    const d = pip(OFFICE_AT.x, OFFICE_AT.y, b.p) ? -1 : Math.hypot(b.cx - OFFICE_AT.x, b.cy - OFFICE_AT.y);
+    if (d < best) { best = d; office = b; }
+  }
+  const nr = nearestRoad(office.cx, office.cy);
+  door = { x: nr.x, y: nr.y, hw: nr.hw };
+  office.kind = "office";
+}
+const officeU = (() => { const dx = office.cx - door.x, dy = office.cy - door.y, L = Math.hypot(dx, dy) || 1; return { x: dx / L, y: dy / L }; })();
+const officeV = { x: -officeU.y, y: officeU.x };
+const DROP_R = 18;
+
+// which land can be reached from the office without swimming (flood fill on a 4 m grid; roads act as bridges)
+const RS = 4, RW = Math.ceil((X1 - X0) / RS), RH = Math.ceil((Y1 - Y0) / RS);
+const reach = new Uint8Array(RW * RH);
+{
+  const wet = (x, y) => {
+    const c = cellOf(x, y); if (c < 0) return true;
+    if (!G.river[c].length || onRoad(x, y)) return false;
+    for (const s of G.river[c]) if (segD2(x, y, s.ax, s.ay, s.bx, s.by) < (s.hw + 1) ** 2) return true;
+    return false;
+  };
+  const start = Math.floor((door.y - Y0) / RS) * RW + Math.floor((door.x - X0) / RS);
+  const q = [start]; reach[start] = 1;
+  while (q.length) {
+    const i = q.pop(), cx = i % RW, cy = (i / RW) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= RW || ny >= RH) continue;
+      const j = ny * RW + nx;
+      if (reach[j] || wet(X0 + (nx + .5) * RS, Y0 + (ny + .5) * RS)) { if (!reach[j]) reach[j] = 2; continue; }
+      reach[j] = 1; q.push(j);
+    }
+  }
+}
+const reachable = (x, y) => {
+  const cx = Math.floor((x - X0) / RS), cy = Math.floor((y - Y0) / RS);
+  return cx >= 0 && cy >= 0 && cx < RW && cy < RH && reach[cy * RW + cx] === 1;
+};
+
+// roadside spots in front of houses, for comrades
+const spots = [];
+for (const b of buildings) {
+  if (b === office || !reachable(b.cx, b.cy)) continue;
+  const nr = nearestRoad(b.cx, b.cy);
+  if (nr.d > 45) continue;
+  const dx = b.cx - nr.x, dy = b.cy - nr.y, L = Math.hypot(dx, dy) || 1;
+  let x = nr.x + dx / L * (nr.hw + 2.5), y = nr.y + dy / L * (nr.hw + 2.5);
+  if (blocked(x, y, 1.5)) { x = nr.x; y = nr.y; }
+  if (reachable(x, y)) spots.push({ x, y, b });
+}
+
+// trees fill the empty land
+const trees = [];
+{
+  const R = rng32(7);
+  for (let k = 0; k < 12000 && trees.length < 2600; k++) {
+    const x = X0 + R() * (X1 - X0), y = Y0 + R() * (Y1 - Y0);
+    if (roadGap(x, y) < 3) continue;
+    if (blocked(x, y, 2.5)) continue;
+    if (Math.hypot(x - door.x, y - door.y) < 26) continue;
+    trees.push({ x, y, r: 2 + R() * 2.8, dark: R() < .45 });
+  }
+}
+
+/* ================= static map layers (Path2D, world units) ================= */
+const PATH = {};
+{
+  const roadsByHw = {};
+  for (const r of roads) {
+    const p = roadsByHw[r.hw] || (roadsByHw[r.hw] = new Path2D());
+    p.moveTo(r.p[0][0], r.p[0][1]);
+    for (let i = 1; i < r.p.length; i++) p.lineTo(r.p[i][0], r.p[i][1]);
+  }
+  PATH.roads = Object.entries(roadsByHw).map(([hw, p]) => ({ hw: +hw, p }));
+  PATH.rivers = rivers.map(r => { const p = new Path2D(); p.moveTo(r.p[0][0], r.p[0][1]); for (const q of r.p) p.lineTo(q[0], q[1]); return { hw: r.hw, p }; });
+  const polyPath = (list) => { const p = new Path2D(); for (const b of list) { p.moveTo(b.p[0][0], b.p[0][1]); for (const q of b.p) p.lineTo(q[0], q[1]); p.closePath(); } return p; };
+  PATH.ponds = polyPath(ponds);
+  const homes = buildings.filter(b => b !== office);
+  PATH.blds = polyPath(homes);
+  PATH.roofs = ROOFS.map(col => ({ col, p: polyPath(homes.filter(b => b.roof === col)) }));
+  PATH.office = polyPath([office]);
+  const t1 = new Path2D(), t2 = new Path2D(), ts = new Path2D();
+  for (const t of trees) {
+    const p = t.dark ? t2 : t1;
+    p.moveTo(t.x + t.r, t.y); p.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+    ts.moveTo(t.x + t.r + 1, t.y + 1); ts.arc(t.x + 1, t.y + 1, t.r, 0, Math.PI * 2);
+  }
+  PATH.trees = t1; PATH.trees2 = t2; PATH.treeShadow = ts;
+}
+
+/* ================= canvas & input ================= */
+const cv = document.getElementById("game"), ctx = cv.getContext("2d");
+const mini = document.getElementById("mini"), mctx = mini.getContext("2d");
+let W = 0, H = 0, DPR = 1, miniBase = null;
+function resize() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = innerWidth; H = innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  const r = mini.getBoundingClientRect();
+  mini.width = Math.round((r.width || 150) * DPR); mini.height = Math.round((r.height || 130) * DPR);
+  miniBase = null;
+}
+addEventListener("resize", resize);
+
+const keys = new Set();
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+  if (k === " " && !e.repeat) { horn(); flashHorn(); }
+  if (k === "m") toggleMute();
+  if (k === "enter" && (state === "menu" || state === "over") && !document.getElementById("play").disabled) startGame();
+  keys.add(k);
+});
+addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+addEventListener("blur", () => keys.clear());
+
+let stick = null; // {id, ox, oy, x, y}
+cv.addEventListener("pointerdown", e => {
+  if (stick) return;
+  stick = { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: e.clientX, y: e.clientY };
+  cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener("pointermove", e => { if (stick && e.pointerId === stick.id) { stick.x = e.clientX; stick.y = e.clientY; } });
+const endStick = e => { if (stick && e.pointerId === stick.id) stick = null; };
+cv.addEventListener("pointerup", endStick);
+cv.addEventListener("pointercancel", endStick);
+const hornBtn = document.getElementById("horn");
+hornBtn.addEventListener("pointerdown", e => { e.preventDefault(); horn(); });
+function flashHorn() { hornBtn.classList.add("hit"); setTimeout(() => hornBtn.classList.remove("hit"), 120); }
+if (matchMedia("(pointer: coarse)").matches) document.getElementById("hornKey").textContent = "হর্ন";
+
+function readInput() {
+  let ix = 0, iy = 0;
+  if (keys.has("arrowleft") || keys.has("a")) ix -= 1;
+  if (keys.has("arrowright") || keys.has("d")) ix += 1;
+  if (keys.has("arrowup") || keys.has("w")) iy -= 1;
+  if (keys.has("arrowdown") || keys.has("s")) iy += 1;
+  if (stick) {
+    const dx = stick.x - stick.ox, dy = stick.y - stick.oy, L = Math.hypot(dx, dy);
+    if (L > 8) { const m = Math.min(1, L / 55); ix = dx / L * m; iy = dy / L * m; }
+  }
+  const L = Math.hypot(ix, iy);
+  if (L > 1) { ix /= L; iy /= L; }
+  return { ix, iy, m: Math.min(1, L) };
+}
+
+/* ================= audio ================= */
+let ac = null, muted = false;
+try { muted = localStorage.getItem("kcp-sim-muted") === "1"; } catch (e) {}
+const muteBtn = document.getElementById("mute");
+const syncMute = () => { muteBtn.textContent = muted ? "🔇" : "🔊"; };
+syncMute();
+function toggleMute() { muted = !muted; syncMute(); engineUpdate(); try { localStorage.setItem("kcp-sim-muted", muted ? "1" : "0"); } catch (e) {} }
+muteBtn.addEventListener("click", toggleMute);
+function tone(f, t0, dur, type, vol, f2) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t0);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+const sfx = {
+  play(fn) { if (!ac || muted) return; try { fn(ac.currentTime); } catch (e) { console.warn("sfx", e); } },
+  horn() {
+    this.play(t => {
+      if (hornBuf) { // real recording; tiny pitch wobble so repeated honks don't sound identical
+        const src = ac.createBufferSource(), g = ac.createGain();
+        src.buffer = hornBuf; src.playbackRate.value = .96 + Math.random() * .08; g.gain.value = .8;
+        src.connect(g).connect(ac.destination); src.start(t);
+        return;
+      }
+      tone(560, t, .13, "square", .07); tone(840, t, .13, "square", .025); tone(440, t + .15, .2, "square", .07); tone(660, t + .15, .2, "square", .025);
+    });
+  },
+  moo() { this.play(t => { tone(210, t, .75, "triangle", .2, 120); tone(105, t, .75, "sine", .12, 70); }); },
+  pop() { this.play(t => tone(500, t, .14, "square", .06, 950)); },
+  chime() { this.play(t => [660, 880, 1175].forEach((f, i) => tone(f, t + i * .09, .35, "triangle", .12))); },
+  boost() { this.play(t => tone(260, t, .45, "sawtooth", .05, 1100)); },
+  run() { this.play(t => [700, 560, 450].forEach((f, i) => tone(f, t + i * .07, .1, "square", .04))); },
+  tick() { this.play(t => tone(1300, t, .06, "square", .04)); },
+
+  // ---- meme-style effects, all synthesized (no copyrighted clips)
+  vineBoom() { this.play(t => { tone(120, t, 1.1, "sine", .55, 34); tone(62, t, 1.1, "triangle", .35, 30); noiseHit(t, .18, .35, "lowpass", 500, 120); }); },
+  scratch() { this.play(t => { noiseHit(t, .11, .4, "bandpass", 500, 2600); noiseHit(t + .11, .16, .4, "bandpass", 2600, 380); }); },
+  boing() { this.play(t => wobble(t, 150, 620, .45, .22)); },
+  bonk() { this.play(t => { tone(320, t, .14, "sine", .4, 85); noiseHit(t, .06, .3, "bandpass", 1800); }); },
+  slide() { this.play(t => wobble(t, 420, 1900, .5, .1, 7, 18)); },
+  airhorn() { this.play(t => { [0, .16, .32].forEach(d => brass(t + d, [440, 554, 659], .12, .1, 3200)); brass(t + .5, [440, 554, 659], .9, .11, 3200); }); },
+  sadTrombone() { this.play(t => { [[311, 0, .42], [294, .45, .42], [277, .9, .42]].forEach(([f, d, l]) => brass(t + d, [f], l, .14, 1100)); brass(t + 1.35, [262], 1.4, .14, 1100, 6, 9); }); },
+  dunDun() { this.play(t => { brass(t, [262, 131], .22, .14, 900); brass(t + .28, [247, 123], .22, .14, 900); brass(t + .56, [208, 104], 1.3, .15, 900, 5, 4); noiseHit(t + .56, .9, .3, "lowpass", 160); }); },
+  fanfare() { this.play(t => { [523, 659, 784].forEach((f, i) => tone(f, t + i * .12, .14, "square", .07)); tone(1047, t + .36, .6, "square", .07); tone(784, t + .36, .6, "triangle", .08); }); },
+  powerDown() { this.play(t => { tone(700, t, .9, "sawtooth", .08, 40); tone(120, t, .9, "sine", .12, 30); }); },
+  powerUp() { this.play(t => { tone(60, t, .55, "sawtooth", .07, 900); tone(1568, t + .55, .4, "sine", .09); }); },
+  thunder() { this.play(t => { noiseHit(t, .12, .5, "highpass", 1800); noiseHit(t + .05, 2.2, .7, "lowpass", 420, 60); }); },
+  megaphone() { this.play(t => { [392, 440, 392, 349, 392].forEach((f, i) => { tone(f, t + i * .11, .1, "square", .045); tone(f * 2.01, t + i * .11, .1, "sawtooth", .02); }); noiseHit(t, .6, .03, "bandpass", 1800); }); },
+  welcome() { this.play(t => [784, 988, 1175].forEach((f, i) => tone(f, t + i * .08, .25, "sine", .08))); },
+};
+
+// building blocks for the effects above
+let noiseBuf = null;
+function noiseBuffer() {
+  if (!noiseBuf) {
+    noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuf;
+}
+function noiseHit(t, dur, vol, type, f1, f2) {
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuffer(); f.type = type; f.frequency.setValueAtTime(f1, t);
+  if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  s.connect(f).connect(g).connect(ac.destination); s.start(t); s.stop(t + dur + .05);
+}
+// brassy chord: sawtooths through a lowpass, optional vibrato (rate, depth in Hz)
+function brass(t, freqs, dur, vol, cutoff, vibRate = 0, vibDepth = 0) {
+  const f = ac.createBiquadFilter(), g = ac.createGain();
+  f.type = "lowpass"; f.frequency.value = cutoff;
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .03);
+  g.gain.setValueAtTime(vol, t + dur * .8); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  f.connect(g).connect(ac.destination);
+  for (const fr of freqs) {
+    const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = fr;
+    if (vibRate) { const l = ac.createOscillator(), d = ac.createGain(); l.frequency.value = vibRate; d.gain.value = vibDepth; l.connect(d).connect(o.frequency); l.start(t); l.stop(t + dur + .05); }
+    o.connect(f); o.start(t); o.stop(t + dur + .05);
+  }
+}
+// cartoon boing / slide whistle: pitch sweep with a wobble that dies away
+function wobble(t, f1, f2, dur, vol, rate = 16, depth = 160) {
+  const o = ac.createOscillator(), g = ac.createGain(), l = ac.createOscillator(), d = ac.createGain();
+  o.type = "sine"; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur * .35);
+  l.frequency.value = rate; d.gain.setValueAtTime(depth, t); d.gain.exponentialRampToValueAtTime(1, t + dur);
+  l.connect(d).connect(o.frequency);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g).connect(ac.destination); o.start(t); l.start(t); o.stop(t + dur + .05); l.stop(t + dur + .05);
+}
+
+// Horn: two honks cut from "Car Horn.wav" (Wikimedia Commons, CC0), pitched up to sound like a CNG
+let hornBuf = null, hornLoading = false;
+function loadHorn() {
+  if (!ac || hornBuf || hornLoading) return;
+  hornLoading = true;
+  fetch("horn.mp3").then(r => r.arrayBuffer())
+    .then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no)))
+    .then(buf => { hornBuf = buf; })
+    .catch(() => { hornLoading = false; }); // keep the synthesized horn
+}
+
+// CNG engine putt-putt: a low sawtooth chopped by a square LFO; pitch and chop rate follow speed
+let eng = null;
+function engineUpdate() {
+  if (!ac) return;
+  try {
+    if (!eng) {
+      const o = ac.createOscillator(), f = ac.createBiquadFilter(), amp = ac.createGain(), vol = ac.createGain();
+      const lfo = ac.createOscillator(), depth = ac.createGain();
+      o.type = "sawtooth"; o.frequency.value = 50;
+      f.type = "lowpass"; f.frequency.value = 420;
+      amp.gain.value = .5; lfo.type = "square"; lfo.frequency.value = 9; depth.gain.value = .5;
+      vol.gain.value = 0;
+      lfo.connect(depth).connect(amp.gain);
+      o.connect(f).connect(amp).connect(vol).connect(ac.destination);
+      o.start(); lfo.start();
+      // rain hiss: looping noise, only audible while it rains
+      const rs = ac.createBufferSource(), rf = ac.createBiquadFilter(), rv = ac.createGain();
+      rs.buffer = noiseBuffer(); rs.loop = true; rf.type = "bandpass"; rf.frequency.value = 2200; rf.Q.value = .4; rv.gain.value = 0;
+      rs.connect(rf).connect(rv).connect(ac.destination); rs.start();
+      eng = { o, lfo, vol, rv };
+    }
+    const on = state === "play" && !muted && !paused, v = P ? Math.abs(P.v) : 0, now = ac.currentTime;
+    eng.rv.gain.setTargetAtTime(on ? rainLevel * .09 : 0, now, .3);
+    eng.vol.gain.setTargetAtTime(on ? .035 + v * .0018 : 0, now, .08);
+    eng.o.frequency.setTargetAtTime(46 + v * 3.2, now, .1);
+    eng.lfo.frequency.setTargetAtTime(8 + v * .9, now, .1);
+  } catch (e) {}
+}
+
+/* ================= photos ================= */
+const IMG = {};
+for (const c of [...COMRADES, SUFAN]) {
+  if (c.a) continue;
+  const im = new Image(); im.src = `../assets/people/${c.id}.jpg`; IMG[c.id] = im;
+}
+
+/* ================= game state ================= */
+const GAME_LEN = 210;          // real seconds = 35 game minutes (4:25 → 5:00)
+const SEATS = 3;
+let state = "menu", rand = Math.random;
+let P = null, comrades = [], cows = [], stalls = [], delivered = [], bubbles = [], floaties = [], rings = [], dust = [];
+let time = 0, lastTick = -1, shake = 0, sufanCd = 0, cam = null;
+let stats = {}, events = {}, shedLevel = 0, rainLevel = 0, banner = null, flash = 0, area = null, chatCd = 0, warned30 = false;
+let confetti = [], puffs = [], skids = [];
+
+// neighbourhoods, each named after its mosque's pin (meters from the map pin, y points south)
+const PLACES = [
+  { n: "মাইজপাড়া", x: 258, y: 110, r: 150, mosque: "কেন্দ্রীয় জামে মসজিদ" },   // 24.835614, 91.955255
+  { n: "পশ্চিমপাড়া", x: -354, y: 15, r: 160, mosque: "পশ্চিমপাড়া জামে মসজিদ" }, // 24.836464, 91.949192
+];
+const RIDE_LINES = [
+  "পংক ভাই, মিটারে কত উঠলো?", "এই রাস্তা দিয়া না, ওইটা শর্টকাট!", "সভায় নাস্তা আছে তো?",
+  "আমারে আগে নামাইয়েন, বাসায় কাজ আছে।", "সিএনজিতে এসি নাই কেন? এইটা কি বিপ্লব?",
+  "ভাড়া পার্টি ফান্ড থেকে, ঠিক আছে?", "গান ছাড়েন মামা, একটু মুড আসুক।", "সুফানের দোকানে বাকি কত হইলো রে?",
+];
+const FAST_LINES = ["মামা আস্তে চালান, চা পড়ে যাবে!", "আল্লাহ বাঁচাও!! 😱", "এইটা সিএনজি না রকেট?", "পংক ভাই, লাইসেন্স আছে তো?"];
+
+// election season: the campaign poster on roadside billboards, poster strings across roads, and processions
+// each spot gets a different poster; a file that's missing is simply skipped
+const POSTERS = [
+  { src: "poster.jpg", slogan: "‘সিলেট-৬ আসনের সমৃদ্ধির জন্য ধানের শীষকে বিজয়ী করা প্রয়োজন’" },
+  { src: "poster2.jpg", slogan: "‘আপনার কথাগুলো সংসদে বলতে চাই আপনার ভোটের মাধ্যমে’" },
+].map(p => { const img = new Image(); img.src = p.src; return { ...p, img }; });
+function posterFor(i) {
+  const ok = POSTERS.filter(p => p.img.complete && p.img.naturalWidth);
+  return ok.length ? ok[i % ok.length] : null;
+}
+let sloganShown = new Set();
+const POSTER_LINES = ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই! 📢", "ভোটের মৌসুম! রাস্তায় শুধু পোস্টার আর পোস্টার।", "পোস্টার গুনতে গুনতে সভায় দেরি হয়ে যাবে!", "এই পোস্টার তো আগেও দেখছি!", "সিএনজির গায়েও কেউ পোস্টার লাগাইয়া দিবে মনে হয়।"];
+const CHANTS = ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই!", "এমরান ভাই এমরান ভাই!", "ধানের শীষে ভোট দিন!", "জিন্দাবাদ! জিন্দাবাদ!", "সমৃদ্ধির পথে বাংলাদেশ!", "ভোট দিন, ভোট দিন!"];
+let billboards = null, buntings = null, michils = [];
+// Sam Vai: a local representative out for a walk. Don't run him over.
+const SAM = { id: "sam", n: "সাম ভাই", a: "🧔", crop: [.24, .03, .54] };
+IMG.sam = new Image(); IMG.sam.src = "sam.jpg";
+const SAM_LINES = ["সাবধানে চালাও বাবা!", "আস্তে, আস্তে! রাস্তা কারো বাপের না।", "এলাকার উন্নয়ন চলছে, সাইড দাও।", "সালাম দিয়া যাও, পংক!"];
+let sam = null, samWarnCd = 0;
+function roadsidePoint(sg, f, gap) { // a spot just off the road edge, on whichever side is free of buildings
+  const x = sg.ax + (sg.bx - sg.ax) * f, y = sg.ay + (sg.by - sg.ay) * f, L = Math.hypot(sg.bx - sg.ax, sg.by - sg.ay) || 1;
+  const nx = -(sg.by - sg.ay) / L, ny = (sg.bx - sg.ax) / L;
+  for (const side of [1, -1]) {
+    const o = { x: x + nx * side * (sg.hw + gap), y: y + ny * side * (sg.hw + gap) };
+    if (!pushOut({ ...o }, 2.5) && !onRoad(o.x, o.y)) return o;
+  }
+  return null;
+}
+function makeElectionDecor() {
+  const R = rng32(2026);
+  billboards = [];
+  const want = [{ x: door.x, y: door.y, min: 35, max: 70 }, ...PLACES.map(p => ({ x: p.x, y: p.y, min: 15, max: 60 }))];
+  for (const w of want) { // one near the office and one near each mosque
+    for (let k = 0; k < 4000; k++) {
+      const sg = roadSegs[(R() * roadSegs.length) | 0], o = roadsidePoint(sg, R(), 3);
+      if (!o) continue;
+      const d = Math.hypot(o.x - w.x, o.y - w.y);
+      if (d < w.min || d > w.max || Math.hypot(o.x - door.x, o.y - door.y) < 30) continue;
+      billboards.push({ ...o, k: billboards.length, seen: false, wig: 0 }); break;
+    }
+  }
+  for (let k = 0; k < 6000 && billboards.length < 14; k++) { // and more scattered around the village
+    const sg = roadSegs[(R() * roadSegs.length) | 0], o = roadsidePoint(sg, R(), 3);
+    if (!o || !reachable(o.x, o.y) && !onRoad(sg.ax, sg.ay)) continue;
+    if (Math.hypot(o.x - door.x, o.y - door.y) < 30 || billboards.some(b => Math.hypot(b.x - o.x, b.y - o.y) < 130)) continue;
+    billboards.push({ ...o, k: billboards.length, seen: false, wig: 0 });
+  }
+  buntings = []; // strings of posters hung across the road
+  for (let k = 0; k < 6000 && buntings.length < 9; k++) {
+    const sg = roadSegs[(R() * roadSegs.length) | 0];
+    if (Math.hypot(sg.bx - sg.ax, sg.by - sg.ay) < 20) continue;
+    const f = .3 + R() * .4, x = sg.ax + (sg.bx - sg.ax) * f, y = sg.ay + (sg.by - sg.ay) * f;
+    if (Math.hypot(x - door.x, y - door.y) < 25 || buntings.some(b => Math.hypot(b.x - x, b.y - y) < 110)) continue;
+    const L = Math.hypot(sg.bx - sg.ax, sg.by - sg.ay);
+    buntings.push({ x, y, nx: -(sg.by - sg.ay) / L, ny: (sg.bx - sg.ax) / L, half: sg.hw + 2.5, ph: R() * 6, k: buntings.length });
+  }
+}
+// walk an actor along its road polyline, bouncing at the ends (used by cows and processions)
+function walkRoad(w, ds) {
+  for (let guard = 0; ds > 0 && guard < 8; guard++) {
+    const [ax, ay] = w.r.p[w.i], [bx, by] = w.r.p[w.i + 1];
+    const L = Math.hypot(bx - ax, by - ay) || 1;
+    const nf = w.f + w.dir * ds / L;
+    if (nf > 1) { ds -= (1 - w.f) * L; w.f = 0; w.i++; if (w.i >= w.r.p.length - 1) { w.i = w.r.p.length - 2; w.f = 1; w.dir = -1; } }
+    else if (nf < 0) { ds -= w.f * L; w.f = 1; w.i--; if (w.i < 0) { w.i = 0; w.f = 0; w.dir = 1; } }
+    else { w.f = nf; ds = 0; }
+  }
+  const [ax, ay] = w.r.p[w.i], [bx, by] = w.r.p[w.i + 1];
+  const nx = ax + (bx - ax) * w.f, ny = ay + (by - ay) * w.f;
+  if (Math.abs(nx - w.x) > .01) w.face = nx > w.x ? -1 : 1;
+  w.x = nx; w.y = ny;
+}
+
+function showBanner(text, sub = "", color = C.yellow, dur = 2) { banner = { text, sub, color, dur, t: 0 }; }
+function burst(x, y, n) {
+  const cols = [C.red, C.yellow, "#2f8a4f", C.paper, "#3d6db3"];
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = 8 + Math.random() * 26;
+    confetti.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: Math.random() * 6, vr: (Math.random() - .5) * 14, c: cols[i % cols.length], t: 0 });
+  }
+}
+function startEvent(k) {
+  if (k === "shed") { showBanner("লোডশেডিং!", "কারেন্ট গেছে! হেডলাইট আর জোনাকি ভরসা", "#ffe27a", 2.4); sfx.powerDown(); say(P, "আবার কারেন্ট গেল! 🕯️", 2.2); }
+  if (k === "rain") { showBanner("ঝুম বৃষ্টি!", "রাস্তা পিছলা, সাবধানে চালাও", "#a9d0e8", 2.4); flash = 1; sfx.thunder(); say(P, "ছাতা আনি নাই মামা! ☔", 2.2); }
+}
+function endEvent(k) {
+  if (k === "shed") { showBanner("কারেন্ট আইছে!", "", C.yellow, 1.4); sfx.powerUp(); }
+  if (k === "rain") say(P, "যাক, বৃষ্টি থামলো। 🌤️", 1.8);
+}
+
+function shuffle(a, R) { for (let i = a.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function newGame() {
+  rand = rng32((Math.random() * 2 ** 31) | 0);
+  const sh = shuffle(spots.slice(), rand);
+  const picks = [];
+  for (const sep of [110, 80, 55, 35, 0]) {
+    for (const s of sh) {
+      if (picks.length >= COMRADES.length) break;
+      const d = Math.hypot(s.x - door.x, s.y - door.y);
+      if (d < 110 || d > 600 || picks.includes(s)) continue;
+      if (picks.every(p => Math.hypot(p.x - s.x, p.y - s.y) >= sep)) picks.push(s);
+    }
+    if (picks.length >= COMRADES.length) break;
+  }
+  comrades = COMRADES.map((d, i) => {
+    const s = picks[i % picks.length], need = 1 + ((rand() * 3) | 0);
+    return { ...d, x: s.x, y: s.y, home: s.b, state: "sleep", need, needMax: need, fled: false, phase: rand() * 6, cd: 0, shake: 0 };
+  });
+
+  cows = [];
+  for (let k = 0; k < 500 && cows.length < 9; k++) {
+    const r = roads[(rand() * roads.length) | 0];
+    if (r.p.length < 2) continue;
+    const i = (rand() * (r.p.length - 1)) | 0, f = rand();
+    const x = r.p[i][0] + (r.p[i + 1][0] - r.p[i][0]) * f, y = r.p[i][1] + (r.p[i + 1][1] - r.p[i][1]) * f;
+    if (Math.hypot(x - door.x, y - door.y) < 70 || !reachable(x, y)) continue;
+    if (cows.some(c => Math.hypot(c.x - x, c.y - y) < 90)) continue;
+    cows.push({ r, i, f, dir: rand() < .5 ? 1 : -1, sp: 1 + rand() * 1.2, x, y, scare: 0, hitCd: 0, face: 1 });
+  }
+
+  if (!billboards) makeElectionDecor();
+  for (const b of billboards) { b.seen = false; b.wig = 0; }
+  sloganShown = new Set();
+  michils = [];
+  for (let k = 0; k < 800 && michils.length < 2; k++) {
+    const r = roads[(rand() * roads.length) | 0];
+    if (r.p.length < 2) continue;
+    const i = (rand() * (r.p.length - 1)) | 0, f = rand();
+    const x = r.p[i][0] + (r.p[i + 1][0] - r.p[i][0]) * f, y = r.p[i][1] + (r.p[i + 1][1] - r.p[i][1]) * f;
+    const d = Math.hypot(x - door.x, y - door.y);
+    if (d < 120 || d > 480 || !reachable(x, y) || michils.some(m => Math.hypot(m.x - x, m.y - y) < 250)) continue;
+    michils.push({ k: michils.length, r, i, f, dir: rand() < .5 ? 1 : -1, x, y, scare: 0, hitCd: 0, chantCd: 2 + rand() * 4, face: 1 });
+  }
+
+  sam = null; samWarnCd = 0;
+  for (let k = 0; k < 2000 && !sam; k++) {
+    const r = roads[(rand() * roads.length) | 0];
+    if (r.p.length < 2) continue;
+    const i = (rand() * (r.p.length - 1)) | 0, f = rand();
+    const x = r.p[i][0] + (r.p[i + 1][0] - r.p[i][0]) * f, y = r.p[i][1] + (r.p[i + 1][1] - r.p[i][1]) * f;
+    const d = Math.hypot(x - door.x, y - door.y);
+    if (d < 140 || d > 420 || !reachable(x, y)) continue;
+    sam = { ...SAM, r, i, f, dir: rand() < .5 ? 1 : -1, x, y, scare: 0, talkCd: 0, face: 1 };
+  }
+
+  stalls = [];
+  for (let k = 0; k < 800 && stalls.length < 3; k++) {
+    const s = roadSegs[(rand() * roadSegs.length) | 0], f = rand();
+    const x = s.ax + (s.bx - s.ax) * f, y = s.ay + (s.by - s.ay) * f;
+    if (Math.hypot(x - door.x, y - door.y) < 160 || Math.hypot(x - door.x, y - door.y) > 550 || !reachable(x, y)) continue;
+    if (stalls.some(t => Math.hypot(t.x - x, t.y - y) < 260)) continue;
+    stalls.push({ x, y, cd: 0 });
+  }
+
+  // start just outside the office, facing along the road
+  const s0 = roadSegs.reduce((b, s) => { const d = segD2(door.x, door.y, s.ax, s.ay, s.bx, s.by); return d < b.d ? { d, s } : b; }, { d: 1e18 }).s;
+  const a0 = Math.atan2(s0.by - s0.ay, s0.bx - s0.ax);
+  // park a little way down the road so the CNG isn't hidden under the office labels
+  P = { x: door.x + Math.cos(a0) * 24, y: door.y + Math.sin(a0) * 24, a: a0, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0 };
+  if (!onRoad(P.x, P.y)) { P.x = door.x; P.y = door.y; }
+  delivered = []; bubbles = []; floaties = []; rings = []; dust = [];
+  time = 0; lastTick = -1; shake = 0; sufanCd = 3;
+  stats = { cows: 0, honks: 0, singara: 0, caught: 0, hattricks: 0, walls: 0, posters: 0, michil: 0 };
+  const shedAt = 50 + rand() * 55; // load-shedding first, rain later, never overlapping
+  events = { shed: { at: shedAt, dur: 9 }, rain: { at: Math.min(GAME_LEN - 40, shedAt + 40 + rand() * 30), dur: 16 } };
+  shedLevel = 0; rainLevel = 0; banner = null; flash = 0; area = null; chatCd = 8; warned30 = false;
+  confetti = []; puffs = []; skids = [];
+  P.puffCd = 0;
+  cam = { x: P.x, y: P.y, z: baseZoom() };
+  say(P, "পংক ভাইয়ের সিএনজি রেডি! চলো, কমরেডদের ঘুম ভাঙাই। প্যাঁ-পোঁ!", 3.2);
+}
+
+const baseZoom = () => clamp(Math.min(W, H) / 135, 2.9, 6.2);
+
+function say(who, text, dur = 3, delay = 0) {
+  for (const b of bubbles) if (b.who === who && b.t >= 0) b.t = Math.max(b.t, b.dur - .25); // replace old line
+  bubbles.push({ who, text, t: -delay, dur });
+}
+function floaty(x, y, text, color = C.red) { floaties.push({ x, y, text, color, t: 0 }); }
+
+function horn() {
+  if (state !== "play" || P.hornCd > 0) return;
+  P.hornCd = .32;
+  rings.push({ x: P.x, y: P.y, t: 0 });
+  sfx.horn();
+  if (++stats.honks === 30) say(P, "হর্ন বাজাইতে বাজাইতে আঙুল ব্যথা!", 2);
+  for (const b of billboards || []) if (dist(b, P) < 35) b.wig = .6;
+  if (sam && dist(sam, P) < 40 && sam.scare <= 0) { sam.scare = 2.5; sam.dir = -sam.dir; say(sam, "হর্ন শুনছি, সরলাম!", 1.6); }
+  for (const m of michils) if (dist(m, P) < 40 && m.scare <= 0) { m.scare = 3; m.dir = -m.dir; say(m, "আচ্ছা আচ্ছা, সাইড দিলাম! জিন্দাবাদ!", 1.8); }
+  for (const c of comrades) {
+    if (c.state !== "sleep" || dist(c, P) > 42) continue;
+    c.need--; c.shake = .45;
+    if (c.need <= 0) wake(c);
+    else if (c.cd <= 0) { say(c, SNORES[(rand() * SNORES.length) | 0], 1.6); c.cd = 1.2; }
+  }
+  for (const w of cows) {
+    if (dist(w, P) > 34) continue;
+    w.scare = 2.6;
+    const [ax, ay] = w.r.p[w.i], [bx, by] = w.r.p[w.i + 1];
+    const along = (bx - ax) * (w.x - P.x) + (by - ay) * (w.y - P.y);
+    w.dir = along >= 0 ? 1 : -1;
+  }
+}
+
+function wake(c) {
+  if (!c.fled && rand() < .4) {
+    c.fled = true; c.state = "flee"; c.fleeT = 13;
+    const far = spots.filter(s => { const d = Math.hypot(s.x - c.x, s.y - c.y); return d > 70 && d < 170; });
+    const t = far.length ? far[(rand() * far.length) | 0] : { x: c.x + 60, y: c.y };
+    c.tx = t.x; c.ty = t.y;
+    say(c, EXCUSES[(rand() * EXCUSES.length) | 0], 3.8);
+    sfx.scratch(); setTimeout(() => sfx.run(), 260);
+  } else {
+    c.state = "awake";
+    say(c, WAKES[(rand() * WAKES.length) | 0], 2.4);
+    sfx.pop();
+  }
+}
+
+function slotPos(i) {
+  const row = Math.floor(i / 4), col = i % 4;
+  return { x: door.x + officeU.x * (door.hw + 4 + row * 4.2) + officeV.x * ((col - 1.5) * 4.6),
+           y: door.y + officeU.y * (door.hw + 4 + row * 4.2) + officeV.y * ((col - 1.5) * 4.6) };
+}
+const sufanPos = () => ({ x: door.x + officeU.x * (door.hw + 3) + officeV.x * 11, y: door.y + officeU.y * (door.hw + 3) + officeV.y * 11 });
+
+/* ================= update ================= */
+function update(dt) {
+  time += dt;
+  if (time >= GAME_LEN) { endGame(false); return; }
+  const left = GAME_LEN - time;
+  if (left < 30 && Math.floor(left) !== lastTick) { lastTick = Math.floor(left); sfx.tick(); }
+  if (left < 30 && !warned30) { warned30 = true; sfx.dunDun(); showBanner("শেষ ৩০ সেকেন্ড!", "জলদি করো, সভা শুরু হয়ে যাচ্ছে", C.red, 1.8); }
+
+  // ---- events: load-shedding and rain fade in and out
+  for (const k in events) {
+    const e = events[k], on = time >= e.at && time < e.at + e.dur;
+    if (on && !e.on) { e.on = true; startEvent(k); }
+    if (!on && e.on) { e.on = false; e.done = true; endEvent(k); }
+  }
+  const fade = (lv, on) => clamp(lv + (on ? dt / 1.2 : -dt / 1.5), 0, 1);
+  shedLevel = fade(shedLevel, events.shed.on); rainLevel = fade(rainLevel, events.rain.on);
+  if (events.rain.on && rand() < dt * .08) { flash = 1; sfx.thunder(); shake = Math.max(shake, .15); }
+  flash = Math.max(0, flash - dt * 2.5);
+
+  // ---- neighbourhood welcome
+  let here = null;
+  for (const pl of PLACES) if (Math.hypot(P.x - pl.x, P.y - pl.y) < pl.r) here = pl;
+  if (here !== area) {
+    if (here && time > 2) { showBanner(`${here.n}য় স্বাগতম!`, here.mosque, C.paper, 1.6); sfx.welcome(); }
+    area = here;
+  }
+
+  // ---- passenger chatter
+  chatCd -= dt;
+  if (chatCd <= 0 && P.riders.length) {
+    const fast = P.v > 15 || P.boost > 0;
+    const pool = fast ? FAST_LINES : RIDE_LINES;
+    say(P, `${P.riders[(rand() * P.riders.length) | 0].n}: ${pool[(rand() * pool.length) | 0]}`, 2.6);
+    chatCd = 9 + rand() * 6;
+  }
+
+  // ---- CNG
+  const inp = readInput();
+  const road = onRoad(P.x, P.y);
+  const maxV = 18 * (road ? 1 : .42) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - .22 * rainLevel);
+  P.hornCd -= dt; P.boost -= dt;
+  if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
+  else if (inp.m > .12) {
+    const da = wrapAng(Math.atan2(inp.iy, inp.ix) - P.a);
+    const tr = (P.v < 3 ? 6 : 4.2) * (1 - .35 * rainLevel) * dt;
+    if (P.v > 10 && Math.abs(da) > 1.1) skids.push({ x: P.x, y: P.y, a: P.a, t: 0 });
+    P.a = wrapAng(P.a + clamp(da, -tr, tr));
+    const tv = maxV * inp.m * Math.max(.12, Math.cos(da));
+    P.v += clamp(tv - P.v, -24 * dt, 9 * dt);
+  } else P.v += clamp(-P.v, -15 * dt, 15 * dt);
+  if (P.v > maxV) P.v = Math.max(maxV, P.v - 22 * dt);
+  P.x += Math.cos(P.a) * P.v * dt; P.y += Math.sin(P.a) * P.v * dt;
+  const bump = pushOut(P, 2) | riverBlock(P, 2);
+  if (bump) { P.v *= Math.pow(.15, dt); P.scrape += dt; } else P.scrape = Math.min(0, P.scrape + dt);
+  if (P.scrape > 1.4) { say(P, "এই গলিতে সিএনজি ঢুকে না মামা!", 1.8); P.scrape = -4; stats.walls++; sfx.bonk(); }
+  P.x = clamp(P.x, X0 + 4, X1 - 4); P.y = clamp(P.y, Y0 + 4, Y1 - 4);
+  if (!road && P.v > 3 && rand() < dt * 18) dust.push({ x: P.x - Math.cos(P.a) * 2.5, y: P.y - Math.sin(P.a) * 2.5, t: 0 });
+  for (const r of P.riders) { r.x = P.x; r.y = P.y; }
+  P.puffCd -= dt;
+  if (P.puffCd <= 0 && (P.v > .5 || rand() < .3)) {
+    P.puffCd = P.v > 8 ? .09 : .22;
+    puffs.push({ x: P.x - Math.cos(P.a) * 3.2, y: P.y - Math.sin(P.a) * 3.2, vx: -Math.cos(P.a) * 1.5 + (rand() - .5), vy: -Math.sin(P.a) * 1.5 + (rand() - .5), t: 0 });
+  }
+
+  // ---- cows
+  for (const w of cows) {
+    w.scare -= dt; w.hitCd -= dt;
+    walkRoad(w, (w.scare > 0 ? 7 : w.sp) * dt);
+    if (w.hitCd <= 0 && P.stun <= 0 && dist(w, P) < 4.3) {
+      w.hitCd = 2.2; P.stun = 1; shake = .35;
+      P.x -= Math.cos(P.a) * 2.5; P.y -= Math.sin(P.a) * 2.5; P.v = 0; pushOut(P, 2);
+      say(w, "হাম্বা!", 1.4); sfx.bonk(); setTimeout(() => sfx.moo(), 140);
+      if (++stats.cows === 3) say(P, "গরু সমিতি মামলা করবে! 🐄⚖️", 2.4);
+      floaty(w.x, w.y, "ধুম!", C.red);
+    }
+  }
+
+  // ---- election posters and processions
+  for (const b of billboards) {
+    b.wig = Math.max(0, b.wig - dt);
+    if (!b.seen && dist(b, P) < 16) {
+      b.seen = true; b.wig = .5; stats.posters++;
+      const ps = posterFor(b.k);
+      if (ps && !sloganShown.has(ps.src)) { sloganShown.add(ps.src); say({ x: b.x, y: b.y - 6 }, ps.slogan, 3.4); }
+      else if (rand() < .45) say(P, POSTER_LINES[(rand() * POSTER_LINES.length) | 0], 2.4);
+    }
+  }
+  for (const m of michils) {
+    m.scare -= dt; m.hitCd -= dt; m.chantCd -= dt;
+    walkRoad(m, (m.scare > 0 ? 4.5 : 1.1) * dt);
+    const d = dist(m, P);
+    if (m.chantCd <= 0 && d < 70) { m.chantCd = 4 + rand() * 3; say(m, rand() < .45 ? CHANTS[0] : CHANTS[(rand() * CHANTS.length) | 0], 2.6); sfx.megaphone(); }
+    if (m.hitCd <= 0 && d < 7.5) {
+      m.hitCd = 3; P.v *= .25; stats.michil++;
+      say(m, "মিছিলের রাস্তা আটকাইয়েন না ভাই!", 2); sfx.bonk(); floaty(m.x, m.y, "জ্যাম!", C.red);
+    }
+  }
+
+  // ---- Sam Vai
+  if (sam) {
+    sam.scare -= dt; sam.talkCd -= dt; samWarnCd -= dt;
+    walkRoad(sam, (sam.scare > 0 ? 4 : 1.2) * dt);
+    const d = dist(sam, P);
+    if (d < 30 && samWarnCd <= 0) { samWarnCd = 14; showBanner("সামনে সাম ভাই!", "সাবধান! হর্ন দাও, সাইড দিবেন", "#ffd2a6", 1.6); sfx.scratch(); }
+    if (d < 22 && sam.talkCd <= 0) { sam.talkCd = 6; say(sam, SAM_LINES[(rand() * SAM_LINES.length) | 0], 2.2); }
+    if (d < 4 && Math.abs(P.v) > 3) { samCrash(); return; }
+    if (d < 4) { P.v = 0; P.x -= Math.cos(P.a) * .5; P.y -= Math.sin(P.a) * .5; }
+  }
+
+  // ---- singara stalls
+  for (const s of stalls) {
+    s.cd -= dt;
+    if (s.cd <= 0 && dist(s, P) < 8) { s.cd = 25; P.boost = 6; say(P, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড ×২"); sfx.boost(); sfx.slide(); stats.singara++; }
+  }
+
+  // ---- comrades
+  for (const c of comrades) {
+    c.cd -= dt; c.shake -= dt;
+    if (c.state === "flee") {
+      const dx = c.tx - c.x, dy = c.ty - c.y, L = Math.hypot(dx, dy);
+      c.fleeT -= dt;
+      if (L < 2 || c.fleeT <= 0) { c.state = "awake"; say(c, "আচ্ছা আচ্ছা, আসছি... 😮‍💨", 2.2); }
+      else { c.x += dx / L * 3.6 * dt; c.y += dy / L * 3.6 * dt; pushOut(c, 1); riverBlock(c, 1); }
+    }
+    if ((c.state === "awake" || c.state === "flee") && dist(c, P) < 9) {
+      if (P.riders.length < SEATS) {
+        const caught = c.state === "flee";
+        c.state = "ride"; P.riders.push(c);
+        say(P, caught ? `${c.n}: ধরা খাইলাম! 😅` : `${c.n}: ${c.b}`, 2.8);
+        floaty(c.x, c.y, caught ? "ধরা!" : "উঠলো!", C.ink);
+        if (caught) { stats.caught++; sfx.vineBoom(); shake = .25; } else sfx.boing();
+      } else if (c.cd <= 0) { say(c, "সিএনজি ফুল মামা! আগে এদের অফিসে নামাও।", 2.2); c.cd = 5; }
+    }
+  }
+
+  // ---- drop-off at the office
+  if (P.riders.length && Math.hypot(P.x - door.x, P.y - door.y) < DROP_R) {
+    P.riders.forEach((c, k) => {
+      c.state = "done"; c.slot = delivered.length; delivered.push(c);
+      const s = slotPos(c.slot); c.x = s.x; c.y = s.y;
+      say(c, c.q, 3, k * 1.1);
+    });
+    floaty(door.x, door.y, `+${bn(P.riders.length)} কমরেড`);
+    const n = P.riders.length;
+    P.riders = []; sfx.chime(); burst(door.x, door.y, 14 * n);
+    if (n >= SEATS) { stats.hattricks++; showBanner("হ্যাটট্রিক!", "একসাথে ৩ জন সভায়!", C.yellow, 1.8); setTimeout(() => sfx.airhorn(), 250); shake = .4; burst(door.x, door.y, 50); }
+    if (delivered.length === comrades.length) { state = "ending"; setTimeout(() => endGame(true), 1800); }
+  }
+
+  // ---- Sufan talks when you're near the office
+  sufanCd -= dt;
+  if (sufanCd <= 0 && Math.hypot(P.x - door.x, P.y - door.y) < 70) { say(SUFAN, SUFAN.lines[(rand() * SUFAN.lines.length) | 0], 2.6); sufanCd = 14; }
+
+  tickEffects(dt);
+
+  // ---- camera
+  const tx = P.x + Math.cos(P.a) * P.v * .9, ty = P.y + Math.sin(P.a) * P.v * .9;
+  const k = Math.min(1, dt * 4);
+  cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
+  cam.z += (baseZoom() * (1 - .18 * Math.min(1, P.v / 16)) - cam.z) * Math.min(1, dt * 2);
+}
+
+function tickEffects(dt) {
+  for (const b of bubbles) b.t += dt;
+  bubbles = bubbles.filter(b => b.t < b.dur);
+  for (const f of floaties) f.t += dt;
+  floaties = floaties.filter(f => f.t < 1.4);
+  for (const r of rings) r.t += dt;
+  rings = rings.filter(r => r.t < .5);
+  for (const d of dust) d.t += dt;
+  dust = dust.filter(d => d.t < .7);
+  shake = Math.max(0, shake - dt);
+  if (banner && (banner.t += dt) > banner.dur) banner = null;
+  for (const c of confetti) { c.t += dt; c.x += c.vx * dt; c.y += c.vy * dt; c.vx *= Math.pow(.25, dt); c.vy *= Math.pow(.25, dt); c.r += c.vr * dt; }
+  confetti = confetti.filter(c => c.t < 2.2);
+  for (const p of puffs) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+  puffs = puffs.filter(p => p.t < 1);
+  for (const k of skids) k.t += dt;
+  skids = skids.filter(k => k.t < 4);
+  if (skids.length > 200) skids.splice(0, skids.length - 200);
+}
+
+/* ================= drawing ================= */
+let OX = 0, OY = 0;
+const sx = x => OX + x * cam.z, sy = y => OY + y * cam.z;
+
+function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+
+function drawWorld(t) {
+  const z = cam.z;
+  const jx = shake > 0 ? (Math.random() - .5) * 8 * shake : 0, jy = shake > 0 ? (Math.random() - .5) * 8 * shake : 0;
+  OX = W / 2 - cam.x * z + jx; OY = H / 2 - cam.y * z + jy;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = C.grassOut; ctx.fillRect(0, 0, W, H);
+  ctx.setTransform(DPR * z, 0, 0, DPR * z, DPR * OX, DPR * OY);
+  ctx.fillStyle = C.grass; ctx.fillRect(X0, Y0, X1 - X0, Y1 - Y0);
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+
+  // water
+  for (const r of PATH.rivers) {
+    ctx.strokeStyle = C.ink; ctx.lineWidth = r.hw * 2 + 1; ctx.stroke(r.p);
+    ctx.strokeStyle = C.water; ctx.lineWidth = r.hw * 2; ctx.stroke(r.p);
+    ctx.strokeStyle = C.water2; ctx.lineWidth = r.hw * .5; ctx.setLineDash([3, 5]); ctx.lineDashOffset = -t * 4; ctx.stroke(r.p); ctx.setLineDash([]);
+  }
+  ctx.fillStyle = C.water; ctx.fill(PATH.ponds); ctx.strokeStyle = C.ink; ctx.lineWidth = .5; ctx.stroke(PATH.ponds);
+
+  // roads: all outlines first so junctions merge
+  ctx.strokeStyle = C.ink;
+  for (const r of PATH.roads) { ctx.lineWidth = r.hw * 2 + 1.1; ctx.stroke(r.p); }
+  ctx.strokeStyle = C.road;
+  for (const r of PATH.roads) { ctx.lineWidth = r.hw * 2; ctx.stroke(r.p); }
+
+  // skid marks
+  ctx.strokeStyle = "#1d1a17"; ctx.lineWidth = .35;
+  for (const k of skids) {
+    ctx.globalAlpha = .35 * (1 - k.t / 4);
+    const nx = -Math.sin(k.a), ny = Math.cos(k.a), dx = Math.cos(k.a) * .8, dy = Math.sin(k.a) * .8;
+    ctx.beginPath();
+    for (const o of [-1, 1]) { ctx.moveTo(k.x + nx * o - dx, k.y + ny * o - dy); ctx.lineTo(k.x + nx * o + dx, k.y + ny * o + dy); }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // drop zone
+  ctx.beginPath(); ctx.arc(door.x, door.y, DROP_R, 0, Math.PI * 2);
+  ctx.fillStyle = P && P.riders.length ? "rgba(200,16,46,.22)" : "rgba(200,16,46,.1)"; ctx.fill();
+  ctx.setLineDash([2.5, 2]); ctx.lineDashOffset = -t * 3; ctx.strokeStyle = C.red; ctx.lineWidth = .8; ctx.stroke(); ctx.setLineDash([]);
+
+  // dust
+  for (const d of dust) { ctx.globalAlpha = (1 - d.t / .7) * .5; ctx.fillStyle = "#8b6b43"; ctx.beginPath(); ctx.arc(d.x, d.y, 1 + d.t * 3, 0, Math.PI * 2); ctx.fill(); }
+  for (const p of puffs) { ctx.globalAlpha = (1 - p.t) * .35; ctx.fillStyle = "#6b6560"; ctx.beginPath(); ctx.arc(p.x, p.y, .6 + p.t * 2.2, 0, Math.PI * 2); ctx.fill(); }
+  ctx.globalAlpha = 1;
+
+  // trees
+  ctx.fillStyle = "rgba(29,26,23,.18)"; ctx.fill(PATH.treeShadow);
+  ctx.fillStyle = C.tree; ctx.fill(PATH.trees);
+  ctx.fillStyle = C.tree2; ctx.fill(PATH.trees2);
+  ctx.strokeStyle = "rgba(29,26,23,.55)"; ctx.lineWidth = .3; ctx.stroke(PATH.trees); ctx.stroke(PATH.trees2);
+
+  // buildings with the site's hard ink shadow
+  ctx.save(); ctx.translate(1.3, 1.3); ctx.fillStyle = C.ink; ctx.fill(PATH.blds); ctx.fill(PATH.office); ctx.restore();
+  for (const r of PATH.roofs) { ctx.fillStyle = r.col; ctx.fill(r.p); }
+  ctx.strokeStyle = C.ink; ctx.lineWidth = .4; ctx.stroke(PATH.blds);
+  ctx.fillStyle = C.yellow; ctx.fill(PATH.office); ctx.lineWidth = .7; ctx.stroke(PATH.office);
+
+  // horn rings
+  for (const r of rings) {
+    ctx.globalAlpha = 1 - r.t / .5; ctx.strokeStyle = C.yellow; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(r.x, r.y, 4 + r.t / .5 * 38, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// strings of mini posters hung across the road, overhead so they pass over the CNG
+function drawBunting(t) {
+  if (!posterFor(0)) return;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  for (const b of buntings) {
+    const ax = sx(b.x - b.nx * b.half), ay = sy(b.y - b.ny * b.half), bx = sx(b.x + b.nx * b.half), by = sy(b.y + b.ny * b.half);
+    if (!onScreen((ax + bx) / 2, (ay + by) / 2, 120)) continue;
+    const sag = 6 + Math.sin(t * 1.5 + b.ph) * 2;
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(ax, ay);
+    ctx.quadraticCurveTo((ax + bx) / 2, (ay + by) / 2 + sag * 2, bx, by); ctx.stroke();
+    const n = 5, pw = clamp(cam.z * 1.9, 12, 22);
+    for (let k = 1; k <= n; k++) {
+      const u = k / (n + 1), x = ax + (bx - ax) * u, y = ay + (by - ay) * u + 4 * u * (1 - u) * sag * 2;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 3 + k + b.ph) * .18);
+      ctx.drawImage(posterFor(b.k + k).img, -pw / 2, 0, pw, pw); ctx.lineWidth = 1; ctx.strokeRect(-pw / 2, 0, pw, pw);
+      ctx.restore();
+    }
+  }
+}
+
+// confetti, drawn after the actors so it lands on top of the office
+function drawConfetti() {
+  if (!confetti.length) return;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  for (const c of confetti) {
+    ctx.globalAlpha = Math.min(1, (2.2 - c.t) / .5);
+    ctx.save(); ctx.translate(sx(c.x), sy(c.y) + c.t * c.t * 30); ctx.rotate(c.r);
+    ctx.fillStyle = c.c; ctx.fillRect(-4, -2.5, 8, 5); ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// sky: golden hour, cloud shadows, rain, lightning and the load-shedding blackout
+const darkCv = document.createElement("canvas"), dctx = darkCv.getContext("2d");
+function drawSky(t) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // the sun sinks as five o'clock gets closer
+  const gold = state === "menu" ? .25 : Math.min(1, time / GAME_LEN);
+  ctx.globalCompositeOperation = "multiply";
+  ctx.fillStyle = `rgba(255,${Math.round(214 - gold * 40)},${Math.round(170 - gold * 60)},${.2 + gold * .3})`; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "source-over";
+  // drifting cloud shadows in world space
+  for (let i = 0; i < 7; i++) {
+    const wx = X0 + ((i * 397 + t * 6) % (X1 - X0 + 600)) - 300, wy = Y0 + (i * 613 % (Y1 - Y0));
+    const x = sx(wx), y = sy(wy), r = (120 + (i * 53) % 90) * cam.z;
+    if (x < -r || x > W + r || y < -r || y > H + r) continue;
+    const g = ctx.createRadialGradient(x, y, r * .2, x, y, r);
+    g.addColorStop(0, "rgba(29,26,23,.10)"); g.addColorStop(1, "rgba(29,26,23,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, r * 1.4, r, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  // rain
+  if (rainLevel > 0) {
+    ctx.fillStyle = `rgba(52,78,112,${.22 * rainLevel})`; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = `rgba(225,238,252,${.75 * rainLevel})`; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const n = Math.round(W * H / 2600 * rainLevel);
+    for (let i = 0; i < n; i++) {
+      const sp = 700 + (i * 37 % 300);
+      const x = (i * 7919 % 1000) / 1000 * (W + 80) - 40, y = ((i * 104729 % 1000) / 1000 * (H + 60) + t * sp) % (H + 60) - 30;
+      ctx.moveTo(x, y); ctx.lineTo(x - 5, y + 16);
+    }
+    ctx.stroke();
+  }
+  // load-shedding: darkness with the headlight cut out of it
+  if (shedLevel > 0 && P) {
+    if (darkCv.width !== cv.width || darkCv.height !== cv.height) { darkCv.width = cv.width; darkCv.height = cv.height; }
+    dctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    dctx.globalCompositeOperation = "source-over"; dctx.clearRect(0, 0, W, H);
+    dctx.fillStyle = `rgba(8,10,28,${.86 * shedLevel})`; dctx.fillRect(0, 0, W, H);
+    dctx.globalCompositeOperation = "destination-out";
+    const px = sx(P.x), py = sy(P.y), R = 30 * cam.z;
+    let g = dctx.createRadialGradient(px, py, R * .2, px, py, R);
+    g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    dctx.fillStyle = g; dctx.fillRect(px - R, py - R, R * 2, R * 2);
+    const L = 75 * cam.z, cx = px + Math.cos(P.a) * L, cy = py + Math.sin(P.a) * L;
+    g = dctx.createRadialGradient(px, py, 0, px, py, L * 1.1);
+    g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(.7, "rgba(0,0,0,.8)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    dctx.fillStyle = g; dctx.beginPath(); dctx.moveTo(px, py);
+    dctx.arc(px, py, L * 1.1, P.a - .42, P.a + .42); dctx.closePath(); dctx.fill();
+    // the office runs on Sufan's generator
+    const ox = sx(door.x), oy = sy(door.y), OR = 34 * cam.z;
+    g = dctx.createRadialGradient(ox, oy, 0, ox, oy, OR);
+    g.addColorStop(0, "rgba(0,0,0,.9)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    dctx.fillStyle = g; dctx.fillRect(ox - OR, oy - OR, OR * 2, OR * 2);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(darkCv, 0, 0); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // warm headlight glow and fireflies
+    ctx.globalCompositeOperation = "lighter";
+    g = ctx.createRadialGradient(cx, cy, 0, cx, cy, L * .7);
+    g.addColorStop(0, `rgba(255,230,150,${.18 * shedLevel})`); g.addColorStop(1, "rgba(255,230,150,0)");
+    ctx.fillStyle = g; ctx.fillRect(cx - L, cy - L, L * 2, L * 2);
+    for (let i = 0; i < 40; i++) {
+      const x = (i * 7919 % 997) / 997 * W + Math.sin(t * .7 + i) * 18, y = (i * 6271 % 991) / 991 * H + Math.cos(t * .5 + i * 1.3) * 14;
+      const b = Math.max(0, Math.sin(t * 2.3 + i * 2.1)) * shedLevel;
+      if (b < .05) continue;
+      g = ctx.createRadialGradient(x, y, 0, x, y, 7);
+      g.addColorStop(0, `rgba(230,255,120,${b})`); g.addColorStop(1, "rgba(230,255,120,0)");
+      ctx.fillStyle = g; ctx.fillRect(x - 7, y - 7, 14, 14);
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+  if (flash > 0) { ctx.fillStyle = `rgba(255,255,255,${flash * .55})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// big centred announcement that pops in
+function drawBanner() {
+  if (!banner) return;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const b = banner, pop = b.t < .25 ? 1.35 - Math.sin(b.t / .25 * Math.PI / 2) * .35 + Math.sin(b.t / .25 * Math.PI) * .12 : 1;
+  const a = Math.min(1, (b.dur - b.t) / .3);
+  const size = Math.min(56, W / 7.5);
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2, H * .3); ctx.scale(pop, pop); ctx.rotate(-.04);
+  ctx.font = `${size}px Galada, ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.lineJoin = "round"; ctx.lineWidth = size / 5; ctx.strokeStyle = C.ink;
+  ctx.fillStyle = C.ink; ctx.fillText(b.text, 4, 4);
+  ctx.strokeText(b.text, 0, 0); ctx.fillStyle = b.color; ctx.fillText(b.text, 0, 0);
+  if (b.sub) {
+    ctx.font = `700 ${Math.round(size * .3)}px ${FONT}`; ctx.lineWidth = 5; ctx.strokeStyle = C.ink;
+    ctx.strokeText(b.sub, 0, size * .78); ctx.fillStyle = C.paper; ctx.fillText(b.sub, 0, size * .78);
+  }
+  ctx.restore();
+}
+
+// Ponk Vai's CNG, seen from above: green body, dark canopy, yellow back stripe, one front wheel
+function drawCNG(t) {
+  const s = Math.max(cam.z, 3.6) * 1.6;
+  const rumble = P.v > .5 ? Math.sin(t * 70) * .05 : Math.sin(t * 40) * .03; // engine shake
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.save();
+  ctx.translate(sx(P.x), sy(P.y)); ctx.rotate(P.a); ctx.scale(s, s); ctx.translate(0, rumble);
+  ctx.lineJoin = "round"; ctx.strokeStyle = C.ink; ctx.lineWidth = .28;
+  if (P.boost > 0) { // speed lines
+    ctx.strokeStyle = C.yellow; ctx.lineWidth = .35;
+    for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(-3.3, i * .9); ctx.lineTo(-5 - Math.random() * 2.5, i * .9); ctx.stroke(); }
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .28;
+  }
+  // shadow, wheels
+  ctx.fillStyle = "rgba(29,26,23,.28)"; rr(ctx, -2.3, -1.3, 5.7, 3.3, .9); ctx.fill();
+  ctx.fillStyle = C.ink;
+  ctx.fillRect(-2.1, -1.85, 1.3, .45); ctx.fillRect(-2.1, 1.4, 1.3, .45); ctx.fillRect(2.35, -.22, 1.1, .44);
+  // body: wide passenger cabin tapering to the driver's nose
+  ctx.fillStyle = "#2f8a4f";
+  ctx.beginPath();
+  ctx.moveTo(-2.7, -1.45); ctx.lineTo(1.0, -1.45); ctx.quadraticCurveTo(2.2, -1.3, 2.95, -.55);
+  ctx.lineTo(2.95, .55); ctx.quadraticCurveTo(2.2, 1.3, 1.0, 1.45); ctx.lineTo(-2.7, 1.45); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // windshield
+  ctx.fillStyle = "#a9d6e5";
+  ctx.beginPath(); ctx.moveTo(1.05, -1.15); ctx.lineTo(1.75, -.95); ctx.lineTo(1.75, .95); ctx.lineTo(1.05, 1.15); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // dark canopy over the cabin, with ribs
+  ctx.fillStyle = "#1e2a22"; rr(ctx, -2.85, -1.55, 3.85, 3.1, .55); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = "rgba(246,239,225,.18)"; ctx.lineWidth = .12;
+  for (const x of [-1.9, -.9, .1]) { ctx.beginPath(); ctx.moveTo(x, -1.45); ctx.lineTo(x, 1.45); ctx.stroke(); }
+  // yellow + white stripe across the back, like the real ones
+  ctx.strokeStyle = C.ink; ctx.lineWidth = .2;
+  ctx.fillStyle = C.yellow; ctx.fillRect(-3.05, -1.5, .38, 3); ctx.strokeRect(-3.05, -1.5, .38, 3);
+  ctx.fillStyle = C.paper; ctx.fillRect(-3.05, -1.5, .14, 3);
+  // headlight and the owner's name on the roof
+  ctx.fillStyle = "#e58a1f"; ctx.beginPath(); ctx.arc(2.95, 0, .22, 0, 7); ctx.fill();
+  ctx.scale(1 / s, 1 / s); // text at real pixel size so tiny fonts render cleanly
+  ctx.fillStyle = "#f0a23a"; ctx.font = `700 ${Math.max(7, .8 * s).toFixed(1)}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("পংক ভাই", -.92 * s, .05 * s);
+  ctx.restore();
+
+  const px = sx(P.x), py = sy(P.y);
+  if (P.v < 3 && !P.riders.length) label("পংক ভাইয়ের সিএনজি", px, py + s * 2.2 + 12, C.yellow, C.ink, 10);
+  // passengers ride on top, drawn big enough to recognise
+  const n = P.riders.length;
+  P.riders.forEach((c, i) => face(c, px + (i - (n - 1) / 2) * 23, py - s * 2.3 - 16 + Math.sin(t * 9 + i) * 1.5, 11, false));
+  if (P.stun > 0) {
+    ctx.font = `16px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (let i = 0; i < 3; i++) { const a = t * 6 + i * 2.1; ctx.fillText("⭐", px + Math.cos(a) * 16, py - 18 + Math.sin(a) * 6); }
+  }
+}
+
+function face(c, x, y, r, dim) {
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = C.paper2; ctx.fill();
+  ctx.clip();
+  const im = IMG[c.id];
+  if (im && im.complete && im.naturalWidth) {
+    const w = im.naturalWidth, h = im.naturalHeight, m = Math.min(w, h);
+    if (c.crop) { const [cx, cy, cs] = c.crop; ctx.drawImage(im, cx * w, cy * h, cs * w, cs * h, x - r, y - r, r * 2, r * 2); } // zoom to the face
+    else ctx.drawImage(im, (w - m) / 2, (h - m) / 2 * .5, m, m, x - r, y - r, r * 2, r * 2);
+  } else {
+    ctx.font = `${Math.round(r * 1.15)}px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(c.a || "🙂", x, y + 1);
+  }
+  if (dim) { ctx.fillStyle = "rgba(40,48,80,.42)"; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink; ctx.stroke();
+}
+
+function label(text, x, y, bg = C.paper, fg = C.ink, size = 12) {
+  ctx.font = `700 ${size}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const w = ctx.measureText(text).width + 10, h = size + 6;
+  rr(ctx, x - w / 2, y - h / 2, w, h, h / 2); ctx.fillStyle = bg; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = C.ink; ctx.stroke();
+  ctx.fillStyle = fg; ctx.fillText(text, x, y + 1);
+}
+
+const onScreen = (x, y, m = 30) => x > -m && y > -m && x < W + m && y < H + m;
+
+function drawActors(t) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const R = clamp(cam.z * 3.6, 12, 19);
+
+  // neighbourhood names, big and faint, plus their mosques
+  for (const pl of PLACES) {
+    const x = sx(pl.x), y = sy(pl.y);
+    if (!onScreen(x, y, 260)) continue;
+    ctx.save(); ctx.globalAlpha = .28; ctx.font = `${Math.round(clamp(cam.z * 14, 34, 64))}px Galada, ${FONT}`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = C.ink;
+    ctx.fillText(pl.n, x, y - 70); ctx.restore();
+    ctx.font = `${Math.round(R * 1.6)}px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("🕌", x, y);
+    label(pl.mosque, x, y + R + 6, "#dff3e4", C.ink, 10);
+  }
+  // campaign billboards on two bamboo poles
+  {
+    const bw = clamp(cam.z * 8, 40, 92);
+    for (const b of billboards) {
+      const x = sx(b.x), y = sy(b.y), ps = posterFor(b.k); if (!ps || !onScreen(x, y, bw)) continue;
+      const wg = b.wig > 0 ? Math.sin(b.wig * 40) * b.wig * .25 : 0;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(wg);
+      ctx.strokeStyle = "#8a6a3a"; ctx.lineWidth = Math.max(2, bw / 22);
+      ctx.beginPath(); ctx.moveTo(-bw * .38, 0); ctx.lineTo(-bw * .38, -bw * .45); ctx.moveTo(bw * .38, 0); ctx.lineTo(bw * .38, -bw * .45); ctx.stroke();
+      ctx.fillStyle = C.ink; ctx.fillRect(-bw / 2 + 3, -bw * 1.4 + 3, bw, bw);
+      ctx.drawImage(ps.img, -bw / 2, -bw * 1.4, bw, bw);
+      ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.strokeRect(-bw / 2, -bw * 1.4, bw, bw);
+      ctx.restore();
+    }
+  }
+  // office sign
+  { // label sits behind the shop, away from the road, so it doesn't cover the CNG
+    const x = sx(office.cx + officeU.x * 14), y = sy(office.cy + officeU.y * 14);
+    if (onScreen(x, y, 120)) label("সুফান বিকাশ ঘর · পার্টি অফিস", x, y, C.red, C.paper, 12);
+  }
+  // stalls
+  for (const s of stalls) {
+    const x = sx(s.x), y = sy(s.y); if (!onScreen(x, y)) continue;
+    ctx.globalAlpha = s.cd > 0 ? .4 : 1;
+    ctx.font = `22px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("🥟", x, y - 4 + (s.cd > 0 ? 0 : Math.sin(t * 4) * 2));
+    label(s.cd > 0 ? "শেষ!" : "সিঙ্গারা", x, y + 15, C.yellow, C.ink, 10);
+    ctx.globalAlpha = 1;
+  }
+  // cows
+  for (const w of cows) {
+    const x = sx(w.x), y = sy(w.y); if (!onScreen(x, y)) continue;
+    ctx.save(); ctx.translate(x, y); ctx.scale(w.face, 1);
+    ctx.font = `${Math.round(R * 1.7)}px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("🐄", 0, w.scare > 0 ? Math.sin(t * 30) * 1.5 : 0);
+    ctx.restore();
+  }
+  // processions: a little crowd with a placard and a megaphone
+  for (const m of michils) {
+    const x = sx(m.x), y = sy(m.y); if (!onScreen(x, y, 60)) continue;
+    ctx.beginPath(); ctx.ellipse(x, y + R * .9, R * 2.6, R * .6, 0, 0, Math.PI * 2); ctx.fillStyle = "rgba(29,26,23,.2)"; ctx.fill();
+    // marchers: head, panjabi and a fist that pumps with the chant
+    const cols = [C.paper, "#2f8a4f", C.paper, "#d9c7a0", C.paper, "#2f8a4f", C.paper], u = R * .42;
+    cols.forEach((col, k) => {
+      const px = x + (k - 3) * R * .62, py = y + (k % 2) * R * .45 - Math.abs(Math.sin(t * 7 + k)) * 3;
+      ctx.lineWidth = 1.5; ctx.strokeStyle = C.ink;
+      rr(ctx, px - u * .8, py - u * .2, u * 1.6, u * 2.1, u * .5); ctx.fillStyle = col; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, py - u * .75, u * .62, 0, Math.PI * 2); ctx.fillStyle = "#c58f5e"; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, py - u * .95, u * .5, Math.PI * 1.05, Math.PI * 1.95); ctx.fillStyle = C.ink; ctx.fill();
+      const fy = py - u * 2.1 - Math.max(0, Math.sin(t * 7 + k)) * u * .6;
+      ctx.beginPath(); ctx.moveTo(px + u * .7, py); ctx.lineTo(px + u * .9, fy); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px + u * .9, fy, u * .3, 0, Math.PI * 2); ctx.fillStyle = "#c58f5e"; ctx.fill(); ctx.stroke();
+    });
+    { // green flag on a pole at the front
+      const fx = x - R * 2.4, fy = y - R * 2.2, wv = Math.sin(t * 6) * R * .15;
+      ctx.strokeStyle = "#8a6a3a"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(fx, y + R * .3); ctx.lineTo(fx, fy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx, fy); ctx.quadraticCurveTo(fx + R * .6, fy - R * .2 + wv, fx + R * 1.2, fy + wv);
+      ctx.lineTo(fx + R * 1.2, fy + R * .8 + wv); ctx.quadraticCurveTo(fx + R * .6, fy + R * .6 + wv, fx, fy + R * .8); ctx.closePath();
+      ctx.fillStyle = "#1f7a3f"; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = C.ink; ctx.stroke();
+    }
+    { // megaphone at the back
+      const mx = x + R * 2.3, my = y - R * .6, d = Math.sin(t * 3) * .15;
+      ctx.save(); ctx.translate(mx, my); ctx.rotate(-.5 + d);
+      ctx.beginPath(); ctx.moveTo(0, -R * .18); ctx.lineTo(R * .9, -R * .45); ctx.lineTo(R * .9, R * .45); ctx.lineTo(0, R * .18); ctx.closePath();
+      ctx.fillStyle = C.red; ctx.fill(); ctx.lineWidth = 1.3; ctx.strokeStyle = C.ink; ctx.stroke(); ctx.restore();
+    }
+    const mp = posterFor(m.k + 1);
+    if (mp) {
+      const pw = R * 1.9, py = y - R * 3.4 + Math.sin(t * 5) * 1.5;
+      ctx.strokeStyle = "#8a6a3a"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, py + pw); ctx.lineTo(x, y - R * .4); ctx.stroke();
+      ctx.drawImage(mp.img, x - pw / 2, py, pw, pw); ctx.lineWidth = 1.5; ctx.strokeStyle = C.ink; ctx.strokeRect(x - pw / 2, py, pw, pw);
+    }
+    label("মিছিল", x, y + R + 8, "#ffe9a8", C.ink, 10);
+  }
+  // Sam Vai
+  if (sam) {
+    const x = sx(sam.x), y0 = sy(sam.y);
+    if (onScreen(x, y0)) {
+      const y = y0 - Math.abs(Math.sin(t * 4)) * 2, r = R * 1.3;
+      ctx.beginPath(); ctx.ellipse(x, y0 + r * .95, r * .85, r * .28, 0, 0, Math.PI * 2); ctx.fillStyle = "rgba(29,26,23,.22)"; ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, r + 3.5, 0, Math.PI * 2); ctx.fillStyle = C.red; ctx.fill();
+      face(sam, x, y, r, false);
+      label("⚠ সাম ভাই", x, y0 + R * 1.3 + 12, "#ffd2a6", C.ink, 11);
+    }
+  }
+  // Sufan and the comrades already at the meeting
+  { const s = sufanPos(), x = sx(s.x), y = sy(s.y); if (onScreen(x, y)) { face(SUFAN, x, y, R * .85, false); label("সুফান", x, y + R + 6, C.yellow, C.ink, 10); } }
+  for (const c of delivered) {
+    const x = sx(c.x), y = sy(c.y); if (!onScreen(x, y)) continue;
+    face(c, x, y + Math.sin(t * 3 + c.slot) * 1, R * .8, false);
+    ctx.font = `${Math.round(R * .8)}px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("☕", x + R * .75, y + R * .5);
+  }
+
+  // comrades waiting out in the village
+  for (const c of comrades) {
+    if (c.state === "ride" || c.state === "done") continue;
+    const x0 = sx(c.x), y0 = sy(c.y); if (!onScreen(x0, y0)) continue;
+    const x = x0 + (c.shake > 0 ? Math.sin(t * 60) * 3 : 0);
+    let y = y0;
+    if (c.state === "awake") y -= Math.abs(Math.sin(t * 5 + c.phase)) * 5;
+    if (c.state === "flee") y -= Math.abs(Math.sin(t * 14)) * 4;
+    ctx.beginPath(); ctx.ellipse(x0, y0 + R * .9, R * .8, R * .28, 0, 0, Math.PI * 2); ctx.fillStyle = "rgba(29,26,23,.22)"; ctx.fill();
+    const ring = c.state === "sleep" ? "#5a6aa8" : c.state === "flee" ? "#e07a1f" : "#2f9a4a";
+    ctx.beginPath(); ctx.arc(x, y, R + 3.5, 0, Math.PI * 2); ctx.fillStyle = ring; ctx.fill();
+    face(c, x, y, R, c.state === "sleep");
+    if (c.state === "sleep") {
+      ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      for (let i = 0; i < 3; i++) {
+        const p = (t * .6 + i / 3 + c.phase) % 1;
+        ctx.globalAlpha = 1 - p; ctx.font = `700 ${11 + p * 9}px ${FONT}`;
+        ctx.fillText("z", x + R * .7 + p * 14, y - R * .6 - p * 26);
+      }
+      ctx.globalAlpha = 1;
+      for (let i = 0; i < c.needMax; i++) { // rings still needed
+        ctx.beginPath(); ctx.arc(x + (i - (c.needMax - 1) / 2) * 10, y - R - 9, 3.6, 0, Math.PI * 2);
+        ctx.fillStyle = i < c.need ? C.yellow : C.paper2; ctx.fill(); ctx.lineWidth = 1.3; ctx.strokeStyle = C.ink; ctx.stroke();
+      }
+    }
+    if (c.state === "flee") { ctx.font = `14px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("💨", x - (c.tx > c.x ? 1 : -1) * (R + 8), y + R * .4); }
+    label(c.n, x0, y0 + R + 9, c.state === "sleep" ? C.paper : c.state === "flee" ? "#ffd2a6" : "#c9f0c2", C.ink, 11);
+  }
+}
+
+function wrapLines(text, maxW) {
+  const words = text.split(" "), lines = []; let line = "";
+  for (const w of words) {
+    const tryL = line ? line + " " + w : w;
+    if (ctx.measureText(tryL).width > maxW && line) { lines.push(line); line = w; } else line = tryL;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawBubbles() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.font = `600 14px ${FONT}`;
+  const shown = bubbles.filter(b => b.t >= 0).slice(-4);
+  for (const b of shown) {
+    const p = b.who === SUFAN ? sufanPos() : b.who;
+    const x = sx(p.x), y = sy(p.y) - (b.who === P ? 44 : 34);
+    if (b.who !== P && !onScreen(x, y, 0)) continue;
+    const a = Math.min(1, b.t / .12, (b.dur - b.t) / .25);
+    ctx.font = `600 14px ${FONT}`;
+    const lines = wrapLines(b.text, Math.min(230, W - 60));
+    const w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 22, h = lines.length * 20 + 12;
+    const bx = clamp(x - w / 2, 8, W - w - 8);
+    let by = y - h - 10;
+    if (by < 70) by = y + 56;
+    ctx.globalAlpha = a;
+    const sc = b.t < .18 ? .6 + .4 * Math.sin(b.t / .18 * Math.PI / 2) + Math.sin(b.t / .18 * Math.PI) * .08 : 1;
+    ctx.save(); ctx.translate(x, by + h); ctx.scale(sc, sc); ctx.translate(-x, -(by + h));
+    rr(ctx, bx + 3, by + 3, w, h, 10); ctx.fillStyle = C.ink; ctx.fill();
+    rr(ctx, bx, by, w, h, 10); ctx.fillStyle = C.paper; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.stroke();
+    ctx.fillStyle = C.ink; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    lines.forEach((l, i) => ctx.fillText(l, bx + 11, by + 7 + i * 20));
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  for (const f of floaties) {
+    const x = sx(f.x), y = sy(f.y) - 30 - f.t * 40;
+    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.4); ctx.font = `700 20px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.lineWidth = 4; ctx.strokeStyle = C.paper; ctx.strokeText(f.text, x, y); ctx.fillStyle = f.color; ctx.fillText(f.text, x, y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function edgeMarker(wx, wy, draw, color) {
+  const x = sx(wx), y = sy(wy);
+  if (x > 20 && y > 90 && x < W - 20 && y < H - 20) return;
+  const cx = W / 2, cy = H / 2 + 30, dx = x - cx, dy = y - cy;
+  const mx = W / 2 - 34, my = H / 2 - 64;
+  const k = Math.min(mx / Math.abs(dx || 1e-4), my / Math.abs(dy || 1e-4));
+  const ex = cx + dx * k, ey = cy + dy * k, a = Math.atan2(dy, dx);
+  ctx.save(); ctx.translate(ex, ey); ctx.rotate(a);
+  ctx.beginPath(); ctx.moveTo(30, 0); ctx.lineTo(17, -9); ctx.lineTo(17, 9); ctx.closePath();
+  ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.stroke();
+  ctx.restore();
+  draw(ex, ey);
+  const m = Math.round(Math.hypot(wx - P.x, wy - P.y) / 10) * 10;
+  label(`${bn(m)} মি`, ex, ey + 22, C.paper, C.ink, 10);
+}
+
+function drawMarkers() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (P.riders.length) edgeMarker(door.x, door.y, (x, y) => {
+    ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI * 2); ctx.fillStyle = C.red; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink; ctx.stroke();
+    ctx.font = `15px ${EMOJI}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🏠", x, y + 1);
+  }, C.red);
+  if (P.riders.length < SEATS) {
+    const left = comrades.filter(c => c.state !== "ride" && c.state !== "done")
+      .sort((a, b) => dist(a, P) - dist(b, P)).slice(0, P.riders.length ? 2 : 3);
+    for (const c of left) edgeMarker(c.x, c.y, (x, y) => face(c, x, y, 13, c.state === "sleep"),
+      c.state === "sleep" ? "#5a6aa8" : c.state === "flee" ? "#e07a1f" : "#2f9a4a");
+  }
+}
+
+function drawStick() {
+  if (!stick || state !== "play") return;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.globalAlpha = .55;
+  ctx.beginPath(); ctx.arc(stick.ox, stick.oy, 55, 0, Math.PI * 2); ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
+  const dx = stick.x - stick.ox, dy = stick.y - stick.oy, L = Math.hypot(dx, dy), k = L > 55 ? 55 / L : 1;
+  ctx.beginPath(); ctx.arc(stick.ox + dx * k, stick.oy + dy * k, 22, 0, Math.PI * 2); ctx.fillStyle = C.yellow; ctx.fill(); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawMini() {
+  const w = mini.width, h = mini.height;
+  if (!w || !h) return;
+  const k = Math.min(w / (X1 - X0), h / (Y1 - Y0)), ox = (w - (X1 - X0) * k) / 2 - X0 * k, oy = (h - (Y1 - Y0) * k) / 2 - Y0 * k;
+  if (!miniBase) {
+    miniBase = document.createElement("canvas"); miniBase.width = w; miniBase.height = h;
+    const m = miniBase.getContext("2d");
+    m.fillStyle = C.grassOut; m.fillRect(0, 0, w, h);
+    m.setTransform(k, 0, 0, k, ox, oy);
+    m.fillStyle = C.grass; m.fillRect(X0, Y0, X1 - X0, Y1 - Y0);
+    m.lineCap = m.lineJoin = "round";
+    for (const r of PATH.rivers) { m.strokeStyle = C.water; m.lineWidth = Math.max(r.hw * 2, 3 / k); m.stroke(r.p); }
+    m.fillStyle = C.water; m.fill(PATH.ponds);
+    m.fillStyle = "rgba(29,26,23,.35)"; m.fill(PATH.blds);
+    m.strokeStyle = C.paper; m.lineWidth = 2.6 / k;
+    for (const r of PATH.roads) m.stroke(r.p);
+  }
+  mctx.setTransform(1, 0, 0, 1, 0, 0);
+  mctx.drawImage(miniBase, 0, 0);
+  const X = x => ox + x * k, Y = y => oy + y * k, d = DPR;
+  mctx.fillStyle = "#2f8a4f"; mctx.strokeStyle = C.ink; mctx.lineWidth = d;
+  for (const pl of PLACES) { mctx.beginPath(); mctx.arc(X(pl.x), Y(pl.y), 2.6 * d, 0, 7); mctx.fill(); mctx.stroke(); }
+  if (sam) { mctx.fillStyle = "#ffd2a6"; mctx.beginPath(); mctx.arc(X(sam.x), Y(sam.y), 3 * d, 0, 7); mctx.fill(); mctx.stroke(); }
+  mctx.fillStyle = C.red;
+  mctx.fillRect(X(door.x) - 4 * d, Y(door.y) - 4 * d, 8 * d, 8 * d); mctx.strokeRect(X(door.x) - 4 * d, Y(door.y) - 4 * d, 8 * d, 8 * d);
+  for (const c of comrades) {
+    if (c.state === "ride" || c.state === "done") continue;
+    mctx.beginPath(); mctx.arc(X(c.x), Y(c.y), 3.2 * d, 0, 7);
+    mctx.fillStyle = c.state === "sleep" ? C.yellow : c.state === "flee" ? "#e07a1f" : "#2f9a4a"; mctx.fill(); mctx.stroke();
+  }
+  mctx.strokeStyle = "rgba(29,26,23,.6)";
+  mctx.strokeRect(X(cam.x - W / 2 / cam.z), Y(cam.y - H / 2 / cam.z), W / cam.z * k, H / cam.z * k);
+  mctx.save(); mctx.translate(X(P.x), Y(P.y)); mctx.rotate(P.a);
+  mctx.beginPath(); mctx.moveTo(6 * d, 0); mctx.lineTo(-4 * d, -4 * d); mctx.lineTo(-4 * d, 4 * d); mctx.closePath();
+  mctx.fillStyle = C.red; mctx.fill(); mctx.strokeStyle = C.ink; mctx.stroke(); mctx.restore();
+}
+
+/* ================= HUD ================= */
+const el = id => document.getElementById(id);
+const hud = { clock: el("clock"), count: el("count"), seats: el("seats") };
+let hudCache = "";
+function gameClock() { const total = 25 + Math.min(35, Math.floor(time / GAME_LEN * 35)); return [4 + Math.floor(total / 60), total % 60]; }
+function drawHud() {
+  const [hh, mm] = gameClock(), late = GAME_LEN - time < 30;
+  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}`;
+  if (key === hudCache) return;
+  hudCache = key;
+  hud.clock.innerHTML = `${bn(hh)}:${bn(String(mm).padStart(2, "0"))}<small>${late ? "তাড়াতাড়ি!" : "সভা ৫:০০ টায়"}</small>`;
+  hud.clock.classList.toggle("late", late);
+  hud.count.textContent = `${bn(delivered.length)}/${bn(comrades.length)}`;
+  [...hud.seats.children].forEach((s, i) => s.classList.toggle("on", i < P.riders.length));
+}
+
+/* ================= loop ================= */
+let last = 0, paused = false, frame = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  const t = now / 1000;
+  const dt = Math.min(.05, (now - last) / 1000 || 0); last = now;
+  if (paused) return;
+  if (state === "menu") { attract(t); return; }
+  if (state === "play") update(dt);
+  else tickEffects(dt);
+  drawWorld(t); drawActors(t); drawCNG(t); drawBunting(t); drawConfetti(); drawSky(t); drawBubbles(); drawMarkers(); drawStick(); drawBanner();
+  if (frame++ % 3 === 0) { drawMini(); engineUpdate(); }
+  drawHud();
+}
+// slow pan over the village behind the start screen
+function attract(t) {
+  cam = { x: door.x + Math.cos(t * .05) * 260, y: door.y + Math.sin(t * .07) * 200, z: baseZoom() * .8 };
+  drawWorld(t); drawSky(t);
+}
+document.addEventListener("visibilitychange", () => { paused = document.hidden; last = performance.now(); keys.clear(); engineUpdate(); });
+
+/* ================= screens ================= */
+function startGame() {
+  try {
+    if (!ac) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ac = new AC(); }
+    if (ac && ac.state === "suspended") ac.resume();
+  } catch (e) {}
+  loadHorn();
+  el("start").classList.add("hidden"); el("end").classList.add("hidden");
+  ["hud", "mini", "horn"].forEach(id => el(id).hidden = false);
+  resize();
+  newGame(); hudCache = "";
+  state = "play";
+}
+el("play").addEventListener("click", startGame);
+el("again").addEventListener("click", startGame);
+
+let lastResult = 0;
+function samCrash() {
+  state = "ending"; P.v = 0; shake = .8; flash = .7;
+  sfx.vineBoom(); setTimeout(() => sfx.sadTrombone(), 600);
+  showBanner("গেম ওভার!", "সাম ভাইয়ের উপর সিএনজি!", C.red, 3);
+  say(sam, "আহ্‌! পংক!! 😵", 2);
+  setTimeout(() => endGame(false, "sam"), 1600);
+}
+function endGame(all, reason) {
+  if (state === "over") return;
+  state = "over"; stick = null; engineUpdate();
+  const n = delivered.length, N = comrades.length;
+  let best = 0;
+  try { best = +(localStorage.getItem("kcp-sim-best") || 0); if (n > best) localStorage.setItem("kcp-sim-best", String(n)); } catch (e) {}
+  const verdicts = [
+    [N, "ঐতিহাসিক সভা! কোরাম পূর্ণ। কেসিপির ইতিহাসে প্রথমবার সবাই সময়মতো।"],
+    [8, "সভা হলো! কয়েকজন যদিও 'পাঁচ মিনিটে আসছি' বলে এখনো আসছেন।"],
+    [4, "অর্ধেক কমিটি। সভা মুলতবি, কিন্তু চা চলবে।"],
+    [1, "কোরাম নাই। সভায় আছেন তুমি, সুফান, আর চায়ের কাপ।"],
+    [0, "সভা বাতিল। কতোয়ালপুর এখনো দুপুরের ঘুমে।"],
+  ];
+  const [hh, mm] = gameClock();
+  el("endKicker").textContent = all ? `বিকাল ${bn(hh)}:${bn(String(mm).padStart(2, "0"))} · সময়ের আগেই!` : "বিকাল ৫টা · সভা শুরু";
+  el("endTitle").textContent = all ? "সবাই এসেছে!" : n >= 8 ? "সভা হলো!" : n >= 1 ? "সভা... মোটামুটি" : "সভা বাতিল!";
+  el("endScore").textContent = `${bn(n)}/${bn(N)} কমরেড`;
+  el("endVerdict").textContent = verdicts.find(([m]) => n >= m)[1];
+  if (reason === "sam") {
+    el("endKicker").textContent = "দুর্ঘটনা! · গেম ওভার";
+    el("endTitle").textContent = "গেম ওভার!";
+    el("endVerdict").textContent = "আপনি একজন জনপ্রতিনিধির উপর গাড়ি তুলে দিয়েছেন! আপনাকে হাশরের দিনের হিসাব দিতে হবে।";
+  }
+  el("endFaces").innerHTML = comrades.map(c => {
+    const ok = c.state === "done";
+    const ph = c.a ? `<div class="ph">${c.a}</div>` : `<div class="ph" style="background-image:url('../assets/people/${c.id}.jpg')"></div>`;
+    const note = ok ? "" : c.state === "sleep" ? " 💤" : c.state === "ride" ? " 🛺" : " 🏃";
+    return `<figure class="${ok ? "" : "miss"}">${ph}${c.n}${note}</figure>`;
+  }).join("");
+  const lastIn = delivered[delivered.length - 1];
+  el("endBill").textContent = n === 0 ? "☕ আজকের চায়ের বিল দেবে: তুমি (পংক ভাইয়ের সিএনজি ভাড়াসহ)"
+    : `☕ আজকের চায়ের বিল দেবেন: ${lastIn.n} (সবার শেষে এসেছেন, নিয়ম তো নিয়ম)`;
+  el("endBest").textContent = n > best ? "🎉 নতুন রেকর্ড!" : `তোমার সেরা: ${bn(best)}/${bn(N)}`;
+  const aw = [];
+  if (stats.hattricks) aw.push(`🎩 হ্যাটট্রিক কিং ×${bn(stats.hattricks)}`);
+  if (stats.caught) aw.push(`🏃 পলাতক শিকারি ×${bn(stats.caught)}`);
+  if (stats.cows >= 3) aw.push(`🐄 গরু-ধাক্কা চ্যাম্পিয়ন (${bn(stats.cows)} বার)`);
+  else if (stats.cows === 0 && n > 0) aw.push("🐮 গরুবান্ধব চালক");
+  if (stats.honks >= 40) aw.push(`📯 হর্ন বিশারদ (${bn(stats.honks)} বার প্যাঁ-পোঁ)`);
+  if (stats.singara >= 2) aw.push(`🥟 সিঙ্গারা খোর ×${bn(stats.singara)}`);
+  if (stats.walls >= 3) aw.push("🧱 দেয়াল প্রেমিক");
+  if (stats.posters >= 6) aw.push(`🗳️ পোস্টার গবেষক (${bn(stats.posters)}টা দেখছো)`);
+  if (stats.michil >= 2) aw.push("📢 মিছিলে আটকা পড়া চালক");
+  el("endAwards").innerHTML = aw.map(x => `<span>${x}</span>`).join("");
+  if (reason === "sam") { /* crash sounds already played */ }
+  else if (all) { sfx.fanfare(); setTimeout(() => sfx.airhorn(), 700); burst(P.x, P.y, 80); }
+  else if (n >= 8) sfx.fanfare();
+  else sfx.sadTrombone();
+  lastResult = n;
+  el("horn").hidden = true;
+  setTimeout(() => el("end").classList.remove("hidden"), all ? 0 : 400);
+}
+
+el("share").addEventListener("click", async () => {
+  const text = `"সভায় আনো!" খেলায় আমি ${bn(lastResult)}/${bn(comrades.length)} জন কমরেডকে শুক্রবারের সভায় এনেছি। তুমি পারবে? ✊☕`;
+  const url = "https://joinkcp.com/sim/";
+  try {
+    if (navigator.share) { await navigator.share({ title: "সভায় আনো! · KCP", text, url }); return; }
+    await navigator.clipboard.writeText(`${text} ${url}`);
+    el("share").textContent = "কপি হয়েছে!";
+    setTimeout(() => { el("share").textContent = "শেয়ার করো"; }, 1600);
+  } catch (e) {}
+});
+
+// expose a tiny hook for automated play-testing
+window.__sim = { get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get door() { return door; }, get events() { return events; }, get stats() { return stats; }, get time() { return time; }, set time(v) { time = v; }, get michils() { return michils; }, get sam() { return sam; }, get billboards() { return billboards; }, sfx, end: endGame };
+
+resize();
+requestAnimationFrame(loop);
+const ready = () => { el("play").disabled = false; const l = el("loading"); if (l) l.remove(); };
+(document.fonts ? document.fonts.load(`700 14px "Hind Siliguri"`).catch(() => {}) : Promise.resolve()).then(ready);
+setTimeout(ready, 2500);
+})();
+</script>
+</body>
+</html>

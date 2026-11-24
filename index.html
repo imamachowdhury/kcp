@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Galada&family=Great+Vibes&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- আপডেটের পর ?v= নম্বর বাড়ান (style.css ও script.js দুটোতেই), তাহলে সবার ব্রাউজারে নতুন ফাইল আসবে -->
-  <link rel="stylesheet" href="style.css?v=26">
+  <link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
 
@@ -202,7 +202,16 @@
     <!-- ====== আড্ডা জোন (খেলা) ====== -->
     <section class="section" id="games">
       <h2 class="section-title">আড্ডা জোন</h2>
-      <p class="section-sub">ছয়টা খেলা, শূন্য কাজ। বিপ্লবের ফাঁকে একটু খেলে নিন।</p>
+      <p class="section-sub">সাতটা খেলা, শূন্য কাজ। বিপ্লবের ফাঁকে একটু খেলে নিন।</p>
+      <a class="sim-promo" href="sim/">
+        <span class="sim-promo-icon" aria-hidden="true">🛺</span>
+        <span class="sim-promo-text">
+          <span class="sim-promo-tag">নতুন!</span>
+          <strong>সভায় আনো!</strong>
+          <span>কতোয়ালপুরের আসল রাস্তায় পংক ভাইয়ের সিএনজি চালিয়ে ঘুমন্ত কমরেডদের বিকাল ৫টার সভায় আনুন।</span>
+        </span>
+        <span class="btn btn-red sim-promo-go">খেলুন →</span>
+      </a>
       <div class="game-tabs" id="gameTabs" role="tablist" aria-label="খেলা বেছে নিন">
         <button type="button" role="tab" data-game="wheel"><span>🎡</span>বিল কে দেবে</button>
         <button type="button" role="tab" data-game="tea"><span>☕</span>চা ঢালো</button>
@@ -391,6 +400,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
-  <script src="script.js?v=26"></script>
+  <script src="script.js?v=27"></script>
 </body>
 </html>
