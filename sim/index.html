@@ -552,7 +552,7 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     mamu.h = 2.95; mamu.floors = 1; mamu.tin = true; mamu.roof = "#8a6248"; mamu.tank = mamu.stair = mamu.cloth = mamu.dish = null; mamu.ips = true;
     const nr = nearestRoad(mamu.cx, mamu.cy), ux = mamu.cx - nr.x, uy = mamu.cy - nr.y;
     mamu.front = mamu.edges.reduce((m, e, i) => (e.nx * ux + e.ny * uy) < m.d ? { i, d: e.nx * ux + e.ny * uy } : m, { i: 0, d: 1e9 }).i;
-    mamu.tag = MAMU_AT(-3.5, 14);
+    mamu.tag = MAMU_AT(-3.5, 10.5);
     mamu.walls = [[[MAMU_AT(-14, 5.2), MAMU_AT(-5, 5.2)], 2.0, "#b9b6ae", "#d2cfc7"], [[MAMU_AT(1.95, 5.2), MAMU_AT(12, 5.2)], 2.2, "#efe5c0", "#fbf4dc"], [[MAMU_AT(12, 5.2), MAMU_AT(12, 18.5)], 2.2, "#efe5c0", "#fbf4dc"]];
     mamu.gate = [MAMU_AT(-1.55, 5.2), MAMU_AT(1.75, 5.2)];
     if (mamuBack) { mamuBack.h = 3.0; mamuBack.floors = 1; mamuBack.tin = true; mamuBack.roof = "#a8adb0"; mamuBack.tank = mamuBack.stair = mamuBack.cloth = mamuBack.dish = null; }
@@ -1427,6 +1427,8 @@ function drawCity(t) {
     wall(.93, .97, .35, 2.8, "#2f6db3", .06);                                  // blue post
     quad(-.06, 1.06, 0, 1.0, 2.95, 2.55, "#8a6248", .12);                     // rusty tin awning
     quad(.22, .78, .98, 1.0, 2.55, 2.25, C.red, .08);                         // the name board under the lip
+    quad(.12, .88, .99, 1.0, 2.6, 3.25, C.red, .1);                           // and the big one standing on the tin's edge
+    quad(.2, .8, .985, 1.0, 2.8, 3.05, C.paper);                                // its lettering, as a pale strip
     quad(-.34, .02, .55, .95, .46, .46, "#9a6a3c", .08);                      // bench by the gate
     ctx.fillStyle = "#5d8f2e"; ctx.strokeStyle = C.ink; ctx.lineWidth = .06;   // green coconuts
     for (const [u, o] of [[.82, .45], [.9, .6], [.76, .65], [.88, .35]]) { const [x, y] = at(u, o, .15); ctx.beginPath(); ctx.arc(x, y, .18, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
@@ -1495,7 +1497,7 @@ function drawCity(t) {
       ctx.stroke();
       ctx.strokeStyle = "rgba(255,255,255,.4)"; ctx.lineWidth = .35; ctx.beginPath();
       ctx.moveTo(b.cx - ca * span, b.cy - sa * span); ctx.lineTo(b.cx + ca * span, b.cy + sa * span); ctx.stroke();
-      if (b === dukan) { const R = rng32(77); ctx.fillStyle = "rgba(150,70,35,.55)"; for (let k = 0; k < 14; k++) { ctx.beginPath(); ctx.ellipse(b.cx + (R() - .5) * span, b.cy + (R() - .5) * span, .4 + R() * .9, .2 + R() * .3, b.ang, 0, Math.PI * 2); ctx.fill(); } } // rust
+      if (b === dukan || b === mamu || b === mamuHouse) { const R = rng32(b === dukan ? 77 : b === mamu ? 78 : 79); ctx.fillStyle = "rgba(150,70,35,.55)"; for (let k = 0; k < 14; k++) { ctx.beginPath(); ctx.ellipse(b.cx + (R() - .5) * span, b.cy + (R() - .5) * span, .4 + R() * .9, .2 + R() * .3, b.ang, 0, Math.PI * 2); ctx.fill(); } } // rust
       ctx.restore();
       return;
     }
@@ -1593,6 +1595,13 @@ function drawCity(t) {
     ctx.strokeStyle = C.ink; ctx.lineWidth = .45; ctx.stroke();
     if (b !== brick) { ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = .9; ctx.stroke(); ctx.restore(); }
     roofBits(b, t);
+    if (b === mamuHouse) { // the black water tank on its stand by the west end, like the 3D house
+      const e = b.edges.reduce((m, e2) => e2.nx < m.nx ? e2 : m, b.edges[0]), x = (e.a[0] + e.b[0]) / 2 + e.nx * 1.0, y = (e.a[1] + e.b[1]) / 2 + e.ny * 1.0;
+      prism([[x - .6, y - .6], [x + .6, y - .6], [x + .6, y + .6], [x - .6, y + .6]], 0, 2.6, "#cfc6ae", "#bdb49c");
+      const lo = lift(x, y, 2.6), hi = lift(x, y, 3.9), r = .65 * (1 + kOf(3.9));
+      ctx.strokeStyle = "#23272c"; ctx.lineWidth = r * 2; ctx.lineCap = "butt"; ctx.beginPath(); ctx.moveTo(lo[0], lo[1]); ctx.lineTo(hi[0], hi[1]); ctx.stroke(); ctx.lineCap = "round";
+      ctx.fillStyle = "#3a4047"; ctx.strokeStyle = C.ink; ctx.lineWidth = .14; ctx.beginPath(); ctx.arc(hi[0], hi[1], r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
     if (b === brick) { // column bars waiting for the next floor, and the first courses of its walls
       for (const q of b.walls3) prism(q, b.h, b.h + 1.1, "#b8603f", "#9c4f33");
       ctx.strokeStyle = "#4a3020"; ctx.lineWidth = .13; ctx.lineCap = "round"; ctx.beginPath();
