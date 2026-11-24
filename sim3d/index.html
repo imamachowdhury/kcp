@@ -342,6 +342,7 @@
 </div>
 
 <script src="../sim/kotalpur-map.js"></script>
+<script src="../sim/kotalpur-extra.js"></script>
 <script src="../sim/card.js"></script>
 <script type="module">
 import * as THREE from "three";
@@ -594,6 +595,20 @@ const trees = [];
     if (roadGap(x, y) < 3 || blocked(x, y, 2.5) || Math.hypot(x - door.x, y - door.y) < 26) continue;
     trees.push({ x, y, r: 2 + R() * 2.8, dark: R() < .45, palm: R() < .12 });
   }
+  // thicker woods where the satellite shows them (MAP.groves, from kotalpur-extra.js): one tree per ~35 m²
+  const GR = rng32(23);
+  for (const g of MAP.groves || []) {
+    let gx0 = 1e9, gy0 = 1e9, gx1 = -1e9, gy1 = -1e9, area = 0;
+    for (let i = 0, j = g.length - 1; i < g.length; j = i++) { const [x, y] = g[i]; gx0 = Math.min(gx0, x); gy0 = Math.min(gy0, y); gx1 = Math.max(gx1, x); gy1 = Math.max(gy1, y); area += (g[j][0] - x) * (g[j][1] + y) / 2; }
+    const want = Math.abs(area) / 35;
+    for (let k = 0, n = 0; k < want * 4 && n < want; k++) {
+      const x = gx0 + GR() * (gx1 - gx0), y = gy0 + GR() * (gy1 - gy0);
+      if (!pip(x, y, g) || roadGap(x, y) < 3 || blocked(x, y, 2.5) || Math.hypot(x - door.x, y - door.y) < 22) continue;
+      if (trees.some(t => Math.abs(t.x - x) < 2.4 && Math.abs(t.y - y) < 2.4)) continue;
+      trees.push({ x, y, r: 2 + GR() * 2.8, dark: GR() < .5, palm: GR() < .16 });
+      n++;
+    }
+  }
   for (let i = trees.length; i--;) if (pip(trees[i].x, trees[i].y, MOSQUE_YARD)) trees.splice(i, 1); // keep the mosque yard clear
 }
 function roadsidePoint(sg, f, gap) {
@@ -843,6 +858,7 @@ const WALLS = ["#efe4cc", "#e6d3b3", "#d8e0cf", "#ecd2c2", "#d3dde4", "#f2ead8",
 const ROOFS = ["#a3aeb6", "#bcc4c9", "#ddd2ba", "#8f9ca5", "#b9a58a"];
 const TINS = ["#9c5a3c", "#8e989e", "#a86b45", "#7d8a90"];
 const tanks = [], stairs = [];
+for (const lk of MAP.looks || []) { const b = buildings.find(b => pip(lk.at[0], lk.at[1], b.p)); if (b) b.look = lk; }
 {
   const R = rng32(23), WB = Builder(), RB = Builder(), TB = Builder(), PB = Builder();
   for (const b of buildings) {
@@ -852,7 +868,8 @@ const tanks = [], stairs = [];
     b.h = Math.max(1, Math.round(raw / 3.2)) * 3.2;           // whole storeys, so the window texture lines up
     b.ips = R() < .3;
     const wall = rgb(b === office ? "#f5c518" : WALLS[(R() * WALLS.length) | 0]);
-    const tin = b !== office && b.h < 4 && R() < .7;
+    let tin = b !== office && b.h < 4 && R() < .7;
+    if (b.look) { b.h = b.look.h; tin = b.look.tin; } // as seen on the satellite (MAP.looks)
     if (b === office || b === dukan || b === palace || b === brick || b === mamu || b === mamuHouse || b === mamuBack || b === mosque || b === mosqueShed) continue; // these have their own models below
     let cum = 0;
     b.p.forEach((q, i) => {
@@ -873,11 +890,11 @@ const tanks = [], stairs = [];
     let ang = 0, best = 0;
     b.p.forEach((q, i) => { const n = b.p[(i + 1) % b.p.length], L = Math.hypot(n[0] - q[0], n[1] - q[1]); if (L > best) { best = L; ang = Math.atan2(n[1] - q[1], n[0] - q[0]); } });
     if (tin) {
-      const c = rgb(TINS[(R() * TINS.length) | 0]), ca = Math.cos(ang), sa = Math.sin(ang);
+      const pick = TINS[(R() * TINS.length) | 0], c = rgb(b.look ? b.look.roof : pick), ca = Math.cos(ang), sa = Math.sin(ang);
       const ids = b.p.map(([x, z]) => TB.v(x, b.h + .05, z, UP, (x * ca + z * sa) / .9, 0, c));
       for (const [a, b2, c2] of tris) TB.tri(ids[a], ids[b2], ids[c2], UP);
     } else {
-      const c = rgb(b === office ? "#c8102e" : ROOFS[(R() * ROOFS.length) | 0]);
+      const pick = ROOFS[(R() * ROOFS.length) | 0], c = rgb(b === office ? "#c8102e" : b.look ? b.look.roof : pick);
       const ids = b.p.map(([x, z]) => RB.v(x, b.h, z, UP, 0, 0, c));
       for (const [a, b2, c2] of tris) RB.tri(ids[a], ids[b2], ids[c2], UP);
       if (b !== office) {

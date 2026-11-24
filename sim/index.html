@@ -365,6 +365,7 @@
 </div>
 
 <script src="kotalpur-map.js"></script>
+<script src="kotalpur-extra.js"></script>
 <script src="card.js"></script>
 <script>
 (() => {
@@ -641,6 +642,20 @@ const trees = [];
     if (Math.hypot(x - door.x, y - door.y) < 26) continue;
     trees.push({ x, y, r: 2 + R() * 2.8, dark: R() < .45 });
   }
+  // thicker woods where the satellite shows them (MAP.groves, from kotalpur-extra.js): one tree per ~35 m²
+  const GR = rng32(23);
+  for (const g of MAP.groves || []) {
+    let gx0 = 1e9, gy0 = 1e9, gx1 = -1e9, gy1 = -1e9, area = 0;
+    for (let i = 0, j = g.length - 1; i < g.length; j = i++) { const [x, y] = g[i]; gx0 = Math.min(gx0, x); gy0 = Math.min(gy0, y); gx1 = Math.max(gx1, x); gy1 = Math.max(gy1, y); area += (g[j][0] - x) * (g[j][1] + y) / 2; }
+    const want = Math.abs(area) / 35;
+    for (let k = 0, n = 0; k < want * 4 && n < want; k++) {
+      const x = gx0 + GR() * (gx1 - gx0), y = gy0 + GR() * (gy1 - gy0);
+      if (!pip(x, y, g) || roadGap(x, y) < 3 || blocked(x, y, 2.5) || Math.hypot(x - door.x, y - door.y) < 22) continue;
+      if (trees.some(t => Math.abs(t.x - x) < 2.4 && Math.abs(t.y - y) < 2.4)) continue;
+      trees.push({ x, y, r: 2 + GR() * 2.8, dark: GR() < .5 });
+      n++;
+    }
+  }
   for (let i = trees.length; i--;) if (pip(trees[i].x, trees[i].y, MOSQUE_YARD)) trees.splice(i, 1); // keep the mosque yard clear
 }
 
@@ -682,6 +697,12 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     });
   }
   for (const t of trees) t.h = 3 + t.r * 1.1;
+  // houses near the office as they look on the satellite (MAP.looks, from kotalpur-extra.js)
+  for (const lk of MAP.looks || []) {
+    const b = buildings.find(b => pip(lk.at[0], lk.at[1], b.p)); if (!b) continue;
+    b.h = lk.h; b.floors = Math.max(1, Math.round(lk.h / 3.2)); b.tin = lk.tin; b.roof = lk.roof;
+    if (lk.tin) b.tank = b.stair = b.cloth = b.dish = null;
+  }
   // Sufan Bikash Ghor, after the real building: the face toward the road, a deep roof overhang, a stair room
   const fr = office.edges.reduce((m, e, i) => (e.nx * officeU.x + e.ny * officeU.y) < m.d ? { i, d: e.nx * officeU.x + e.ny * officeU.y } : m, { i: 0, d: 2 });
   office.front = fr.i;
