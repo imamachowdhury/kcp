@@ -307,7 +307,9 @@ function poly(pts) {
   for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); cx += x; cy += y; }
   return { p: pts, x0, y0, x1, y1, cx: cx / pts.length, cy: cy / pts.length };
 }
-const buildings = MAP.buildings.map(poly), ponds = MAP.water.map(poly);
+const PALACE_POLY = [[124, 36], [131, 36], [131, 46], [124, 46]]; // Sufan Palace's house, missing from OpenStreetMap
+const buildings = [...MAP.buildings, PALACE_POLY].map(poly), ponds = MAP.water.map(poly);
+const palace = buildings[buildings.length - 1];
 for (const b of [...buildings, ...ponds]) addBox(G.solid, b.x0 - 3, b.y0 - 3, b.x1 + 3, b.y1 + 3, b);
 function pip(x, y, p) { let ins = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const xi = p[i][0], yi = p[i][1], xj = p[j][0], yj = p[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins; } return ins; }
 function pushOut(o, r) {
@@ -341,6 +343,16 @@ let office = null, door = null;
 }
 const officeU = (() => { const dx = office.cx - door.x, dy = office.cy - door.y, L = Math.hypot(dx, dy) || 1; return { x: dx / L, y: dy / L }; })();
 const officeV = { x: -officeU.y, y: officeU.x };
+// Vhaiyar Dukan, the tea shop across from the office (24.836000, 91.953128 on Google Maps)
+const DUKAN_AT = { x: 43.2, y: 66.8 };
+const dukan = buildings.filter(b => b !== office).reduce((m, b) => { const d = pip(DUKAN_AT.x, DUKAN_AT.y, b.p) ? -1 : Math.hypot(b.cx - DUKAN_AT.x, b.cy - DUKAN_AT.y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b;
+// a building's frame: u points from its road into it, v along the road; w and d are its size along v and u
+function frameOf(b) {
+  const nr = nearestRoad(b.cx, b.cy), L = Math.hypot(b.cx - nr.x, b.cy - nr.y) || 1, u = { x: (b.cx - nr.x) / L, y: (b.cy - nr.y) / L }, v = { x: -u.y, y: u.x };
+  const us = b.p.map(([x, y]) => (x - b.cx) * u.x + (y - b.cy) * u.y), vs = b.p.map(([x, y]) => (x - b.cx) * v.x + (y - b.cy) * v.y);
+  const u0 = Math.min(...us), u1 = Math.max(...us), v0 = Math.min(...vs), v1 = Math.max(...vs);
+  return { u, v, w: v1 - v0, d: u1 - u0, x: b.cx + u.x * (u0 + u1) / 2 + v.x * (v0 + v1) / 2, y: b.cy + u.y * (u0 + u1) / 2 + v.y * (v0 + v1) / 2, road: nr };
+}
 const DROP_R = 18;
 
 // land reachable from the office without swimming
@@ -634,7 +646,7 @@ const tanks = [], stairs = [];
     b.ips = R() < .3;
     const wall = rgb(b === office ? "#f5c518" : WALLS[(R() * WALLS.length) | 0]);
     const tin = b !== office && b.h < 4 && R() < .7;
-    if (b === office) continue; // Sufan Bikash Ghor has its own model below
+    if (b === office || b === dukan || b === palace) continue; // these have their own models below
     let cum = 0;
     b.p.forEach((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dz = n[1] - q[1], L = Math.hypot(dx, dz); if (L < .01) return;
@@ -853,6 +865,123 @@ let officeFlag = null;
   officeFlag = new THREE.Mesh(flagGeo, lam({ map: flagTex, side: THREE.DoubleSide }));
   officeFlag.position.set(-1.5, 9.35 + 4.2, -1.1); officeFlag.castShadow = true; g.add(officeFlag);
 }
+// models in a building's frame: local +z faces the road, +x runs along it (to the right as seen from the road)
+function landmark(f) {
+  const g = new THREE.Group(); g.position.set(f.x, 0, f.y); g.rotation.y = Math.atan2(-f.u.x, -f.u.y); scene.add(g);
+  const box = (w, hh, d, x, y, z, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  const plane = (w, hh, mat, x, y, z, ry = 0) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, hh), mat); m.position.set(x, y, z); m.rotation.y = ry; g.add(m); return m; };
+  // a roof sheet sloping from (z0, y0) down to (z1, y1), across x from -w/2 to w/2
+  const slope = (w, z0, y0, z1, y1, mat, x = 0) => { const L = Math.hypot(z1 - z0, y1 - y0), m = new THREE.Mesh(new THREE.BoxGeometry(w, .06, L), mat); m.position.set(x, (y0 + y1) / 2, (z0 + z1) / 2); m.rotation.x = Math.atan2(y0 - y1, z1 - z0); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  return { g, box, plane, slope };
+}
+const sheetTex = (base, rust, seed) => canvasTex(256, 256, (c) => { // corrugated tin, optionally rusty
+  for (let x = 0; x < 256; x++) { const v = Math.sin(x / 256 * Math.PI * 28); c.fillStyle = `rgba(${base.map(k => Math.round(k * (.86 + v * .14))).join(",")})`; c.fillRect(x, 0, 1, 256); }
+  if (rust) { const R = rng32(seed); for (let k = 0; k < 22; k++) { c.fillStyle = `rgba(150,72,38,${.25 + R() * .35})`; c.beginPath(); c.ellipse(R() * 256, R() * 256, 8 + R() * 26, 4 + R() * 10, 0, 0, Math.PI * 2); c.fill(); } }
+});
+const signTex = (lines, bg, fg, w, hh, size) => canvasTex(w, hh, (c) => {
+  c.fillStyle = bg; c.fillRect(0, 0, w, hh); c.fillStyle = fg; c.textAlign = "center"; c.textBaseline = "middle";
+  lines.forEach((t, k) => { c.font = `700 ${size}px "Hind Siliguri", sans-serif`; c.fillText(t, w / 2, hh * (k + .5) / lines.length); });
+});
+
+// Vhaiyar Dukan, after the street photo: one long storey under rusty grey tin that runs out over a veranda on white posts;
+// the open shop with hanging chips, two red shutters, an empty bay at the end
+if (dukan) {
+  const f = frameOf(dukan), { g, box, plane, slope } = landmark(f), W = f.w, D = f.d, hw = W / 2, F = D / 2, VZ = F - 2.1; // VZ: shop fronts
+  dukan.h = 3.6;
+  const white = lam({ color: "#ece8de" }), post = lam({ color: "#f3efe6" }), blue = lam({ color: "#2f6db3" });
+  box(W + .2, .3, D + .2, 0, .15, 0, lam({ color: "#c9c2b2" }));                       // concrete platform
+  { // the shop block: back wall taller than the front so the tin slopes to the road
+    const s = new THREE.Shape([[-F, .3], [VZ, .3], [VZ, 2.95], [-F, 3.55]].map(([z, y]) => new THREE.Vector2(z, y)));
+    const geo = new THREE.ExtrudeGeometry(s, { depth: W, bevelEnabled: false }); geo.rotateY(-Math.PI / 2); geo.translate(hw, 0, 0);
+    const m = new THREE.Mesh(geo, white); m.castShadow = m.receiveShadow = true; g.add(m);
+  }
+  const tin = slope(W + .5, -F - .3, 3.62, F + .45, 2.62, lam({ map: sheetTex([160, 168, 172], true, 7) }));
+  tin.material.map.wrapS = tin.material.map.wrapT = THREE.RepeatWrapping; tin.material.map.repeat.set(W / 4, 1);
+  for (const x of [-hw + .15, -hw * .2, hw * .3, hw * .66, hw - .15]) box(.22, 2.6, .22, x, 1.6, F - .05, post); // veranda posts
+  // the open shop on the left
+  const L0 = -hw + .2, L1 = -hw * .2 - .2, Lw = L1 - L0, Lc = (L0 + L1) / 2;
+  const shelf = canvasTex(256, 160, (c) => {
+    c.fillStyle = "#2b2520"; c.fillRect(0, 0, 256, 160); const R = rng32(12), cols = ["#e0301e", "#f5c518", "#2f8a4f", "#f08a24", "#3b6fd1", "#f6efe1"];
+    for (let r = 0; r < 3; r++) { c.fillStyle = "#8a6a48"; c.fillRect(0, 50 + r * 45, 256, 4); for (let x = 3; x < 250;) { const w = 6 + R() * 12, hh = 14 + R() * 20; c.fillStyle = cols[(R() * 6) | 0]; c.fillRect(x, 50 + r * 45 - hh, w, hh); x += w + 2; } }
+  });
+  plane(Lw, 2.6, lam({ map: shelf }), Lc, 1.6, VZ + .01);
+  box(Lw * .55, 1.0, .55, Lc - Lw * .12, .8, VZ + .45, lam({ color: "#8a5a36" }));     // counter
+  box(.7, .9, .5, Lc + Lw * .32, .75, VZ + .4, lam({ color: "#d8d8d8" }));              // glass biscuit case
+  for (const x of [L0 + .05, L1 - .05]) box(.12, 2.6, .12, x, 1.6, VZ + .06, blue);   // blue posts at the shop mouth
+  const chips = [3, 5, 9].map(seed => canvasTex(32, 160, (c) => {
+    const R = rng32(seed), cols = ["#e0301e", "#f5c518", "#2f8a4f", "#f08a24", "#3b6fd1", "#c2185b"];
+    for (let y = 0; y < 160; y += 22) { c.fillStyle = cols[(R() * 6) | 0]; c.fillRect(2, y, 28, 20); c.fillStyle = "rgba(255,255,255,.6)"; c.fillRect(8, y + 7, 16, 5); }
+  }));
+  for (let k = 0; k < 16; k++) { const s = plane(.17, 1.2, lam({ map: chips[k % 3], side: THREE.DoubleSide }), L0 + .25 + k * (Lw - .5) / 15, 2.15 - (k % 2) * .1, VZ + .14 + (k % 3) * .05); s.rotation.y = k % 2 ? .25 : -.25; }
+  plane(Lw * .55, .42, new THREE.MeshBasicMaterial({ map: signTex(["ফ্লেক্সিলোড · রিচার্জ"], "#2b3fa8", "#ffffff", 320, 72, 34) }), Lc + Lw * .12, 2.72, VZ + .2);
+  plane(.55, 1.5, lam({ map: signTex(["ভাইয়ার", "দোকান", "চা · পান", "বিস্কুট"], "#c8102e", "#f6efe1", 120, 330, 28) }), -hw + .2, 1.75, F + .08);
+  // two red rolling shutters
+  const shut = canvasTex(64, 128, (c) => { c.fillStyle = "#c8352a"; c.fillRect(0, 0, 64, 128); c.fillStyle = "rgba(0,0,0,.18)"; for (let y = 4; y < 128; y += 8) c.fillRect(0, y, 64, 2); c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(0, 0, 64, 3); });
+  const S0 = -hw * .2 + .15, S1 = hw * .3 - .1, sw = (S1 - S0) / 2;
+  for (let k = 0; k < 2; k++) plane(sw - .12, 2.45, lam({ map: shut }), S0 + sw * (k + .5), 1.55, VZ + .01);
+  plane(.48, 1.05, new THREE.MeshBasicMaterial({ map: signTex(["ফ্লেক্সিলোড", "পাওয়ার লোড", "ইন্টারনেট", "স্ক্র্যাচ কার্ড"], "#2463b8", "#ffffff", 140, 300, 24) }), -hw * .2, 2.0, F + .07);
+  box(1.3, .45, .45, -hw * .2 - .9, .52, F - .55, lam({ color: "#bdb6a6" }));           // concrete bench by the middle post
+  // a teapot on the bench, it's a tea shop after all
+  const pot = new THREE.Mesh(new THREE.SphereGeometry(.13, 10, 8), lam({ color: "#9aa3a8" })); pot.scale.y = .8; pot.position.set(-hw * .2 - .6, .85, F - .55); g.add(pot);
+}
+
+// Sufan Palace, after the street photo: a cream house under grey tin behind a turquoise boundary wall,
+// a red-and-blue iron gate between square pillars, a wooden shed by the gate, areca palms along the wall
+{
+  const f = frameOf(palace), { g, box, plane, slope } = landmark(f), W = f.w, D = f.d, hw = W / 2, F = D / 2;
+  const roadGap = Math.hypot(f.x - f.road.x, f.y - f.road.y) - (f.road.hw || 4) - F;  // yard between the house and the road
+  const WZ = F + Math.max(2.4, roadGap - 1.2), cream = lam({ color: "#efe3b0" });
+  palace.h = 4.4;
+  box(W, 3.1, D, 0, 1.55, 0, cream);
+  { // hipped tin roof
+    const t = sheetTex([170, 176, 180], false), m2 = lam({ map: t, side: THREE.DoubleSide }); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / 4, 1);
+    const ox = hw + .45, oz = F + .45, y0 = 3.05, y1 = 4.5, rx = Math.max(.3, ox - oz);
+    const pos = [], add = (...pts) => pts.forEach(q => pos.push(...q));
+    add([-ox, y0, oz], [ox, y0, oz], [rx, y1, 0], [-ox, y0, oz], [rx, y1, 0], [-rx, y1, 0]);   // front slope
+    add([ox, y0, -oz], [-ox, y0, -oz], [-rx, y1, 0], [ox, y0, -oz], [-rx, y1, 0], [rx, y1, 0]); // back slope
+    add([ox, y0, oz], [ox, y0, -oz], [rx, y1, 0], [-ox, y0, -oz], [-ox, y0, oz], [-rx, y1, 0]);  // the two hips
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    const uv = []; for (let k = 0; k < pos.length; k += 3) uv.push((pos[k] + ox) / 4, (pos[k + 2] + oz) / 4); geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, m2); m.castShadow = m.receiveShadow = true; g.add(m);
+  }
+  const winT = canvasTex(64, 64, (c) => { c.fillStyle = "#1f2a33"; c.fillRect(0, 0, 64, 64); c.strokeStyle = "#3a6fb0"; c.lineWidth = 6; c.strokeRect(3, 3, 58, 58); c.strokeStyle = "#cfd5da"; c.lineWidth = 2; for (let x = 14; x < 64; x += 10) { c.beginPath(); c.moveTo(x, 4); c.lineTo(x, 60); c.stroke(); } });
+  for (const x of [-hw * .65, -hw * .1, hw * .55]) plane(.9, 1.0, lam({ map: winT }), x, 1.7, F + .01);
+  plane(1.0, 2.1, lam({ map: canvasTex(64, 128, (c) => { c.fillStyle = "#24313a"; c.fillRect(0, 0, 64, 128); c.strokeStyle = "#111"; c.lineWidth = 3; for (let x = 6; x < 64; x += 9) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, 128); c.stroke(); } for (let y = 10; y < 128; y += 22) { c.beginPath(); c.moveTo(0, y); c.lineTo(64, y); c.stroke(); } }) }), hw * .2, 1.05, F + .01); // grilled door
+  plane(1.0, .5, lam({ map: canvasTex(64, 32, (c) => { c.fillStyle = "#e9e4d6"; c.fillRect(0, 0, 64, 32); c.fillStyle = "#6b6456"; for (let x = 4; x < 64; x += 12) for (let y = 4; y < 32; y += 12) { c.beginPath(); c.arc(x + 3, y + 3, 3.5, 0, Math.PI * 2); c.fill(); } }) }), hw * .2, 2.6, F + .01); // breeze-block vent
+  // turquoise boundary wall with damp stains, the gate on the right
+  const wallT = canvasTex(128, 64, (c) => {
+    c.fillStyle = "#8fd3d0"; c.fillRect(0, 0, 128, 64); const gr = c.createLinearGradient(0, 30, 0, 64); gr.addColorStop(0, "rgba(40,60,50,0)"); gr.addColorStop(1, "rgba(40,60,50,.45)"); c.fillStyle = gr; c.fillRect(0, 0, 128, 64);
+    const R = rng32(19); c.fillStyle = "rgba(40,60,50,.2)"; for (let k = 0; k < 20; k++) c.fillRect(R() * 128, R() * 30, 2 + R() * 8, 4 + R() * 18);
+  }, true);
+  const wallM = lam({ map: wallT }), G0 = hw * .35, G1 = G0 + 1.9, WL = -hw - 1, WR = hw + 1.2;
+  const run = (x0, x1, z0, z1) => { const L = Math.hypot(x1 - x0, z1 - z0), m = box(L, 1.8, .22, (x0 + x1) / 2, .9, (z0 + z1) / 2, wallM); m.rotation.y = -Math.atan2(z1 - z0, x1 - x0); m.material = lam({ map: wallT.clone() }); m.material.map.repeat.set(L / 3, 1); m.material.map.needsUpdate = true; };
+  run(WL, G0 - .25, WZ, WZ); run(G1 + .25, WR, WZ, WZ); run(WL, WL, WZ, -F - 1); run(WR, WR, WZ, -F - 1); run(WL, WR, -F - 1, -F - 1);
+  for (const x of [G0 - .25, G1 + .25]) box(.5, 2.3, .5, x, 1.15, WZ, lam({ color: "#a6e0dd" }));                    // gate pillars
+  plane(.5, .26, new THREE.MeshBasicMaterial({ map: signTex(["সুফান প্যালেস"], "#f6efe1", C.ink, 220, 110, 34) }), G0 - .25, 1.75, WZ + .26); // name plate
+  const gateT = canvasTex(96, 128, (c) => {
+    c.clearRect(0, 0, 96, 128); c.fillStyle = "#c8352a"; c.fillRect(6, 28, 84, 94); c.fillStyle = "#3b6fd1";
+    for (const [x, y] of [[6, 28], [48, 28], [6, 75], [48, 75]]) { c.beginPath(); c.moveTo(x + 21, y); c.lineTo(x + 42, y + 23); c.lineTo(x + 21, y + 47); c.lineTo(x, y + 23); c.closePath(); c.fill(); }
+    c.strokeStyle = "#1d1a17"; c.lineWidth = 3; c.strokeRect(6, 28, 84, 94); c.beginPath(); c.moveTo(48, 28); c.lineTo(48, 122); c.stroke();
+    c.lineWidth = 3; for (let k = 0; k < 4; k++) { c.beginPath(); c.arc(16 + k * 21, 22, 8, Math.PI, 0); c.stroke(); }  // the scrolls on top
+  });
+  const leaf = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.9), lam({ map: gateT, transparent: true, alphaTest: .4, side: THREE.DoubleSide }));
+  leaf.geometry.translate(.5, 0, 0); leaf.position.set(G0, 1.0, WZ); leaf.rotation.y = -.25; g.add(leaf);
+  const leaf2 = leaf.clone(); leaf2.position.set(G1, 1.0, WZ); leaf2.rotation.y = Math.PI + 1.2; g.add(leaf2);  // the other leaf swung open
+  // wooden shed by the gate, and the flat-roofed store at the front left with a tyre on top
+  const wood = lam({ color: "#6b4a2b" });
+  for (const [x, z] of [[G0, F + .4], [G1 + 1.4, F + .4], [G0, WZ - .5], [G1 + 1.4, WZ - .5]]) box(.12, 2.4, .12, x, 1.2, z, wood);
+  slope(G1 + 1.6 - G0 + .2, F + .2, 2.55, WZ - .3, 2.35, lam({ map: sheetTex([120, 110, 96], true, 3) }), (G0 + G1 + 1.4) / 2);
+  box(3.6, 2.1, WZ - F - .6, WL + 2.1, 1.05, (WZ + F) / 2 - .1, lam({ color: "#d8cfb8" }));
+  box(3.9, .12, WZ - F - .3, WL + 2.1, 2.16, (WZ + F) / 2 - .1, lam({ color: "#8f8a80" }));
+  const tyre = new THREE.Mesh(new THREE.TorusGeometry(.32, .11, 8, 16), lam({ color: "#222" })); tyre.rotation.x = Math.PI / 2; tyre.position.set(WL + 1.4, 2.3, (WZ + F) / 2); g.add(tyre);
+  // areca palms along the outside of the wall
+  const trunk = lam({ color: "#a9a59b" }), frond = lam({ color: "#4f8a35", side: THREE.DoubleSide });
+  for (let x = WL + .8, k = 0; x < G0 - .6; x += 1.5, k++) {
+    const hh = 8 + (k % 3) * 1.3, tr = new THREE.Mesh(new THREE.CylinderGeometry(.09, .13, hh, 6), trunk); tr.position.set(x, hh / 2, WZ + .55 + (k % 2) * .25); tr.castShadow = true; g.add(tr);
+    for (let j = 0; j < 6; j++) { const fr = new THREE.Mesh(new THREE.ConeGeometry(.28, 2.2, 3), frond); fr.geometry.translate(0, 1.1, 0); fr.position.set(x, hh, tr.position.z); fr.rotation.set(1.1, j / 6 * Math.PI * 2, 0, "YXZ"); fr.scale.z = .25; fr.castShadow = true; g.add(fr); }
+  }
+}
+
 // mosques: a small white prayer hall, green dome and a minaret at each neighbourhood
 for (const pl of PLACES) {
   const g = new THREE.Group();
@@ -1224,7 +1353,7 @@ let state = "menu", rand = Math.random, P = null, comrades = [], cows = [], mich
 let time = 0, lastTick = -1, sufanCd = 0, events = {}, shedLevel = 0, rainLevel = 0, flash = 0, area = null, chatCd = 0, warned30 = false, samWarnCd = 0, shakeT = 0, gid = 0;
 const dyn = new THREE.Group(); scene.add(dyn);
 const rings = [];
-let sufan = null, officeTag = null, camHold = null; // camHold: test-only fixed camera offset
+let sufan = null, officeTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
 
 function clearDyn() {
   while (dyn.children.length) dyn.remove(dyn.children[0]);
@@ -1296,6 +1425,7 @@ function newGame() {
   sufan = { x: sp.x, y: sp.y, hy: 3.4, mesh: makePerson("#2f8a4f", faceTex(SUFAN, RING.done)), tag: mkEl("tag", "সুফান") };
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
+  placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")]].filter(([b]) => b);
   for (const pl of PLACES) pl.tag = mkEl("tag place", `🕌 ${pl.mosque}`);
   for (const b of billboards) b.seen = false;
 
@@ -1609,6 +1739,7 @@ function render(t, dt) {
     for (const s of stalls) near(s.x, s.y, 70) ? place(s.tag, project(s.x, 3.4, s.y)) : (s.tag.style.display = "none");
     for (const pl of PLACES) if (pl.tag) near(pl.mx, pl.my, 140) ? place(pl.tag, project(pl.mx, 12, pl.my)) : (pl.tag.style.display = "none");
     if (officeTag) near(office.cx, office.cy, 170) ? place(officeTag, project(office.cx, office.h + 6.5, office.cy)) : (officeTag.style.display = "none");
+    for (const [b, tg] of placeTags) near(b.cx, b.cy, 110) ? place(tg, project(b.cx, b.h + 3, b.cy)) : (tg.style.display = "none");
     if (sufan) near(sufan.x, sufan.y) ? place(sufan.tag, project(sufan.x, 3.05, sufan.y)) : (sufan.tag.style.display = "none");
   }
   for (let i = bubbles.length - 1; i >= 0; i--) {
@@ -1774,7 +1905,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 // test hook
 window.__sim3 = {
   get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
-  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, openShop, closeShop,
+  get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };

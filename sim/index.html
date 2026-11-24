@@ -343,7 +343,9 @@ function poly(pts, kind) {
   for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); cx += x; cy += y; }
   return { p: pts, x0, y0, x1, y1, cx: cx / pts.length, cy: cy / pts.length, kind, roof: ROOFS[(roofRng() * ROOFS.length) | 0] };
 }
-const buildings = MAP.buildings.map(p => poly(p, "b"));
+const PALACE_POLY = [[124, 36], [131, 36], [131, 46], [124, 46]]; // Sufan Palace (24.836232, 91.953999), missing from OpenStreetMap
+const buildings = [...MAP.buildings, PALACE_POLY].map(p => poly(p, "b"));
+const palace = buildings[buildings.length - 1];
 const ponds = MAP.water.map(p => poly(p, "w"));
 for (const b of [...buildings, ...ponds]) addBox(G.solid, b.x0 - 3, b.y0 - 3, b.x1 + 3, b.y1 + 3, b);
 function pip(x, y, p) {
@@ -404,6 +406,9 @@ let office = null, door = null;
   door = { x: nr.x, y: nr.y, hw: nr.hw };
   office.kind = "office";
 }
+// Vhaiyar Dukan, the tea shop across from the office (24.836000, 91.953128 on Google Maps)
+const DUKAN_AT = { x: 43.2, y: 66.8 };
+const dukan = buildings.filter(b => b !== office).reduce((m, b) => { const d = pip(DUKAN_AT.x, DUKAN_AT.y, b.p) ? -1 : Math.hypot(b.cx - DUKAN_AT.x, b.cy - DUKAN_AT.y); return d < m.d ? { b, d } : m; }, { b: null, d: 1e18 }).b;
 const officeU = (() => { const dx = office.cx - door.x, dy = office.cy - door.y, L = Math.hypot(dx, dy) || 1; return { x: dx / L, y: dy / L }; })();
 const officeV = { x: -officeU.y, y: officeU.x };
 const DROP_R = 18;
@@ -472,7 +477,7 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     const area = b.p.reduce((a, q, i) => { const n = b.p[(i + 1) % b.p.length]; return a + q[0] * n[1] - n[0] * q[1]; }, 0) / 2;
     b.sgn = area >= 0 ? 1 : -1;
     const big = Math.abs(area) > 260;
-    b.h = b === office ? 8 : (big ? 7 : 3.6) + R() * (big ? 5.5 : 4.4);   // 1 to 4 storeys
+    b.h = b === office ? 7 : (big ? 7 : 3.6) + R() * (big ? 5.5 : 4.4);   // 1 to 4 storeys
     b.floors = Math.max(1, Math.round(b.h / 3.2));
     b.ips = R() < .3;                                         // has an IPS: lights stay on in load-shedding
     // what's on the roof: tin sheets on the small houses; tanks, stair rooms, dishes and washing on the concrete ones
@@ -490,7 +495,7 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
       if (R() < .4) b.cloth = [ctr(.6, 1), ctr(.6, 3), R() * 6];
       if (R() < .3) b.dish = ctr(.55, b.p.length - 1);
     }
-    const wall = hexRgb(b === office ? "#f5c518" : WALLS[(R() * WALLS.length) | 0]);
+    const wall = hexRgb(b === office ? "#86d6bf" : b === dukan ? "#ece8de" : b === palace ? "#efe3b0" : WALLS[(R() * WALLS.length) | 0]);
     b.edges = b.p.map((q, i) => {
       const n = b.p[(i + 1) % b.p.length], dx = n[0] - q[0], dy = n[1] - q[1], L = Math.hypot(dx, dy) || 1;
       const nx = dy / L * b.sgn, ny = -dx / L * b.sgn;          // outward normal
@@ -499,6 +504,28 @@ const shade = (rgb, k) => `rgb(${rgb.map(v => Math.round(Math.min(255, v * k))).
     });
   }
   for (const t of trees) t.h = 3 + t.r * 1.1;
+  // Sufan Bikash Ghor, after the real building: the face toward the road, a deep roof overhang, a stair room
+  const fr = office.edges.reduce((m, e, i) => (e.nx * officeU.x + e.ny * officeU.y) < m.d ? { i, d: e.nx * officeU.x + e.ny * officeU.y } : m, { i: 0, d: 2 });
+  office.front = fr.i;
+  const fe = office.edges[fr.i];
+  office.over = office.p.map(([x, y]) => { const dx = x - office.cx, dy = y - office.cy, L = Math.hypot(dx, dy) || 1, k = 1 + .5 / L; return [office.cx + dx * k + fe.nx * .3, office.cy + dy * k + fe.ny * .3]; });
+  { const ca = Math.cos(office.ang), sa = Math.sin(office.ang), w = 1.2, sx0 = office.cx - fe.nx * 1.1, sy0 = office.cy - fe.ny * 1.1;
+    office.stairBox = [[-w, -w], [w, -w], [w, w], [-w, w]].map(([x, y]) => [sx0 + x * ca - y * sa, sy0 + x * sa + y * ca]); office.stairC = [sx0, sy0]; }
+  // the tea shop: one storey under rusty tin
+  { // Sufan Palace: a cream house under grey tin behind a turquoise boundary wall with a red-and-blue gate
+    const b = palace, nr = nearestRoad(b.cx, b.cy), L = Math.hypot(b.cx - nr.x, b.cy - nr.y) || 1, u = [(b.cx - nr.x) / L, (b.cy - nr.y) / L], v = [-u[1], u[0]];
+    b.h = 3.6; b.floors = 1; b.tin = true; b.roof = "#a9b0b4"; b.tank = b.stair = b.cloth = b.dish = null;
+    const P2 = (du, dv) => [b.cx + u[0] * du + v[0] * dv, b.cy + u[1] * du + v[1] * dv], F = 3.5, WZ = -(F + 2.8), hw = 5;
+    b.wall = [[P2(WZ, -hw - 1), P2(WZ, hw * .35 - .25)], [P2(WZ, hw * .35 + 2.15), P2(WZ, hw + 1.2)], [P2(WZ, hw + 1.2), P2(F + 1, hw + 1.2)], [P2(F + 1, hw + 1.2), P2(F + 1, -hw - 1)], [P2(F + 1, -hw - 1), P2(WZ, -hw - 1)]];
+    b.gate = [P2(WZ, hw * .35 - .25), P2(WZ, hw * .35 + 2.15)];
+    b.tag = P2(F + 6, 0);
+  }
+  if (dukan) { // one long storey under grey tin, open to the road
+    dukan.h = 3.2; dukan.floors = 1; dukan.tin = true; dukan.roof = "#9aa3a8"; dukan.tank = dukan.stair = dukan.cloth = dukan.dish = null; dukan.ips = true;
+    const nr = nearestRoad(dukan.cx, dukan.cy), ux = dukan.cx - nr.x, uy = dukan.cy - nr.y, uL = Math.hypot(ux, uy) || 1;
+    dukan.tag = [dukan.cx + ux / uL * 7, dukan.cy + uy / uL * 7]; // label sits behind the shop, off the road
+    dukan.front = dukan.edges.reduce((m, e, i) => (e.nx * ux + e.ny * uy) < m.d ? { i, d: e.nx * ux + e.ny * uy } : m, { i: 0, d: 1e9 }).i;
+  }
 }
 
 /* ================= static map layers (Path2D, world units) ================= */
@@ -1324,6 +1351,70 @@ function drawCity(t) {
     });
     ctx.fillStyle = lid; ctx.beginPath(); hi.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fill(); ctx.stroke();
   }
+  // Sufan Bikash Ghor's road side. u runs left to right as seen from the road, off is metres out from the wall, hh is height
+  function faceOf(e) {
+    const rx = e.ny, ry = -e.nx, flip = (e.b[0] - e.a[0]) * rx + (e.b[1] - e.a[1]) * ry < 0;
+    const at = (u, off, hh) => { const uu = flip ? 1 - u : u; return lift(e.a[0] + (e.b[0] - e.a[0]) * uu + e.nx * off, e.a[1] + (e.b[1] - e.a[1]) * uu + e.ny * off, hh); };
+    const quad = (u0, u1, o0, o1, h0, h1, fill, stroke) => {
+      const q = [at(u0, o0, h0), at(u1, o0, h0), at(u1, o1, h1), at(u0, o1, h1)];
+      ctx.beginPath(); q.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+      ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.strokeStyle = C.ink; ctx.lineWidth = stroke; ctx.stroke(); }
+    };
+    return { at, quad, wall: (u0, u1, h0, h1, fill, stroke) => quad(u0, u1, 0, 0, h0, h1, fill, stroke) };
+  }
+  // Vhaiyar Dukan's road side: the open shop, two red shutters, an empty bay, white posts holding up the tin
+  function dukanFront(b) {
+    const { quad, wall } = faceOf(b.edges[b.front]), cols = ["#e0301e", "#f5c518", "#2f8a4f", "#f08a24", "#3b6fd1", "#f6efe1"];
+    quad(-.02, 1.02, 0, .6, .3, .3, "#c9c2b2", .12);                          // concrete platform
+    wall(.02, .42, .3, 2.7, "#2b2520", .12);                                   // the open shop
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 12; k++) wall(.05 + k * .03, .07 + k * .03, .8 + r * .6, 1.15 + r * .6, cols[(k * 5 + r) % 6]);
+    for (let k = 0; k < 9; k++) wall(.06 + k * .04, .075 + k * .04, 1.6, 2.65, cols[(k + 1) % 6]); // hanging chips
+    wall(.08, .25, .3, 1.15, "#8a5a36", .1);                                    // counter
+    wall(.02, .06, .9, 2.4, C.red, .08); wall(.22, .36, 2.35, 2.65, "#2b3fa8", .08); // signs
+    wall(.43, .62, .3, 2.6, "#c8352a", .12); wall(.63, .8, .3, 2.6, "#c8352a", .12);  // shutters
+    for (let k = 1; k < 9; k++) { wall(.43, .62, .3 + k * .28, .32 + k * .28, "rgba(0,0,0,.18)"); wall(.63, .8, .3 + k * .28, .32 + k * .28, "rgba(0,0,0,.18)"); }
+    wall(.82, .98, .3, 2.7, "#d9d4c8", .1);                                     // empty bay
+    for (const u of [.01, .42, .61, .81, .99]) wall(u - .012, u + .012, .3, 3.1, u === .61 ? "#f3efe6" : "#f3efe6", .06); // posts
+    wall(.6, .66, 1.5, 2.6, "#2463b8", .06);                                    // flexiload sign on the post
+  }
+  function officeFront(b, facing) {
+    const { at, quad, wall } = faceOf(b.edges[b.front]);
+    quad(-.03, 1.03, 0, .9, .25, .25, "#b9b4a6", .15);                     // concrete plinth
+    if (facing) {
+      wall(.05, .24, .25, 2.4, "#5a3a26", .12);                             // stair door
+      wall(.26, .31, 1.3, 2.4, C.red, .08);                                 // "baki chahiya lojja diben na"
+      wall(.34, .96, .25, 2.85, "#2b2520", .14);                            // the open shop
+      const cols = ["#e0301e", "#f5c518", "#2f8a4f", "#f08a24", "#3b6fd1", "#f6efe1"];
+      for (let r = 0; r < 4; r++) for (let k = 0; k < 11; k++) { const u = .36 + k * .04; if (u > .8) break; wall(u, u + .03, .55 + r * .55, .9 + r * .55, cols[(k * 3 + r) % 6]); }
+      for (let k = 0; k < 8; k++) wall(.37 + k * .035, .39 + k * .035, 1.75, 2.8, cols[(k + 2) % 6]); // strings of chips packets
+      wall(.84, .94, .25, 2.15, "#f3efe6", .1); wall(.855, .925, .5, 1.9, "#cfe6ef");                    // fridge
+      wall(.72, .8, 1.65, 2.6, "#2463b8", .08);                             // flexiload sign
+      wall(.08, .26, 3.9, 6.0, "#3a2c22", .1); wall(.32, .5, 3.9, 6.0, "#3a2c22", .1); wall(.58, .93, 4.5, 6.0, "#3a2c22", .1); // upstairs windows
+      for (const [u, v] of [[.47, .5], [.5, .35], [.53, .55]]) { const [x, y] = at(u, v, .4); ctx.fillStyle = "#8bb34a"; ctx.beginPath(); ctx.arc(x, y, .17, 0, Math.PI * 2); ctx.fill(); }
+    }
+    // the sloped shade over the shop, whose top is the balcony floor
+    quad(-.02, 1.02, 1.6, 1.6, 2.85, 3.55, "#78c9b1", .14);
+    quad(-.02, 1.02, 0, 1.6, 3.55, 3.55, "#a3e3d0", .16);
+    ctx.strokeStyle = "#f3efe6"; ctx.lineWidth = .12; ctx.beginPath();  // white balusters
+    for (let u = .03; u < .98; u += .035) { const [x0, y0] = at(u, 1.5, 3.6), [x1, y1] = at(u, 1.5, 4.5); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); }
+    ctx.stroke();
+    ctx.strokeStyle = "#5fb39b"; ctx.lineWidth = .3; ctx.beginPath(); { const [x0, y0] = at(.01, 1.5, 4.55), [x1, y1] = at(.99, 1.5, 4.55); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke();
+    // the party banner tied on the railing
+    quad(.2, .76, 1.65, 1.65, 3.5, 4.8, "#fbfaf5", .1); quad(.2, .28, 1.66, 1.66, 3.5, 4.8, "#24479b"); quad(.29, .75, 1.66, 1.66, 4.2, 4.6, C.red); quad(.29, .75, 1.66, 1.66, 3.5, 3.75, "#2f8a4f");
+  }
+  function officeRoof(b) {
+    const ov = b.over.map(([x, y]) => lift(x, y, b.h));
+    ctx.beginPath(); ov.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+    ctx.fillStyle = "#7b8781"; ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .5; ctx.stroke();
+    ctx.save(); ctx.clip(); ctx.fillStyle = "rgba(40,48,45,.16)"; // weathering stains
+    const R = rng32(41); for (let k = 0; k < 12; k++) { const [x, y] = lift(b.cx + (R() - .5) * 7, b.cy + (R() - .5) * 8, b.h); ctx.beginPath(); ctx.arc(x, y, .3 + R() * .7, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+    prism(b.stairBox, b.h, b.h + 2.3, "#86d6bf", "#7b8781");
+    const [x, y] = lift(b.stairC[0], b.stairC[1], b.h + 2.3); // KCP star on the stair room
+    ctx.fillStyle = C.yellow; ctx.beginPath();
+    for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr2 = k % 2 ? .45 : 1.05; ctx.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); }
+    ctx.closePath(); ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .2; ctx.stroke();
+  }
   function roofBits(b, t) {
     if (b.tin) { // corrugated sheets with a ridge down the middle
       atH(b.h);
@@ -1334,6 +1425,7 @@ function drawCity(t) {
       ctx.stroke();
       ctx.strokeStyle = "rgba(255,255,255,.4)"; ctx.lineWidth = .35; ctx.beginPath();
       ctx.moveTo(b.cx - ca * span, b.cy - sa * span); ctx.lineTo(b.cx + ca * span, b.cy + sa * span); ctx.stroke();
+      if (b === dukan) { const R = rng32(77); ctx.fillStyle = "rgba(150,70,35,.55)"; for (let k = 0; k < 14; k++) { ctx.beginPath(); ctx.ellipse(b.cx + (R() - .5) * span, b.cy + (R() - .5) * span, .4 + R() * .9, .2 + R() * .3, b.ang, 0, Math.PI * 2); ctx.fill(); } } // rust
       ctx.restore();
       return;
     }
@@ -1369,11 +1461,20 @@ function drawCity(t) {
     }
   }
 
+  if (palace.x1 > cx - hw - 20 && palace.x0 < cx + hw + 20 && palace.y1 > cy - hh - 20 && palace.y0 < cy + hh + 20) { // Sufan Palace's boundary wall and gate
+    const seg = ([a, c], hgt, fill) => { const A = lift(a[0], a[1], hgt), B = lift(c[0], c[1], hgt); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(B[0], B[1]); ctx.lineTo(A[0], A[1]); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.stroke(); return [A, B]; };
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .2;
+    for (const s of palace.wall) { const [A, B] = seg(s, 1.8, "#7cc4c1"); ctx.save(); ctx.strokeStyle = "#a6e0dd"; ctx.lineWidth = .45; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); ctx.restore(); }
+    const [g0, g1] = palace.gate, gm = [(g0[0] + g1[0]) / 2, (g0[1] + g1[1]) / 2];
+    seg([g0, gm], 1.9, "#c8352a"); seg([gm, g1], 1.9, "#3b6fd1");
+  }
   // buildings, far ones first so the nearer ones overlap them
   vb.sort((a, b) => Math.hypot(b.cx - cx, b.cy - cy) - Math.hypot(a.cx - cx, a.cy - cy));
   ctx.lineJoin = "round";
   for (const b of vb) {
     const top = b.p.map(([x, y]) => lift(x, y, b.h));
+    const frontSeen = b === office && (() => { const e = b.edges[b.front], mx = (e.a[0] + e.b[0]) / 2, my = (e.a[1] + e.b[1]) / 2; return e.nx * (cx - mx) + e.ny * (cy - my) > 0; })();
+    if (b === office && !frontSeen) officeFront(b, false); // balcony behind the building: draw it first
     b.edges.forEach((e, i) => {
       const mx = (e.a[0] + e.b[0]) / 2, my = (e.a[1] + e.b[1]) / 2;
       if (e.nx * (cx - mx) + e.ny * (cy - my) <= 0) return;      // wall faces away from the drone
@@ -1381,7 +1482,7 @@ function drawCity(t) {
       ctx.fillStyle = e.col; ctx.beginPath();
       ctx.moveTo(e.a[0], e.a[1]); ctx.lineTo(e.b[0], e.b[1]); ctx.lineTo(tb[0], tb[1]); ctx.lineTo(ta[0], ta[1]); ctx.closePath();
       ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .35; ctx.stroke();
-      if (!e.win) return;
+      if (!e.win || (b === office && i === b.front)) return;
       // windows: one row per storey
       const P2 = (u, v) => { const bx = e.a[0] + (e.b[0] - e.a[0]) * u, by = e.a[1] + (e.b[1] - e.a[1]) * u, tx = ta[0] + (tb[0] - ta[0]) * u, ty = ta[1] + (tb[1] - ta[1]) * u; return [bx + (tx - bx) * v, by + (ty - by) * v]; };
       ctx.fillStyle = b === office ? "#7a3b12" : "rgba(52,72,92,.78)"; ctx.beginPath();
@@ -1395,18 +1496,15 @@ function drawCity(t) {
       }
       ctx.fill();
     });
+    if (frontSeen) officeFront(b, true);
+    if (b === dukan) { const e = b.edges[b.front], mx = (e.a[0] + e.b[0]) / 2, my = (e.a[1] + e.b[1]) / 2; if (e.nx * (cx - mx) + e.ny * (cy - my) > 0) dukanFront(b); }
+    if (b === office) { officeRoof(b); continue; }
     // flat roof with a parapet line
     ctx.beginPath(); ctx.moveTo(top[0][0], top[0][1]); for (const q of top) ctx.lineTo(q[0], q[1]); ctx.closePath();
-    ctx.fillStyle = b === office ? C.red : b.roof; ctx.fill();
-    ctx.strokeStyle = C.ink; ctx.lineWidth = b === office ? .7 : .45; ctx.stroke();
+    ctx.fillStyle = b.roof; ctx.fill();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = .45; ctx.stroke();
     ctx.save(); ctx.clip(); ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = .9; ctx.stroke(); ctx.restore();
     roofBits(b, t);
-    if (b === office) { // KCP star on the party office roof
-      const [x, y] = lift(b.cx, b.cy, b.h);
-      ctx.fillStyle = C.yellow; ctx.beginPath();
-      for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr2 = k % 2 ? 1.3 : 3.1; ctx.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); }
-      ctx.closePath(); ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = .3; ctx.stroke();
-    }
   }
 }
 
@@ -1693,6 +1791,8 @@ function drawActors(t) {
     const x = sx(office.cx + officeU.x * 14), y = sy(office.cy + officeU.y * 14);
     if (onScreen(x, y, 120)) label("সুফান বিকাশ ঘর · পার্টি অফিস", x, y, C.red, C.paper, 12);
   }
+  { const x = sx(palace.tag[0]), y = sy(palace.tag[1]); if (onScreen(x, y, 120)) label("সুফান প্যালেস 🏠", x, y, "#a6e0dd", C.ink, 11); }
+  if (dukan) { const x = sx(dukan.tag[0]), y = sy(dukan.tag[1]); if (onScreen(x, y, 120)) label("ভাইয়ার দোকান ☕", x, y, C.yellow, C.ink, 11); }
   // stalls
   for (const s of stalls) {
     const x = sx(s.x), y = sy(s.y); if (!onScreen(x, y)) continue;
