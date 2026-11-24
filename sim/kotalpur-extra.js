@@ -30,7 +30,7 @@
     [[63.5, 57.8], [63.5, 63.6], [72.2, 63.6], [72.2, 57.8]],   // the white room with a tank east of Vhaiyar Dukan; the rest of its plot is a walled site
     [[22, 45.5], [32, 45.5], [32, 50.5], [22, 50.5]],           // the white tin-roofed house on the north pond's bank
     [[-20.5, 2.5], [-9.5, 2.5], [-9.5, 16], [-20.5, 16]],       // Ujan Vati Stur, up the lane to the north
-    [[24.5, 71], [27, 71], [27, 73.4], [24.5, 73.4]]            // the little tin shed between Sufan Bikash Ghor and the lane
+    [[23.55, 68.65], [26.05, 68.65], [26.05, 71.05], [23.55, 71.05]] // the little tin shed on the junction corner, against Sufan Bikash Ghor's north wall
   );
   M.water.push(
     // behind Vhaiyar Dukan, between the white house and the red-roofed building
@@ -61,12 +61,12 @@
   // gives each its own model: the plank kiosk against Sufan Bikash Ghor's north wall, the cream house across the
   // concrete lane with a banner frame on its roof, the long bare-brick shed under rusty tin behind the shop, and the
   // white room with a water tank at the back of the brick-walled building site east of the shop
-  M.dukanArea = { kiosk: [25.7, 72.2], banner: [27, 48], brickShed: [46.5, 45.4], site: [67.8, 60.7] };
+  M.dukanArea = { kiosk: [24.8, 69.85], banner: [27, 48], brickShed: [46.5, 45.4], site: [67.8, 60.7] };
   // small things on the ground the game draws: benches, bamboo fences, a concrete gate frame, a brick ring well, patches
   // of red earth (dirt) and concrete (slab), a brick-lined drain, brick walls, boundary walls (bwall; `jali` is how many
   // meters from the start carry the pierced band, `col` and `base` recolour it), metal gates (gate, and tingate under a
   // tin roof), barbed wire, a haystack, a drying sheet, a brick-heaped tank lid, electric poles, a signboard, a tin-sheet fence,
-  // areca palms, papaya trees, a log pile and bamboo clumps; `open` is
+  // areca palms, papaya trees, a log pile, bamboo clumps, a gourd trellis (macha) and a triangular road sign (rsign); `open` is
   // ground the game keeps trees off
   M.props = [
     { k: "bench", p: [[154.6, 31.6], [156.4, 33.2]] },
@@ -105,12 +105,17 @@
     // where the lane meets the road (street photos at 24.834345, 91.952744): a fence of old tin sheets on wooden legs
     // round a plot of areca palms, a gap for a gate in its lane side, a pole at its south-east corner
     // round Vhaiyar Dukan: the building site's low bare-brick walls (open on the road side) and its heaps of sand, the
-    // electric poles at the junction, and the school's yellow signboard on the lane past Sufan Bikash Ghor
+    // electric poles at the junction, and the school's yellow signboard on the lane's east edge, seen from both the junction
+    // and the panorama south of the office (it hangs about halfway between them)
     { k: "wall", h: 1.3, p: [[58.5, 68.1], [54.8, 67.6], [54.8, 57.8], [63.5, 57.8]] },
     { k: "wall", h: 1.3, p: [[64.5, 69], [72.4, 70.2], [72.2, 63.6]] },
     { k: "hay", at: [60.2, 64.2], col: "#c8b07e", s: .8 }, { k: "hay", at: [57.6, 60.6], col: "#b9a57c", s: .6 },
     { k: "epole", at: [47.5, 76.8] }, { k: "epole", at: [28, 71.2] },
-    { k: "sign", p: [[18.86, 93.57], [21.14, 94.83]], text: ["প্রভাতী বিদ্যানিকেতন", "ভর্তি চলছে"] },
+    { k: "sign", p: [[35.5, 77.4], [37.7, 78.4]], text: ["প্রভাতী বিদ্যানিকেতন", "ভর্তি চলছে"] },
+    // south of the bare-brick house (the Street View panorama at 24.835849, 91.952999, Dec 2022): a bamboo trellis for
+    // gourds over a muddy patch, and a triangular road sign at its corner on the lane, facing the junction
+    { k: "macha", p: [[21.6, 86.6], [19.8, 97.5], [9.5, 96.5], [10.5, 85.5]] },
+    { k: "rsign", at: [22.1, 86.1], face: [34, 69.7] },
     { k: "tinfence", p: [[-9, 241.6], [-8, 233], [0.5, 233], [-0.1, 237.2]] },
     { k: "tinfence", p: [[-0.3, 239.4], [-0.6, 243], [-9, 241.6]] },
     { k: "epole", at: [-2.4, 243.9] },
@@ -119,7 +124,8 @@
   M.open = [[[150, 27.5], [195, 27.5], [195, 34.4], [150, 34.4]], [[112.4, 27], [135, 27], [135, 35.2], [112.4, 35.2]],
             [[31.6, 87.8], [46.7, 87.8], [46.7, 106.7], [31.6, 106.7]],
             [[21.2, 155], [35.2, 155], [35.2, 178], [24, 178], [18.9, 171]],
-            [[15.8, 179.5], [18.3, 179.5], [18.3, 185.1], [15.8, 185.1]], [[34.2, 171], [40, 171], [40, 176], [34.2, 176]], [[-9.4, 232.6], [0.9, 232.6], [-0.2, 243.4], [-9.4, 242]]];
+            [[15.8, 179.5], [18.3, 179.5], [18.3, 185.1], [15.8, 185.1]], [[34.2, 171], [40, 171], [40, 176], [34.2, 176]], [[-9.4, 232.6], [0.9, 232.6], [-0.2, 243.4], [-9.4, 242]],
+            [[22.2, 85.7], [20.4, 98.3], [8.7, 97.3], [9.8, 84.6]]];
   // the school's grounds: the white-walled playing field in front (yard; edge `gate` is the open corner where the path
   // leaves), the flag pole, and two haystacks out by the paddy
   M.school = {

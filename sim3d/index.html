@@ -485,10 +485,12 @@ function poly(pts) {
   return { p: pts, x0, y0, x1, y1, cx: cx / pts.length, cy: cy / pts.length };
 }
 const PALACE_POLY = [[124, 36], [131, 36], [131, 46], [124, 46]]; // Sufan Palace's house, missing from OpenStreetMap
-// Sufan Bikash Ghor (24.835843, 91.952955) stands on the WEST side of the lane, facing east; OpenStreetMap has no building there.
-// Next to it, south along the lane, an unfinished bare-brick house.
-const OFFICE_POLY = [[24.3, 79.8], [22.6, 86.1], [17.8, 84.9], [19.5, 78.5]];
-const BRICK_POLY = [[22.4, 86.8], [20.9, 92.6], [15.1, 91.1], [16.6, 85.3]];
+// Sufan Bikash Ghor stands on the WEST side of the lane just south of the junction, facing east; OpenStreetMap has no
+// building there. Next to it, south along the lane, an unfinished bare-brick house. Placed by the Street View panoramas at the
+// junction and south of the brick house (Dec 2022), about 8 m north of where Google's pin (24.835843, 91.952955) puts it,
+// leaving room for the plank kiosk on the junction corner (the game's roads are wider than the real lanes)
+const OFFICE_POLY = [[25.85, 71.7], [24.15, 78], [19.35, 76.8], [21.05, 70.4]];
+const BRICK_POLY = [[23.95, 78.7], [22.45, 84.5], [16.65, 83], [18.15, 77.2]];
 // Real Mamur Dukan (24.835771, 91.953983): a little tea stall set in the boundary wall of a cream compound, on the south side
 // of the lane right across from where the road north to Sufan Palace branches off. a: metres east along the lane from that
 // junction, o: metres south of the lane's centre line
@@ -1247,10 +1249,11 @@ if (dukan) {
   }
 }
 
-// the unfinished house next to the office: two storeys of bare brick, empty window holes, rebar sticking up for the next floor
+// the unfinished house next to the office, after the Street View panorama south of it (Dec 2022): one storey of bare brick
+// between grey concrete columns under a bare concrete slab, empty window holes, rebar sticking up for the next floor
 {
   const f = frameOf(brick), { g, box, plane } = landmark(f), W = f.w, D = f.d, hw = W / 2, F = D / 2;
-  brick.h = 6.2;
+  brick.h = 3.3;
   const brickT = canvasTex(128, 128, (c) => {
     c.fillStyle = "#8c8479"; c.fillRect(0, 0, 128, 128); const R = rng32(31);
     for (let r = 0; r < 16; r++) for (let k = -1; k < 6; k++) {
@@ -1260,23 +1263,21 @@ if (dukan) {
   }, true);
   const mat = (rx, ry) => { const t = brickT.clone(); t.repeat.set(rx, ry); t.needsUpdate = true; return lam({ map: t }); };
   const conc = lam({ color: "#a7a39b" }), hole = lam({ color: "#211d1a" }), rebar = lam({ color: "#5b3d2a" });
-  for (const [y0, hh] of [[0, 2.9], [3.1, 2.9]]) {
-    box(W, hh, D, 0, y0 + hh / 2, 0, mat(W / 1.6, hh / 1.6));
-  }
-  box(W + .3, .22, D + .3, 0, 3.0, 0, conc);                                            // floor slab
-  box(W + .3, .2, D + .3, 0, 6.1, 0, conc);                                             // roof slab, still bare
+  box(W, 2.9, D, 0, 1.45, 0, mat(W / 1.6, 2.9 / 1.6));
+  box(W + .2, .3, D + .2, 0, 2.95, 0, conc);                                            // the grey beam all round under the slab
+  box(W + .8, .18, D + .8, 0, 3.19, 0, conc);                                           // roof slab, still bare, sticking out a little
   // empty openings, no frames yet
-  for (const x of [-hw * .55, hw * .55]) { plane(1.1, 1.2, hole, x, 4.6, F + .01); plane(1.1, 1.2, hole, x, 1.7, F + .01); }
+  for (const x of [-hw * .55, hw * .55]) plane(1.3, 1.4, hole, x, 1.6, F + .01);
   plane(1.1, 2.2, hole, 0, 1.1, F + .01);                                               // the door hole
-  for (const z of [-F * .4, F * .4]) for (const s2 of [-1, 1]) plane(.9, 1.0, hole, s2 * (hw + .02), 4.6, z, s2 * Math.PI / 2);
-  // grey concrete columns with brick filled in between, and bundles of bars sticking up for the third floor
+  for (const z of [-F * .4, F * .4]) for (const s2 of [-1, 1]) plane(.9, 1.1, hole, s2 * (hw + .02), 1.7, z, s2 * Math.PI / 2);
+  // grey concrete columns with brick filled in between, and bundles of bars sticking up for the next floor
   const cols = [];
   for (const x of [-hw + .15, hw - .15]) for (const z of [-F + .15, 0, F - .15]) cols.push([x, z]);
   cols.push([0, -F + .15]);                                                            // the middle of the front stays clear for the door
   for (const [x, z] of cols) {
-    box(.34, 6.1, .34, x, 3.05, z, conc);
+    box(.34, 3.1, .34, x, 1.55, z, conc);
     for (const [dx, dz] of [[-.09, -.09], [.09, -.09], [-.09, .09], [.09, .09]]) {
-      const r = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, 1.2, 4), rebar); r.position.set(x + dx, 6.8, z + dz); r.rotation.set(dz * 1.4, 0, -dx * 1.4); g.add(r);
+      const r = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, 1.2, 4), rebar); r.position.set(x + dx, 3.85, z + dz); r.rotation.set(dz * 1.4, 0, -dx * 1.4); g.add(r);
     }
   }
   // a heap of bricks and sand by the road
@@ -1675,12 +1676,14 @@ if (tinHouse.length === 4) {
   // the plank kiosk against Sufan Bikash Ghor's north wall: weathered boards, its plank front shut toward the junction,
   // a rusty tin roof running back to the wall, a white sheet and a striped mat heaped in front, a blue crate
   if (kiosk) {
+    const n0 = g.children.length, KX = -.95, KZ = -2.35; // drawn where it first stood, then moved with the office (MAP.dukanArea.kiosk)
     const planks = lam({ map: canvasTex(64, 64, (c2) => { const R = rng32(57); for (let k = 0; k < 8; k++) { const v = .8 + R() * .3; c2.fillStyle = `rgb(${[138, 124, 104].map(q => Math.round(q * v)).join(",")})`; c2.fillRect(k * 8, 0, 8, 64); c2.fillStyle = "#4e4438"; c2.fillRect(k * 8, 0, 1, 64); } }, true) });
     box(24.5, 27, 71, 73.4, 0, .35, lam({ color: "#9b8f80" })); box(24.6, 26.9, 71.1, 73.3, .35, 2.2, planks);
     for (const z of [71.6, 72.2, 72.8]) box(26.9, 26.98, z - .28, z + .28, .45, 2.05, planks);
     slopeX(70.7, 73.7, 27.6, 2.55, 24.3, 2.35, tinT([150, 140, 128], 59, 1));
     box(27.1, 27.9, 71.2, 72.4, 0, .45, lam({ color: "#ecebe4" })); box(27.1, 27.95, 72.5, 73.3, 0, .3, lam({ color: "#b25a3c" }));
     box(27.2, 27.7, 70.4, 70.9, 0, .3, lam({ color: "#2f63b8" }));
+    for (const m of g.children.slice(n0)) { m.position.x += KX; m.position.z += KZ; }
     kiosk.h = 2.6;
   }
   // the cream house across the concrete lane: grey tin over cream walls, three square pillars along its front, and a
@@ -1897,6 +1900,35 @@ if (tinHouse.length === 4) {
         c.position.set((bx + tx) / 2, h / 2, (by + ty) / 2); c.lookAt(tx, h, ty); c.rotateX(Math.PI / 2); c.castShadow = true; scene.add(c);
         const l = new THREE.Mesh(new THREE.SphereGeometry(1, 7, 5), leaf[k % 2]); l.scale.set(1.1, .7, 1.1); at(l, tx, h - .2, ty, a);
       }
+    } else if (pr.k === "macha") { // a bamboo trellis for gourds: thin posts, a grid of poles at chest height, vines bunched on top, a muddy patch under it
+      const [p0, p1, p2, p3] = pr.p, P = (u, v) => [p0[0] + (p1[0] - p0[0]) * u + (p3[0] - p0[0]) * v + (p0[0] - p1[0] + p2[0] - p3[0]) * u * v,
+        p0[1] + (p1[1] - p0[1]) * u + (p3[1] - p0[1]) * v + (p0[1] - p1[1] + p2[1] - p3[1]) * u * v];
+      const R = rng32(57), H = 1.55, bam = lam({ color: "#9a845c" }), lenA = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), lenB = Math.hypot(p3[0] - p0[0], p3[1] - p0[1]);
+      const B = Builder(), mc = rgb("#6c6a50"), tris = THREE.ShapeUtils.triangulateShape(pr.p.map(([x, z]) => new THREE.Vector2(x, z)), []), ids = pr.p.map(([x, z]) => B.v(x, .03, z, UP, 0, 0, mc));
+      for (const [a, b2, c2] of tris) B.tri(ids[a], ids[b2], ids[c2], UP);
+      const mud = new THREE.Mesh(B.build(), lam({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); mud.receiveShadow = true; scene.add(mud);
+      const pond = at(new THREE.Mesh(new THREE.CircleGeometry(1, 16), lam({ color: "#7d8b88" })), ...(([x, z]) => [x, .045, z])(P(.35, .7))); pond.rotation.x = -Math.PI / 2; pond.scale.set(3.2, 2.2, 1); pond.castShadow = false;
+      const nu = Math.max(2, Math.round(lenA / 2.3)), nv = Math.max(2, Math.round(lenB / 2.3));
+      for (let i = 0; i <= nu; i++) for (let j = 0; j <= nv; j++) { const [x, z] = P(i / nu, j / nv); at(new THREE.Mesh(new THREE.CylinderGeometry(.035, .045, H, 5), bam), x, H / 2, z); }
+      const pole = (a, b2) => { const L = Math.hypot(b2[0] - a[0], b2[1] - a[1]); at(new THREE.Mesh(new THREE.BoxGeometry(L, .05, .05), bam), (a[0] + b2[0]) / 2, H, (a[1] + b2[1]) / 2, -Math.atan2(b2[1] - a[1], b2[0] - a[0])); };
+      const mu = Math.round(lenA / 1.1), mv = Math.round(lenB / 1.1);
+      for (let i = 0; i <= mu; i++) pole(P(i / mu, 0), P(i / mu, 1));
+      for (let j = 0; j <= mv; j++) pole(P(0, j / mv), P(1, j / mv));
+      const leafM = ["#5f9a3a", "#4c8530", "#78a94a"].map(c => lam({ color: c })), gourdM = lam({ color: "#a9c77a" });
+      for (let k = 0; k < 46; k++) {
+        const [x, z] = P(R(), R()), m = at(new THREE.Mesh(new THREE.SphereGeometry(1, 7, 4), leafM[k % 3]), x, H + .08, z, R() * 3);
+        m.scale.set(.5 + R() * .7, .12, .4 + R() * .6);
+      }
+      for (let k = 0; k < 12; k++) { const [x, z] = P(.1 + R() * .8, .1 + R() * .8); at(new THREE.Mesh(new THREE.CylinderGeometry(.07, .09, .5, 6), gourdM), x, H - .3, z); }
+    } else if (pr.k === "rsign") { // a triangular road warning sign on a thin post, facing `face`
+      const [x, y] = pr.at, ry = Math.atan2(pr.face[0] - x, pr.face[1] - y), post = lam({ color: "#8a8d8a" });
+      at(new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, 2.4, 6), post), x, 1.2, y);
+      const face = lam({ map: canvasTex(64, 64, (c2) => {
+        c2.clearRect(0, 0, 64, 64); c2.fillStyle = "#c8102e"; c2.beginPath(); c2.moveTo(32, 3); c2.lineTo(62, 58); c2.lineTo(2, 58); c2.closePath(); c2.fill();
+        c2.fillStyle = "#f4f4f0"; c2.beginPath(); c2.moveTo(32, 15); c2.lineTo(52, 52); c2.lineTo(12, 52); c2.closePath(); c2.fill();
+        c2.fillStyle = "#1d1a17"; c2.fillRect(30, 26, 4, 16); c2.fillRect(30, 45, 4, 4);
+      }), alphaTest: .5, side: THREE.DoubleSide });
+      at(new THREE.Mesh(new THREE.PlaneGeometry(.75, .75), face), x + Math.sin(ry) * .04, 2.15, y + Math.cos(ry) * .04, ry);
     } else if (pr.k === "dirt" || pr.k === "slab") {
       const B = Builder(), c = rgb(pr.k === "slab" ? "#cdc9bd" : "#c08a5a"), tris = THREE.ShapeUtils.triangulateShape(pr.p.map(([x, z]) => new THREE.Vector2(x, z)), []), ids = pr.p.map(([x, z]) => B.v(x, .04, z, UP, 0, 0, c));
       for (const [a, b2, c2] of tris) B.tri(ids[a], ids[b2], ids[c2], UP);
