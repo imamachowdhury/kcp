@@ -124,6 +124,15 @@
   .money small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
   .money.minus { background: #ffd2c8; }
   .money[hidden] { display: none; }
+  .steps { list-style: none; display: flex; gap: 6px; padding: 0; margin: 10px 0 14px; }
+  .steps li { flex: 1; font-size: 12px; font-weight: 700; color: var(--ink-soft); border-top: 5px solid var(--paper-2); padding-top: 4px; }
+  .steps li.done { border-color: var(--ink-soft); }
+  .steps li.on { border-color: var(--red); color: var(--red); }
+  .step[hidden] { display: none; }
+  .step > .btns { position: sticky; bottom: -1px; z-index: 1; background: var(--paper); padding: 10px 0 4px; box-shadow: 0 -12px 12px -8px var(--paper); }
+  .step:not([data-step="3"]) > .btns { flex-wrap: nowrap; }
+  .step > .btns .btn { padding-left: 14px; padding-right: 14px; }
+  a.driver { text-decoration: none; }
   .drivers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
   .drivers .sec { grid-column: 1 / -1; margin: 0; font-weight: 700; font-size: 14px; text-align: left; }
   .driver { font: inherit; color: var(--ink); text-align: left; background: var(--paper-2); border: 2.5px solid var(--ink); border-radius: 12px;
@@ -255,18 +264,20 @@
   <div class="panel">
     <p class="kicker">কেসিপি আড্ডা জোন · নতুন খেলা</p>
     <h1>সভায় আনো!</h1>
-    <p class="lead">শুক্রবার, বিকাল ৪টা ২৫। ৫টায় <b>সুফান বিকাশ ঘরে</b> কেন্দ্রীয় কমিটির সভা। কিন্তু কমরেডরা সবাই দুপুরের ঘুমে। <b>পংকি ভাইয়ের সিএনজি</b> নিয়ে কতোয়ালপুর ঘুরে সবাইকে সভায় আনো।</p>
-    <div class="drivers" id="vehicles">
-      <p class="sec">১. কোন গাড়িতে যাবা?</p>
-      <button class="driver" data-v="cng"><span class="ph ic">🛺</span><b>পংক পরিবহন সিএনজি</b><small>👥 পেছনে একসাথে ৫ জন।<br>🐢 কিন্তু পংকি রাজের চেয়ে ধীরে চলে।</small></button>
-      <button class="driver" data-v="scooter"><span class="ph" style="background-image:url('../assets/vehicles/ponkiraj.jpg')"></span><b>তানিমের পংকি রাজ</b><small>🚀 সিএনজির চেয়ে অনেক জোরে চলে।<br>👤 কিন্তু পেছনে মাত্র ১ জন।</small></button>
-    </div>
-    <div class="drivers" id="drivers">
-      <p class="sec" id="drvQ">২. আজকে সিএনজি চালাবেন কে?</p>
-      <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু ফুল স্পিডে লম্বা মোড় নিলে এক্সিডেন্ট করেন।</small></button>
-      <button class="driver" data-d="muhon"><span class="ph" style="background-image:url('../assets/people/muhon.jpg')"></span><b>নেতা মুহন ভাই</b><small>✅ সব ঠিকঠাক, সাবধানে চালান।<br>📢 কিন্তু মিছিল দেখলে থেমে স্লোগান দিতে লেগে যান।</small></button>
-    </div>
-    <ul class="rules">
+    <ol class="steps" aria-label="ধাপ"><li>ভার্সন</li><li>নিয়ম</li><li>গাড়ি</li><li>চালক</li></ol>
+
+    <section class="step" data-step="0">
+      <div class="drivers">
+        <p class="sec">কোনটা খেলবা? একটাতে চাপ দাও</p>
+        <button class="driver on" data-mode="2d" data-go="1"><span class="ph ic">🗺️</span><b>২ডি ম্যাপ</b><small>উপর থেকে দেখা কতোয়ালপুরের ম্যাপ। যেকোনো ফোনে হালকা চলে।</small></button>
+        <a class="driver" data-mode="3d" href="../sim3d/#rules"><span class="ph ic">🧊</span><b>৩ডি 🆕</b><small>রাস্তায় নেমে চালানো, পুরো ৩ডি। নতুন ফোন বা কম্পিউটারে ভালো চলে।</small></a>
+      </div>
+      <div class="btns"><a class="btn ghost" href="../">KCP তে ফিরে যান</a></div>
+    </section>
+
+    <section class="step" data-step="1" hidden>
+      <p class="lead">শুক্রবার, বিকাল ৪টা ২৫। ৫টায় <b>সুফান বিকাশ ঘরে</b> কেন্দ্রীয় কমিটির সভা। কিন্তু কমরেডরা সবাই দুপুরের ঘুমে। <b>পংকি ভাইয়ের সিএনজি</b> নিয়ে কতোয়ালপুর ঘুরে সবাইকে সভায় আনো।</p>
+      <ul class="rules">
       <li><span>💤</span><span>ঘুমন্ত কমরেডের কাছে গিয়ে <b>প্যাঁ-পোঁ হর্ন</b> বাজাও। কারো কারো ঘুম ভাঙতে কয়েকবার লাগে।</span></li>
       <li><span>🛺</span><span>সিএনজির পেছনে একসাথে <b>৫ জন</b>, তানিমের পংকি রাজে পেছনে <b>১ জন</b>। অফিসের লাল বৃত্তে গেলেই নামবে।</span></li>
       <li><span>🗣️</span><span>কেউ কেউ ঘুম ভেঙে <b>অজুহাত</b> দেবে। অজুহাত শুনে ঠিক জবাব বাছো: চা, চিপস, নাকি "এমরান ভাই আসতেছেন!" ভুল হলে পালাবে, তখন পিছু নিয়ে ধরো।</span></li>
@@ -278,15 +289,33 @@
       <li><span>💰</span><span>প্রতি কমরেডের <b>ভাড়া</b> পাবে, গরু-দেয়ালে ধাক্কায় <b>জরিমানা</b>। টাকা জমিয়ে <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।</span></li>
       <li><span>⚡</span><span>সাবধান: মাঝপথে <b>লোডশেডিং</b> আর <b>ঝুম বৃষ্টি</b>! একসাথে ৩ জন নামালে <b>হ্যাটট্রিক</b>।</span></li>
     </ul>
-    <p class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> বা <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> দিয়ে চালাও · <kbd>Space</kbd> = হর্ন<br>মোবাইলে: নিচে ◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস আর ব্রেক (চাইলে স্ক্রিনে আঙুল টেনেও চালানো যায়)</p>
-    <div class="wallet" id="startWallet">পকেটে: ৳০</div>
-    <div class="btns">
-      <button class="btn" id="play" disabled>সিএনজি স্টার্ট দাও</button>
-      <button class="btn alt" id="shopFromStart">দোকান 🛒</button>
-      <a class="btn ghost" href="../sim3d/">৩ডি ভার্সন 🆕</a>
-      <a class="btn ghost" href="../">KCP তে ফিরে যান</a>
-    </div>
-    <p class="loading" id="loading">ম্যাপ লোড হচ্ছে...</p>
+      <p class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> বা <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> দিয়ে চালাও · <kbd>Space</kbd> = হর্ন<br>মোবাইলে: নিচে ◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস আর ব্রেক (চাইলে স্ক্রিনে আঙুল টেনেও চালানো যায়)</p>
+      <div class="btns"><button class="btn ghost" data-go="0">← পিছনে</button><button class="btn" data-go="2">বুঝছি, গাড়ি বাছি →</button></div>
+    </section>
+
+    <section class="step" data-step="2" hidden>
+      <div class="drivers" id="vehicles">
+        <p class="sec">কোন গাড়িতে যাবা? একটাতে চাপ দাও</p>
+        <button class="driver" data-v="cng"><span class="ph ic">🛺</span><b>পংক পরিবহন সিএনজি</b><small>👥 পেছনে একসাথে ৫ জন।<br>🐢 কিন্তু পংকি রাজের চেয়ে ধীরে চলে।</small></button>
+        <button class="driver" data-v="scooter"><span class="ph" style="background-image:url('../assets/vehicles/ponkiraj.jpg')"></span><b>তানিমের পংকি রাজ</b><small>🚀 সিএনজির চেয়ে অনেক জোরে চলে।<br>👤 কিন্তু পেছনে মাত্র ১ জন।</small></button>
+      </div>
+      <div class="btns"><button class="btn ghost" data-go="1">← পিছনে</button></div>
+    </section>
+
+    <section class="step" data-step="3" hidden>
+      <div class="drivers" id="drivers">
+        <p class="sec" id="drvQ">আজকে সিএনজি চালাবেন কে?</p>
+        <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু ফুল স্পিডে লম্বা মোড় নিলে এক্সিডেন্ট করেন।</small></button>
+        <button class="driver" data-d="muhon"><span class="ph" style="background-image:url('../assets/people/muhon.jpg')"></span><b>নেতা মুহন ভাই</b><small>✅ সব ঠিকঠাক, সাবধানে চালান।<br>📢 কিন্তু মিছিল দেখলে থেমে স্লোগান দিতে লেগে যান।</small></button>
+      </div>
+      <div class="wallet" id="startWallet">পকেটে: ৳০</div>
+      <div class="btns">
+        <button class="btn ghost" data-go="2">← পিছনে</button>
+        <button class="btn" id="play" disabled>সিএনজি স্টার্ট দাও</button>
+        <button class="btn alt" id="shopFromStart">দোকান 🛒</button>
+      </div>
+      <p class="loading" id="loading">ম্যাপ লোড হচ্ছে...</p>
+    </section>
   </div>
 </div>
 
@@ -738,7 +767,8 @@ addEventListener("keydown", e => {
   if (k === " " && !e.repeat && !talk) { horn(); flashHorn(); }
   if (talk && ["1", "2", "3"].includes(k)) answerTalk(["tea", "chips", "emran"][+k - 1]);
   if (k === "m") toggleMute();
-  if (k === "enter" && (state === "menu" || state === "over") && !document.getElementById("play").disabled) startGame();
+  if (k === "enter" && state === "menu" && el("shop").classList.contains("hidden")) { if (startStep < 3) goStep(startStep + 1); else if (!el("play").disabled) startGame(); }
+  else if (k === "enter" && state === "over" && !el("play").disabled) startGame();
   keys.add(k);
 });
 addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
@@ -2599,14 +2629,24 @@ function openShop(from) {
   if (!garage.on) { garage.on = true; garage.last = 0; requestAnimationFrame(drawGarage); }
 }
 el("shopFromStart").addEventListener("click", () => openShop("start"));
+// start screen in steps: version → rules → vehicle → driver and start
+let startStep = 0;
+function goStep(n) {
+  startStep = n;
+  document.querySelectorAll("#start .step").forEach(x => { x.hidden = +x.dataset.step !== n; });
+  document.querySelectorAll("#start .steps li").forEach((li, i) => { li.classList.toggle("on", i === n); li.classList.toggle("done", i < n); });
+  const scr = el("start"); scr.scrollTop = 0; scr.querySelector(".panel").scrollTop = 0;
+}
+document.querySelectorAll("#start [data-go]").forEach(b => b.addEventListener("click", () => goStep(+b.dataset.go)));
+goStep(location.hash === "#rules" ? 1 : 0);
 const syncDrivers = () => {
   document.querySelectorAll(".driver[data-d]").forEach(b => b.classList.toggle("on", b.dataset.d === driverId));
   document.querySelectorAll(".driver[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === vehId));
-  el("drvQ").textContent = `২. আজকে ${VEH().go} চালাবেন কে?`;
+  el("drvQ").textContent = `আজকে ${VEH().go} চালাবেন কে?`;
   if (!el("play").disabled) el("play").textContent = `${VEH().go} স্টার্ট দাও`;
 };
 document.querySelectorAll(".driver[data-v]").forEach(b => b.addEventListener("click", () => {
-  vehId = b.dataset.v; syncDrivers();
+  vehId = b.dataset.v; syncDrivers(); goStep(3);
   try { localStorage.setItem("kcp-sim-vehicle", vehId); } catch (e) {}
 }));
 document.querySelectorAll(".driver[data-d]").forEach(b => b.addEventListener("click", () => {
