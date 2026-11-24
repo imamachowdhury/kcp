@@ -1709,8 +1709,8 @@ function wobble(t, f1, f2, dur, vol, rate = 16, depth = 160) {
   g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
   o.connect(g).connect(ac.destination); o.start(t); l.start(t); o.stop(t + dur + .05); l.stop(t + dur + .05);
 }
-let hornBuf = null, susBuf = null, overBuf = null, startBuf = null, startPending = false, startEnd = 0, startSrc = null, musicBuf = null, musicGain = null, musicSrc = null;
-function musicLevel() { // full volume, silent when muted, or stepped back until the CNG's start tune ends
+let hornBuf = null, susBuf = null, overBuf = null, startBuf = null, startPending = false, startEnd = 0, startSrc = null, musicEl = null, musicGain = null;
+function musicLevel() { // full volume, silent when muted, or stepped back until the CNG's start tune (or the game-over sound) ends
   if (!ac || !musicGain) return;
   const g = musicGain.gain, now = ac.currentTime; g.cancelScheduledValues(now);
   if (muted) { g.setValueAtTime(0, now); return; }
@@ -1764,13 +1764,37 @@ const sfx = {
   cash() { this.play(t => { tone(1318, t, .07, "square", .045); tone(1760, t + .06, .22, "square", .045); }); },
   welcome() { this.play(t => [784, 988, 1175].forEach((f, i) => tone(f, t + i * .08, .25, "sine", .08))); },
 };
-// background music: "Happy Adventure (Loop)" by TinyWorlds, opengameart.org, CC0
-function startMusic() {
-  if (!ac || !musicBuf || musicSrc) return;
-  musicGain = ac.createGain(); musicGain.connect(ac.destination); musicLevel();
-  musicSrc = ac.createBufferSource(); musicSrc.buffer = musicBuf; musicSrc.loop = true;
-  musicSrc.connect(musicGain); musicSrc.start();
+// background music: the "সভায় আনো!" song, made by the user with Suno (shared with the 2D game)
+const MUSIC_URL = "../sim/bgm.mp3";
+function startMusic() { // streamed, not decoded: a 2½-minute song would be ~55MB in memory
+  if (!ac) return;
+  try {
+    if (!musicEl) {
+      musicEl = new Audio(MUSIC_URL); musicEl.loop = true; musicEl.preload = "auto";
+      musicGain = ac.createGain(); musicGain.connect(ac.destination);
+      ac.createMediaElementSource(musicEl).connect(musicGain);
+    }
+    musicLevel(); if (musicEl.paused && !(state === "play" && paused)) musicEl.play().catch(() => {}); // one song, carried from the start screen through every round
+  } catch (e) {}
 }
+// the song starts as the page opens: at once if the browser allows sound, else on the first tap or key
+setTimeout(function musicOnEntry() { // after the whole script has run (it reads state and paused)
+  try {
+    if (!ac) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ac = new AC(); }
+    if (!ac) return;
+    if (ac.state === "running") startMusic();
+    else ac.resume().then(() => { if (ac.state === "running") startMusic(); }).catch(() => {});
+    const evs = ["pointerdown", "touchend", "keydown"];
+    const kick = () => { evs.forEach(e => removeEventListener(e, kick, true)); try { if (ac.state === "suspended") ac.resume(); startMusic(); } catch (e) {} };
+    evs.forEach(e => addEventListener(e, kick, true));
+  } catch (e) {}
+}, 0);
+// quiet while the tab is hidden; back on return (a paused round stays quiet until resumed)
+document.addEventListener("visibilitychange", () => {
+  if (!musicEl) return;
+  if (document.hidden) musicEl.pause();
+  else if (!(state === "play" && paused)) musicEl.play().catch(() => {});
+});
 let eng = null;
 function engineUpdate() {
   if (!ac) return;
@@ -2540,7 +2564,7 @@ function startGame() {
     if (ac && !susBuf) loadBuf("../sim/sus.mp3").then(b => susBuf = b).catch(() => {});
     if (ac && !overBuf) loadBuf("../sim/game-over.mp3").then(b => overBuf = b).catch(() => {});
     if (ac && !startBuf) loadBuf("../sim/cng-start.mp3").then(b => { startBuf = b; if (startPending && state === "play" && time < 2) sfx.cngStart(); }).catch(() => {});
-    if (ac && !musicBuf) loadBuf("music.mp3").then(b => { musicBuf = b; startMusic(); }).catch(() => {});
+    startMusic();
   } catch (e) {}
   if (garage) { garage = null; camera.clearViewOffset(); resize(); el("shop").classList.add("hidden"); }
   el("start").classList.add("hidden"); el("end").classList.add("hidden");
@@ -2559,7 +2583,7 @@ function setPause(on) {
   stick = null; stickEl.style.display = "none";
   el("pauseScr").classList.toggle("hidden", !on);
   el("pauseVerdict").textContent = `${VEH().go} সাইড করে রাখা হলো, ঘড়িও থেমে আছে। কমরেডরা আরেকটু ঘুমাক।`;
-  try { if (ac) { if (on) ac.suspend(); else ac.resume(); } } catch (e) {}
+  try { if (ac) { if (on) ac.suspend(); else ac.resume(); } if (musicEl) { if (on) musicEl.pause(); else musicEl.play().catch(() => {}); } } catch (e) {}
   if (!on) engineUpdate();
 }
 el("pauseBtn").addEventListener("click", () => setPause(true));
