@@ -128,6 +128,7 @@
     padding: 8px; cursor: pointer; display: grid; grid-template-columns: 46px 1fr; gap: 4px 8px; align-items: center; box-shadow: 2px 2px 0 var(--ink); }
   .driver .ph { width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper) center/cover; grid-row: span 2; }
   .driver b { font-size: 15px; line-height: 1.2; }
+  .driver .ph.ic { display: grid; place-items: center; font-size: 26px; background: var(--yellow); }
   .driver small { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
   .driver.on { background: #fff3c2; box-shadow: 0 0 0 3px var(--red), 3px 3px 0 var(--ink); }
   .driver.on b::after { content: " ✓"; color: var(--red); }
@@ -213,7 +214,7 @@
 
 <div class="hud" id="hud" hidden>
   <div class="card clock" id="clock">৪:২৫<small>সভা ৫:০০ টায়</small></div>
-  <div class="card count"><span id="count">০/১১</span><span class="seats" id="seats"><i></i><i></i><i></i></span><small>কমরেড সভায় · সিএনজির সিট</small></div>
+  <div class="card count"><span id="count">০/১১</span><span class="seats" id="seats"><i></i><i></i><i></i></span><small>কমরেড সভায় · সিট</small></div>
   <div class="spacer"></div>
   <button class="icon-btn" id="mute" aria-label="শব্দ বন্ধ/চালু">🔊</button>
   <a class="icon-btn" href="../" aria-label="KCP হোমপেজে ফিরে যান">🏠</a>
@@ -238,9 +239,19 @@
     <p class="kicker">কেসিপি আড্ডা জোন · নতুন খেলা</p>
     <h1>সভায় আনো!</h1>
     <p class="lead">শুক্রবার, বিকাল ৪টা ২৫। ৫টায় <b>সুফান বিকাশ ঘরে</b> কেন্দ্রীয় কমিটির সভা। কিন্তু কমরেডরা সবাই দুপুরের ঘুমে। <b>পংকি ভাইয়ের সিএনজি</b> নিয়ে কতোয়ালপুর ঘুরে সবাইকে সভায় আনো।</p>
+    <div class="drivers" id="vehicles">
+      <p class="sec">১. কোন গাড়িতে যাবা?</p>
+      <button class="driver" data-v="cng"><span class="ph ic">🛺</span><b>পংক পরিবহন সিএনজি</b><small>👥 পেছনে একসাথে ৫ জন।<br>🐢 কিন্তু পংকি রাজের চেয়ে ধীরে চলে।</small></button>
+      <button class="driver" data-v="scooter"><span class="ph" style="background-image:url('../assets/vehicles/ponkiraj.jpg')"></span><b>তানিমের পংকি রাজ</b><small>🚀 সিএনজির চেয়ে অনেক জোরে চলে।<br>👤 কিন্তু পেছনে মাত্র ১ জন।</small></button>
+    </div>
+    <div class="drivers" id="drivers">
+      <p class="sec" id="drvQ">২. আজকে সিএনজি চালাবেন কে?</p>
+      <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু এক্সিডেন্টের ভয়ও বেশি।</small></button>
+      <button class="driver" data-d="muhon"><span class="ph" style="background-image:url('../assets/people/muhon.jpg')"></span><b>নেতা মুহন ভাই</b><small>✅ সব ঠিকঠাক, সাবধানে চালান।<br>📢 কিন্তু মিছিল দেখলে থেমে স্লোগান দিতে লেগে যান।</small></button>
+    </div>
     <ul class="rules">
       <li><span>💤</span><span>ঘুমন্ত কমরেডের কাছে গিয়ে <b>প্যাঁ-পোঁ হর্ন</b> বাজাও। কারো কারো ঘুম ভাঙতে কয়েকবার লাগে।</span></li>
-      <li><span>🛺</span><span>সিএনজির পেছনের সিটে একসাথে <b>৩ জন</b>। অফিসের লাল বৃত্তে গেলেই নামবে।</span></li>
+      <li><span>🛺</span><span>সিএনজির পেছনে একসাথে <b>৫ জন</b>, তানিমের পংকি রাজে পেছনে <b>১ জন</b>। অফিসের লাল বৃত্তে গেলেই নামবে।</span></li>
       <li><span>🗣️</span><span>কেউ কেউ ঘুম ভেঙে <b>অজুহাত</b> দেবে। অজুহাত শুনে ঠিক জবাব বাছো: চা, চিপস, নাকি "এমরান ভাই আসতেছেন!" ভুল হলে পালাবে, তখন পিছু নিয়ে ধরো।</span></li>
       <li><span>☕</span><span><b>ভাইয়ার দোকানে</b> থামলে চা, তিন রাস্তার মোড়ে <b>রিয়েল মামুর দোকানে</b> থামলে চিপস (৳৫ করে, ৩টা পর্যন্ত)। সিএনজি থামিয়ে দাঁড়াও, মামা নিজেই দিয়ে দেবে।</span></li>
       <li><span>🐄</span><span>রাস্তায় গরু। ধাক্কা দিলে থেমে যাবে, হর্ন দিলে সরে যায়।</span></li>
@@ -251,11 +262,6 @@
       <li><span>⚡</span><span>সাবধান: মাঝপথে <b>লোডশেডিং</b> আর <b>ঝুম বৃষ্টি</b>! একসাথে ৩ জন নামালে <b>হ্যাটট্রিক</b>।</span></li>
     </ul>
     <p class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> বা <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> দিয়ে চালাও · <kbd>Space</kbd> = হর্ন<br>মোবাইলে: নিচে ◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস আর ব্রেক (চাইলে স্ক্রিনে আঙুল টেনেও চালানো যায়)</p>
-    <div class="drivers" id="drivers">
-      <p class="sec">আজকে সিএনজি চালাবেন কে?</p>
-      <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু এক্সিডেন্টের ভয়ও বেশি।</small></button>
-      <button class="driver" data-d="muhon"><span class="ph" style="background-image:url('../assets/people/muhon.jpg')"></span><b>নেতা মুহন ভাই</b><small>✅ সব ঠিকঠাক, সাবধানে চালান।<br>📢 কিন্তু মিছিল দেখলে থেমে স্লোগান দিতে লেগে যান।</small></button>
-    </div>
     <div class="wallet" id="startWallet">পকেটে: ৳০</div>
     <div class="btns">
       <button class="btn" id="play" disabled>সিএনজি স্টার্ট দাও</button>
@@ -778,7 +784,7 @@ const SHOP = [
   { id: "up-led", cat: "up", ic: "🔦", n: "LED হেডলাইট", d: "লোডশেডিংয়ে অনেক দূর পর্যন্ত দেখা যায়।", price: 150 },
   { id: "up-bumper", cat: "up", ic: "🐄", n: "গরু-বাম্পার", d: "গরুর ধাক্কায় প্রায় থামবে না, জরিমানা অর্ধেক।", price: 250 },
   { id: "up-engine", cat: "up", ic: "⚙️", n: "নতুন ইঞ্জিন", d: "টপ স্পিড ১২% বেশি।", price: 400 },
-  { id: "up-seat4", cat: "up", ic: "💺", n: "চতুর্থ সিট", d: "একসাথে ৪ জন কমরেড তোলা যাবে।", price: 500 },
+  { id: "up-seat4", cat: "up", ic: "💺", n: "ষষ্ঠ সিট", d: "সিএনজিতে একসাথে ৬ জন কমরেড তোলা যাবে।", price: 500 },
 ];
 let shop = { wallet: 0, owned: ["horn-papo", "paint-green"], horn: "horn-papo", paint: "paint-green" };
 try {
@@ -787,7 +793,7 @@ try {
 } catch (e) {}
 const saveShop = () => { try { localStorage.setItem("kcp-sim-shop", JSON.stringify(shop)); } catch (e) {} };
 const has = id => shop.owned.includes(id);
-const seatCount = () => has("up-seat4") ? 4 : 3;
+const seatCount = () => VEH().seats + (vehId === "cng" && has("up-seat4") ? 1 : 0);
 const hornRange = () => ({ "horn-bashi": 52, "horn-bus": 60, "horn-gaan": 55 })[shop.horn] || 42;
 const paintItem = () => SHOP.find(i => i.id === shop.paint) || SHOP[4];
 let run = { fare: 0, bonus: 0, fine: 0, spend: 0 };
@@ -961,14 +967,24 @@ let sloganShown = new Set();
 const POSTER_LINES = ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই! 📢", "ভোটের মৌসুম! রাস্তায় শুধু পোস্টার আর পোস্টার।", "পোস্টার গুনতে গুনতে সভায় দেরি হয়ে যাবে!", "এই পোস্টার তো আগেও দেখছি!", "সিএনজির গায়েও কেউ পোস্টার লাগাইয়া দিবে মনে হয়।"];
 // who drives today: Ponki Vai is fast and reckless, Neta Muhon Vai is careful but can't pass a procession
 const DRIVERS = {
-  ponki: { n: "পংকি ভাই", label: "পংকি ভাইয়ের সিএনজি", speed: 1.18, turn: 1.15, crashy: true,
+  ponki: { n: "পংকি ভাই", shirt: "#e3d24a", label: "পংকি ভাইয়ের সিএনজি", speed: 1.18, turn: 1.15, crashy: true,
     hello: "পংকি ভাই স্টিয়ারিংয়ে! শক্ত করে ধরেন, আজকে উড়াইয়া নিমু। প্যাঁ-পোঁ!" },
-  muhon: { n: "মুহন ভাই", label: "নেতা মুহন ভাই চালাচ্ছেন", speed: 1, turn: 1, rally: true,
+  muhon: { n: "মুহন ভাই", shirt: "#a3122a", label: "নেতা মুহন ভাই চালাচ্ছেন", speed: 1, turn: 1, rally: true,
     hello: "মুহন ভাই স্টিয়ারিংয়ে। ধীরে চলি, নিরাপদে চলি। চলো কমরেডদের ঘুম ভাঙাই!" },
 };
 let driverId = "ponki";
 try { const d = localStorage.getItem("kcp-sim-driver"); if (DRIVERS[d]) driverId = d; } catch (e) {}
 const DRV = () => DRIVERS[driverId];
+// the ride: Ponk Poribohon's CNG (5 seats) or Tanim's old scooter, Ponki Raj (1 seat, much faster)
+const VEHICLES = {
+  cng: { id: "cng", n: "সিএনজি", go: "সিএনজি", seats: 5, speed: 1, turn: 1 },
+  scooter: { id: "scooter", n: "তানিমের পংকি রাজ", go: "পংকি রাজ", seats: 1, speed: 1.32, turn: 1.15,
+    hello: "তানিমের পংকি রাজ! পেছনে একজনই বসবে, কিন্তু স্পিড দেখবা। ভটভটভট!" },
+};
+let vehId = "cng";
+try { const v = localStorage.getItem("kcp-sim-vehicle"); if (VEHICLES[v]) vehId = v; } catch (e) {}
+const VEH = () => VEHICLES[vehId];
+const rideLabel = () => vehId === "cng" ? DRV().label : `${DRV().n} · ${VEH().n}`;
 const CRASH_LINES = ["আরে আরে! ব্রেক কই গেল!", "ধড়াম! কিছু হয় নাই, কিছু হয় নাই... 😵", "পংকি ভাই: এইটা গাড়ির দোষ, আমার না!", "রিকশার সাথে লাগলো! মাফ কইরা দেন ভাই!", "সিএনজি উল্টাইতে উল্টাইতে বাঁচলো! 😱"];
 const RALLY_LINES = ["মিছিল দেখলে আমি থামতে পারি না ভাই!", "এক মিনিট, একটা স্লোগান দিয়াই আসি!", "নেতা মানুষ, মিছিল ফালাইয়া যাই কেমনে?"];
 const CHANTS = ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই!", "এমরান ভাই এমরান ভাই!", "ধানের শীষে ভোট দিন!", "জিন্দাবাদ! জিন্দাবাদ!", "সমৃদ্ধির পথে বাংলাদেশ!", "ভোট দিন, ভোট দিন!"];
@@ -1133,6 +1149,7 @@ function newGame() {
   P.puffCd = 0;
   cam = { x: P.x, y: P.y, z: baseZoom() };
   say(P, DRV().hello, 3.2);
+  if (VEH().hello) { const me = P; setTimeout(() => { if (P === me && state === "play") say(P, VEH().hello, 3); }, 3400); }
 }
 
 const baseZoom = () => clamp(Math.min(W, H) / 135, 2.9, 6.2);
@@ -1275,7 +1292,7 @@ function update(dt) {
   // ---- CNG
   const inp = readInput();
   const road = onRoad(P.x, P.y);
-  const maxV = 18 * DRV().speed * (road ? 1 : .42) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - (has("up-umbrella") ? 0 : .22) * rainLevel) * (has("up-engine") ? 1.12 : 1);
+  const maxV = 18 * DRV().speed * VEH().speed * (road ? 1 : .42) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - (has("up-umbrella") ? 0 : .22) * rainLevel) * (has("up-engine") ? 1.12 : 1);
   P.hornCd -= dt; P.boost -= dt;
   const aWas = P.a;
   if (P.rally) { // Muhon Vai has stopped to chant with the procession
@@ -1286,7 +1303,7 @@ function update(dt) {
   else if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
   else if (inp.m > .12) {
     const da = wrapAng(Math.atan2(inp.iy, inp.ix) - P.a);
-    const tr = (P.v < 3 ? 6 : 4.2) * (inp.tk || 1) * DRV().turn * (1 - (has("up-umbrella") ? 0 : .35) * rainLevel) * dt;
+    const tr = (P.v < 3 ? 6 : 4.2) * (inp.tk || 1) * DRV().turn * VEH().turn * (1 - (has("up-umbrella") ? 0 : .35) * rainLevel) * dt;
     if (P.v > 10 && Math.abs(da) > 1.1) skids.push({ x: P.x, y: P.y, a: P.a, t: 0 });
     P.a = wrapAng(P.a + clamp(da, -tr, tr));
     const tv = maxV * inp.m * Math.max(.12, Math.cos(da));
@@ -1404,7 +1421,7 @@ function update(dt) {
         say(P, caught ? `${c.n}: ধরা খাইলাম! 😅` : `${c.n}: ${c.b}`, 2.8);
         floaty(c.x, c.y, caught ? "ধরা!" : "উঠলো!", C.ink);
         if (caught) { stats.caught++; sfx.vineBoom(); shake = .25; earn("bonus", 10, c.x, c.y - 8, "ধরার বোনাস"); } else sfx.boing();
-      } else if (c.cd <= 0) { say(c, "সিএনজি ফুল মামা! আগে এদের অফিসে নামাও।", 2.2); c.cd = 5; }
+      } else if (c.cd <= 0) { say(c, `${VEH().go} ফুল মামা! আগে এদের অফিসে নামাও।`, 2.2); c.cd = 5; }
     }
   }
 
@@ -1997,6 +2014,38 @@ function cngShape(c, paint, t) {
   }
 }
 
+// Tanim's scooter, Ponki Raj, seen from above (front at +x), with the driver on the seat
+function scooterShape(c, t) {
+  const body = "#c4553f", ink = C.ink;
+  c.lineJoin = "round"; c.strokeStyle = ink; c.lineWidth = .2;
+  c.fillStyle = ink; c.fillRect(-2.0, -.17, .6, .34); c.fillRect(1.6, -.15, .6, .3);            // tyres peeking out
+  c.fillStyle = body; rr(c, -2.0, -.72, 1.95, 1.44, .66); c.fill(); c.stroke();                 // round rear cowl
+  c.strokeStyle = "rgba(255,240,225,.45)"; c.lineWidth = .1;                                     // shine on the old paint
+  c.beginPath(); c.arc(-1.05, 0, .52, -2.3, -1.0); c.stroke(); c.strokeStyle = ink; c.lineWidth = .2;
+  c.fillStyle = "#e0301e"; c.fillRect(-2.12, -.22, .16, .44);                                    // tail light
+  c.fillStyle = "#2b2622"; rr(c, -.25, -.42, 1.15, .84, .14); c.fill(); c.stroke();               // floorboard
+  c.strokeStyle = "rgba(246,239,225,.25)"; c.lineWidth = .06;
+  for (const y of [-.25, -.08, .08, .25]) { c.beginPath(); c.moveTo(-.1, y); c.lineTo(.75, y); c.stroke(); }
+  c.strokeStyle = ink; c.lineWidth = .2;
+  c.fillStyle = body; c.beginPath(); c.ellipse(1.75, 0, .5, .32, 0, 0, 7); c.fill(); c.stroke();  // front mudguard
+  rr(c, .8, -.56, .45, 1.12, .22); c.fill(); c.stroke();                                         // leg shield
+  c.strokeStyle = "#cfd5da"; c.lineWidth = .07;                                                  // mirror stalks
+  for (const k of [-1, 1]) { c.beginPath(); c.moveTo(1.05, k * .7); c.lineTo(.85, k * 1.12); c.stroke(); }
+  c.strokeStyle = ink; c.lineWidth = .2;
+  c.fillStyle = body; rr(c, .98, -.92, .26, 1.84, .1); c.fill(); c.stroke();                      // handlebar
+  c.fillStyle = ink; c.fillRect(1.0, -1.12, .22, .26); c.fillRect(1.0, .86, .22, .26);              // grips
+  c.fillStyle = "#cfd5da"; for (const k of [-1, 1]) { c.beginPath(); c.arc(.85, k * 1.16, .13, 0, 7); c.fill(); c.stroke(); }
+  c.fillStyle = "#ffe9a8"; c.beginPath(); c.arc(1.3, 0, .17, 0, 7); c.fill(); c.stroke();          // headlight
+  c.fillStyle = ink; rr(c, -1.8, -.4, 1.45, .8, .34); c.fill();                                   // black seat
+  // the driver: shoulders in his panjabi, arms out to the grips, head of black hair
+  const sh = DRV().shirt;
+  c.strokeStyle = sh; c.lineWidth = .26; c.lineCap = "round";
+  for (const k of [-1, 1]) { c.beginPath(); c.moveTo(-.5, k * .45); c.lineTo(.35, k * .8); c.lineTo(1.05, k * .95); c.stroke(); }
+  c.lineCap = "butt"; c.strokeStyle = ink; c.lineWidth = .16;
+  c.fillStyle = sh; c.beginPath(); c.ellipse(-.6, 0, .36, .62, 0, 0, 7); c.fill(); c.stroke();
+  c.fillStyle = "#2a1f18"; c.beginPath(); c.arc(-.5, 0, .3, 0, 7); c.fill(); c.stroke();
+}
+
 // Ponki Vai's CNG, seen from above: green body, dark canopy, yellow back stripe, one front wheel
 function drawCNG(t) {
   const s = Math.max(cam.z, 3.6) * 1.6;
@@ -2007,7 +2056,8 @@ function drawCNG(t) {
   ctx.lineJoin = "round"; ctx.strokeStyle = C.ink; ctx.lineWidth = .28;
   if (P.boost > 0) { // speed lines
     ctx.strokeStyle = C.yellow; ctx.lineWidth = .35;
-    for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(-3.3, i * .9); ctx.lineTo(-5 - Math.random() * 2.5, i * .9); ctx.stroke(); }
+    const bk = vehId === "cng" ? 0 : 1.1, wy = vehId === "cng" ? .9 : .5;
+    for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(-3.3 + bk, i * wy); ctx.lineTo(-5 + bk - Math.random() * 2.5, i * wy); ctx.stroke(); }
     ctx.strokeStyle = C.ink; ctx.lineWidth = .28;
   }
   // shadow, wheels
@@ -2016,17 +2066,20 @@ function drawCNG(t) {
     const ox = (SUN.x * ca - SUN.y * sa) * L, oy = (SUN.x * sa + SUN.y * ca) * L;
     ctx.fillStyle = `rgba(40,44,70,${.36 * sunFade()})`;
     ctx.beginPath(); // one path, so the overlapping copies don't darken each other
-    for (let k = 0; k <= 4; k++) { const x = -2.9 + ox * k / 4, y = -1.5 + oy * k / 4; ctx.moveTo(x, y); ctx.lineTo(x + 5.9, y); ctx.lineTo(x + 5.9, y + 3); ctx.lineTo(x, y + 3); ctx.closePath(); }
+    const [bx, by, bw, bh] = vehId === "cng" ? [-2.9, -1.5, 5.9, 3] : [-2.36, -.86, 4.9, 1.72];
+    for (let k = 0; k <= 4; k++) { const x = bx + ox * k / 4, y = by + oy * k / 4; ctx.moveTo(x, y); ctx.lineTo(x + bw, y); ctx.lineTo(x + bw, y + bh); ctx.lineTo(x, y + bh); ctx.closePath(); }
     ctx.fill();
   }
-  cngShape(ctx, paintItem(), t);
-  ctx.scale(1 / s, 1 / s); // text at real pixel size so tiny fonts render cleanly
-  ctx.fillStyle = "#f0a23a"; ctx.font = `700 ${Math.max(6, .56 * s).toFixed(1)}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillText("পংক পরিবহন", -.92 * s, .05 * s);
+  if (vehId === "cng") {
+    cngShape(ctx, paintItem(), t);
+    ctx.scale(1 / s, 1 / s); // text at real pixel size so tiny fonts render cleanly
+    ctx.fillStyle = "#f0a23a"; ctx.font = `700 ${Math.max(6, .56 * s).toFixed(1)}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("পংক পরিবহন", -.92 * s, .05 * s);
+  } else { ctx.scale(1.15, 1.15); scooterShape(ctx, t); } // a touch bigger so it reads at map zoom
   ctx.restore();
 
   const px = sx(P.x), py = sy(P.y);
-  if (P.v < 3 && !P.riders.length) label(DRV().label, px, py + s * 2.2 + 12, C.yellow, C.ink, 10);
+  if (P.v < 3 && !P.riders.length) label(rideLabel(), px, py + s * 2.2 + 12, C.yellow, C.ink, 10);
   // passengers ride on top, drawn big enough to recognise
   const n = P.riders.length;
   P.riders.forEach((c, i) => face(c, px + (i - (n - 1) / 2) * 23, py - s * 2.3 - 16 + Math.sin(t * 9 + i) * 1.5, 11, false));
@@ -2486,8 +2539,17 @@ function openShop(from) {
   if (!garage.on) { garage.on = true; garage.last = 0; requestAnimationFrame(drawGarage); }
 }
 el("shopFromStart").addEventListener("click", () => openShop("start"));
-const syncDrivers = () => document.querySelectorAll(".driver").forEach(b => b.classList.toggle("on", b.dataset.d === driverId));
-document.querySelectorAll(".driver").forEach(b => b.addEventListener("click", () => {
+const syncDrivers = () => {
+  document.querySelectorAll(".driver[data-d]").forEach(b => b.classList.toggle("on", b.dataset.d === driverId));
+  document.querySelectorAll(".driver[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === vehId));
+  el("drvQ").textContent = `২. আজকে ${VEH().go} চালাবেন কে?`;
+  if (!el("play").disabled) el("play").textContent = `${VEH().go} স্টার্ট দাও`;
+};
+document.querySelectorAll(".driver[data-v]").forEach(b => b.addEventListener("click", () => {
+  vehId = b.dataset.v; syncDrivers();
+  try { localStorage.setItem("kcp-sim-vehicle", vehId); } catch (e) {}
+}));
+document.querySelectorAll(".driver[data-d]").forEach(b => b.addEventListener("click", () => {
   driverId = b.dataset.d; syncDrivers();
   try { localStorage.setItem("kcp-sim-driver", driverId); } catch (e) {}
 }));
@@ -2599,11 +2661,11 @@ el("share").addEventListener("click", async () => {
 });
 
 // expose a tiny hook for automated play-testing
-window.__sim = { get driver() { return driverId; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS, get run() { return run; }, get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get door() { return door; }, get events() { return events; }, get stats() { return stats; }, get time() { return time; }, set time(v) { time = v; }, get michils() { return michils; }, get sam() { return sam; }, get billboards() { return billboards; }, sfx, end: endGame };
+window.__sim = { get driver() { return driverId; }, get vehicle() { return vehId; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS, get run() { return run; }, get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get door() { return door; }, get events() { return events; }, get stats() { return stats; }, get time() { return time; }, set time(v) { time = v; }, get michils() { return michils; }, get sam() { return sam; }, get billboards() { return billboards; }, sfx, end: endGame };
 
 resize();
 requestAnimationFrame(loop);
-const ready = () => { el("play").disabled = false; const l = el("loading"); if (l) l.remove(); };
+const ready = () => { el("play").disabled = false; syncDrivers(); const l = el("loading"); if (l) l.remove(); };
 (document.fonts ? document.fonts.load(`700 14px "Hind Siliguri"`).catch(() => {}) : Promise.resolve()).then(ready);
 setTimeout(ready, 2500);
 })();
