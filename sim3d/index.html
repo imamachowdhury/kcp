@@ -2388,15 +2388,61 @@ for (const r of [cng, scoot]) {
   mergeUnder(r.drv, new Set([r.drvShirt]), { live }); // the driver bakes on his own, so he can step out
 }
 // the driver on foot: legs and arms swing from the hip and shoulder, photo face like everyone else (faces +x)
+// people: one jointed low-poly body for everyone — sandals, legs (trousers or a lungi), hips, a torso (shirt or panjabi),
+// arms with hands that swing from the shoulder, a neck, and either a real head (hair, eyes, nose, maybe a beard or a cap)
+// or, for the people you know, their photo badge sized like a head. Models face +x; legs and arms pivot at hip and shoulder.
+const SKINS = ["#c58f5e", "#b07a4e", "#94643f", "#d6a173"];
+const PANTS = ["#3a3530", "#4a4f5a", "#6b5a44", "#2c3446"];
+const LUNGIS = ["#2f6db3", "#7a2f3a", "#2f6a4a", "#5a4fa0", "#3d3d3d"];
+const hGeo = {}, hMat = {};
+const hg = (k, f) => hGeo[k] || (hGeo[k] = f());
+const hm = c => hMat[c] || (hMat[c] = lam({ color: c }));
+const limbGeo = (r, len, up) => hg(`l${r}|${len}|${up}`, () => { const g = new THREE.CapsuleGeometry(r, len, 3, 8); g.translate(0, (up ? 1 : -1) * (len / 2 + r), 0); return g; }); // its top (or bottom) end sits on the pivot
+function makeHuman(o = {}) {
+  const R = o.R || Math.random, pick = a => a[(R() * a.length) | 0];
+  const g = new THREE.Group(), skin = hm(o.skin || pick(SKINS)), shirtM = o.shirtMat || hm(o.shirt || "#f6efe1"), pantsM = hm(o.pants || pick(PANTS));
+  const lungi = o.lungi ?? R() < .35, kurta = o.kurta ?? (!lungi && R() < .3);
+  const add = (par, geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; par.add(m); return m; };
+  const legs = [-1, 1].map(sd => {
+    const lp = new THREE.Group(); lp.position.set(0, .92, sd * .1); g.add(lp);
+    add(lp, limbGeo(.075, .72, false), lungi ? skin : pantsM, 0, 0, 0);
+    add(lp, hg("foot", () => new THREE.BoxGeometry(.25, .06, .11)), hm("#3a2a20"), .05, -.88, 0);
+    return lp;
+  });
+  if (lungi) add(g, hg("lungi", () => new THREE.CylinderGeometry(.2, .26, .72, 12)), hm(o.lungiCol || pick(LUNGIS)), 0, .62, 0);
+  else add(g, hg("hips", () => new THREE.CylinderGeometry(.19, .18, .22, 10)), pantsM, 0, .96, 0).scale.x = .7;
+  const torso = add(g, hg(kurta ? "kurta" : "torso", () => kurta ? new THREE.CylinderGeometry(.21, .25, .84, 12) : new THREE.CylinderGeometry(.23, .18, .62, 12)), shirtM, 0, kurta ? 1.2 : 1.31, 0);
+  torso.scale.x = .6; // flatter front to back than side to side
+  add(g, hg("neck", () => new THREE.CylinderGeometry(.05, .058, .14, 8)), skin, 0, 1.66, 0);
+  let face = null;
+  if (o.face) {
+    const k = .62 * (o.faceScale || 1);
+    face = new THREE.Sprite(new THREE.SpriteMaterial({ map: o.face === true ? null : o.face })); face.scale.set(k, k, 1); face.position.y = 1.78 + k * .3; g.add(face);
+  } else {
+    add(g, hg("head", () => new THREE.SphereGeometry(.12, 12, 10)), skin, .01, 1.82, 0).scale.set(.95, 1.14, .9);
+    const hair = add(g, hg("hair", () => new THREE.SphereGeometry(.128, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2)), hm("#1d1a17"), -.012, 1.84, 0); hair.rotation.z = .38;
+    for (const z of [-.042, .042]) add(g, hg("eye", () => new THREE.BoxGeometry(.02, .022, .03)), hm("#1d1a17"), .108, 1.84, z);
+    add(g, hg("nose", () => new THREE.BoxGeometry(.04, .05, .03)), skin, .12, 1.8, 0);
+    if (o.beard ?? R() < .3) add(g, hg("beard", () => new THREE.SphereGeometry(.09, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2)), hm("#1d1a17"), .05, 1.76, 0).scale.set(1, 1.3, 1.15);
+    if (o.cap ?? R() < .2) add(g, hg("cap", () => new THREE.CylinderGeometry(.105, .115, .08, 12)), hm("#f6efe1"), -.005, 1.93, 0);
+  }
+  const arm = (sd, up) => { // up: the raised (waving, fist-pumping) arm
+    const ap = new THREE.Group(); ap.position.set(0, 1.53, sd * .27); g.add(ap);
+    const dir = up ? 1 : -1;
+    add(ap, limbGeo(.066, .16, up), shirtM, 0, 0, 0);
+    add(ap, limbGeo(.052, .3, up), kurta ? shirtM : skin, 0, dir * .25, 0);
+    add(ap, hg("hand", () => new THREE.SphereGeometry(.058, 8, 6)), skin, 0, dir * .68, 0);
+    if (!up) ap.rotation.x = -sd * .1; // hang a touch away from the body
+    return ap;
+  };
+  const arms = [arm(-1, false), arm(1, !!o.armUp)];
+  g.userData = { face, arm: arms[1], arms, legs, shirt: shirtM };
+  return g;
+}
 function makeWalker() {
-  const g = new THREE.Group(), legMat = lam({ color: "#3a3530" }), shirt = lam({ color: "#f6efe1" }), skin = lam({ color: "#c58f5e" });
-  const limb = (w, h, d, mat, x, y, z) => { const geo = new THREE.BoxGeometry(w, h, d); geo.translate(0, -h / 2, 0); const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
-  const legs = [-1, 1].map(s => limb(.17, .82, .19, legMat, 0, .84, s * .13));
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(.27, .36, .95, 8), shirt); body.position.y = 1.28; body.castShadow = true; g.add(body);
-  const arms = [-1, 1].map(s => { const a = limb(.12, .7, .12, shirt, 0, 1.7, s * .34); const hand = new THREE.Mesh(new THREE.SphereGeometry(.08, 6, 5), skin); hand.position.y = -.72; a.add(hand); return a; });
-  const face = new THREE.Sprite(new THREE.SpriteMaterial()); face.scale.set(1.15, 1.15, 1); face.position.y = 2.2; g.add(face);
+  const shirt = lam({ color: "#f6efe1" }), g = makeHuman({ shirtMat: shirt, face: true, skin: "#c58f5e", pants: "#3a3530", lungi: false, kurta: false });
   g.visible = false; scene.add(g);
-  return { g, legs, arms, shirt, face };
+  return { g, legs: g.userData.legs, arms: g.userData.arms, shirt, face: g.userData.face };
 }
 const walker = makeWalker();
 const ride = () => vehId === "scooter" && !garage ? scoot : cng; // the shop's garage always shows the CNG
@@ -2422,15 +2468,10 @@ const arrow = new THREE.Group();
   const t = new THREE.Mesh(new THREE.BoxGeometry(1.1, .35, .35), mat); t.position.x = -.3;
   a.castShadow = t.castShadow = true; arrow.add(a, t); scene.add(arrow);
 }
-// a person: legs, kurta and a big round photo badge for a head
+// a person you know: the shared body with their photo badge for a head
 const SHIRTS = ["#f6efe1", "#2f6db3", "#c8102e", "#2f8a4f", "#e8dba0", "#6b4fa0", "#e07a1f", "#3d3d3d"];
-function makePerson(shirt, faceMap, scale = 1) {
-  const g = new THREE.Group(), legs = lam({ color: "#3a3530" });
-  for (const s of [-1, 1]) { const l = new THREE.Mesh(new THREE.BoxGeometry(.16, .8, .18), legs); l.position.set(0, .4, s * .13); l.castShadow = true; g.add(l); }
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(.27, .36, .95, 8), lam({ color: shirt })); body.position.y = 1.25; body.castShadow = true; g.add(body);
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: faceMap })); sp.scale.set(1.25 * scale, 1.25 * scale, 1); sp.position.y = 2.15; g.add(sp);
-  g.userData.face = sp;
-  return g;
+function makePerson(shirt, faceMap, scale = 1, opts = {}) {
+  return makeHuman({ shirt, face: faceMap, faceScale: scale, skin: "#c58f5e", pants: "#3a3530", lungi: false, kurta: !!opts.kurta, armUp: !!opts.wave, R: () => .5 });
 }
 // sleeping comrades lie on a khat (rope bed) in front of their house
 function makeKhat() {
@@ -2456,17 +2497,8 @@ function makeCow(R) {
   const tail = new THREE.Mesh(new THREE.BoxGeometry(.06, .7, .06), m); tail.position.set(-.97, .95, 0); tail.rotation.z = -.2; g.add(tail);
   g.userData.legs = legs; return g;
 }
-function makeMarcher(R) {
-  const g = new THREE.Group();
-  const shirt = ["#f6efe1", "#2f8a4f", "#f6efe1", "#d9c7a0"][(R() * 4) | 0];
-  for (const s of [-1, 1]) { const l = new THREE.Mesh(new THREE.BoxGeometry(.15, .8, .17), lam({ color: "#3a3530" })); l.position.set(0, .4, s * .12); g.add(l); }
-  const b = new THREE.Mesh(new THREE.CylinderGeometry(.25, .33, .95, 8), lam({ color: shirt })); b.position.y = 1.25; b.castShadow = true; g.add(b);
-  const h = new THREE.Mesh(new THREE.SphereGeometry(.24, 10, 8), lam({ color: "#c58f5e" })); h.position.y = 1.95; h.castShadow = true; g.add(h);
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(.25, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2.2), lam({ color: "#1d1a17" })); hair.position.y = 2; g.add(hair);
-  const geo = new THREE.BoxGeometry(.12, .7, .12); geo.translate(0, .35, 0);
-  const arm = new THREE.Mesh(geo, lam({ color: shirt })); arm.position.set(0, 1.6, .3); g.add(arm);
-  const fist = new THREE.Mesh(new THREE.SphereGeometry(.12, 8, 6), lam({ color: "#c58f5e" })); fist.position.y = .72; arm.add(fist);
-  g.userData.arm = arm; return g;
+function makeMarcher(R) { // a villager or a marcher: random clothes, a real head, the right arm raised
+  return makeHuman({ R, shirt: ["#f6efe1", "#2f8a4f", "#f6efe1", "#d9c7a0", "#2f6db3", "#e8dba0"][(R() * 6) | 0], armUp: true });
 }
 
 /* ================= traffic: other CNGs, rickshaws, easybikes and motorbikes on the roads =================
@@ -2986,9 +3018,9 @@ function makeOffer(force) {
         if (d >= 150 && d <= 420 && Math.hypot(q.x - door.x, q.y - door.y) > 120 && reachable(q.x, q.y) && !stalls.some(t => Math.hypot(t.x - q.x, t.y - q.y) < 30)) h = q;
       }
       if (!o || !h) continue;
-      const mesh = makePerson("#3b6fb0", faceTex(JIHAN, RING.talk)); mesh.userData.arm = new THREE.Object3D();
+      const mesh = makePerson("#3b6fb0", faceTex(JIHAN, RING.talk), 1, { wave: true });
       mesh.position.set(o.x, 0, o.y); mesh.rotation.y = -Math.atan2(o.fy, o.fx); dyn.add(mesh);
-      offer = { kind: k, x: o.x, y: o.y, hy: 3.4, n: JIHAN.n, mesh, hotelAt: h, tag: mkEl("tag ask", "🍛 কমরেড জিহান ❗"), t: 60 };
+      offer = { kind: k, x: o.x, y: o.y, hy: 2.9, n: JIHAN.n, mesh, hotelAt: h, tag: mkEl("tag ask", "🍛 কমরেড জিহান ❗"), t: 60 };
       sfx.welcome(); return true;
     }
     if (k === "pax" || k === "herd" || k === "ckpt") {
@@ -3041,7 +3073,7 @@ function acceptOffer() {
   } else if (o.kind === "lunch") {
     const h = o.hotelAt, hotel = { x: h.x, y: h.y, fx: h.fx, fy: h.fy, hy: 3, g: makeHotel(h), tag: mkEl("tag", "🍛 হেভ্বি লাঞ্চ হোটেল") }; dyn.add(hotel.g);
     o.mesh.visible = false;
-    const jihan = { x: o.x, y: o.y, hy: 3.4, mesh: o.mesh, tag: mkEl("tag", "🍛 জিহান") }; jihan.tag.style.display = "none";
+    const jihan = { x: o.x, y: o.y, hy: 2.9, mesh: o.mesh, tag: mkEl("tag", "🍛 জিহান") }; jihan.tag.style.display = "none";
     mission = { kind: "lunch", stage: 0, jihan, hotel, eat: 0, eatCd: 0, bumps: 0, hit: false, t: Math.round(dist(o, hotel) / 7 + 30), reward: 70, meshes: [hotel.g, o.mesh], tags: [hotel.tag, jihan.tag] };
     say(P, "জিহান: মামা হেভ্বি লাঞ্চ অইবো! হোটেলে চলো, খিদায় মরতেছি। 🍛", 3); floaty(o.x, o.y, "উঠলো!", C.ink); sfx.boing();
   } else if (o.kind === "poster") {
@@ -3514,6 +3546,7 @@ function missionRender(t) {
   if (mission && mission.kind === "thief") {
     const th = mission.thief; th.mesh.position.set(th.x, th.caught ? 0 : Math.abs(Math.sin(t * 14)) * .15, th.y); th.mesh.rotation.y = -th.a;
     th.mesh.userData.arm.rotation.z = th.caught ? 0 : -1.2 + Math.sin(t * 14) * .5;
+    th.mesh.userData.legs.forEach((l, i) => l.rotation.z = th.caught ? 0 : Math.sin(t * 14 + i * Math.PI) * .7);
     Math.hypot(th.x - me().x, th.y - me().y) < 140 ? place(th.tag, project(th.x, 2.9, th.y)) : (th.tag.style.display = "none");
   }
   if (mission && mission.kind === "leaf") for (const l of mission.leaves) if (!l.got) { l.mesh.position.set(l.x, .5 + Math.abs(Math.sin(t * 2 + l.ph)) * .9, l.y); l.mesh.rotation.set(Math.sin(t * 3 + l.ph) * .8, t * 2 + l.ph, 0); }
@@ -3550,7 +3583,7 @@ function exitRide() {
   const at = tries.map(([dx, dy]) => ({ x: P.x + dx, y: P.y + dy })).find(o => !blocked(o.x, o.y, .45));
   if (!at) { floaty(P.x, P.y, "দরজা খোলে না!", C.ink); sfx.bonk(); return; }
   P.v = 0; P.risk = 0;
-  W = { x: at.x, y: at.y, a: P.a, v: 0, walk: 0, hy: 3.3 };
+  W = { x: at.x, y: at.y, a: P.a, v: 0, walk: 0, hy: 2.8 };
   sfx.door(); syncRideUi();
   if (!walkTip) { walkTip = true; showBanner("পায়ে হেঁটে!", "গলিতে ঢুকে যাও, কাজ শেষে গাড়িতে ফিরে এসো", 2.6); } // the first time, the tip says it
   else say(W, vehId === "cng" ? "সিএনজি এখানে থাক, হাইটা যাই!" : "পংকি রাজ এখানে থাক, হাইটা যাই!", 2);
@@ -3703,7 +3736,7 @@ function newGame() {
     dyn.add(m.mesh); m.tag = mkEl("tag warn", "মিছিল 📢"); michils.push(m);
   }
   sam = randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - door.x, y - door.y); return d > 140 && d < 420 && reachable(x, y); });
-  if (sam) { Object.assign(sam, { id: SAM.id, n: SAM.n, scare: 0, talkCd: 0 }); sam.mesh = makePerson("#f6efe1", faceTex(SAM, RING.sam), 1.2); dyn.add(sam.mesh); sam.tag = mkEl("tag warn", "⚠ সাম ভাই"); }
+  if (sam) { Object.assign(sam, { id: SAM.id, n: SAM.n, scare: 0, talkCd: 0 }); sam.mesh = makePerson("#f6efe1", faceTex(SAM, RING.sam), 1.1, { kurta: true }); dyn.add(sam.mesh); sam.tag = mkEl("tag warn", "⚠ সাম ভাই"); }
   stalls = [];
   for (let k = 0; k < 800 && stalls.length < 3; k++) {
     const s = roadSegs[(rand() * roadSegs.length) | 0], o = roadsidePoint(s, rand(), 1.5); if (!o) continue;
@@ -3715,7 +3748,7 @@ function newGame() {
     stalls.push({ x: o.x, y: o.y, cd: 0, g, tag: mkEl("tag", "🥟 সিঙ্গারা") });
   }
   const sp = sufanPos();
-  sufan = { x: sp.x, y: sp.y, hy: 3.4, mesh: makePerson("#2f8a4f", faceTex(SUFAN, RING.done)), tag: mkEl("tag", "সুফান") };
+  sufan = { x: sp.x, y: sp.y, hy: 2.9, mesh: makePerson("#2f8a4f", faceTex(SUFAN, RING.done), 1, { kurta: true }), tag: mkEl("tag", "সুফান") };
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
   offer = null; mission = null; offerCd = 4; misDone = 0; misRecent = []; misKey = ""; misTalkCd = 0; beacon.visible = false; el("mission").hidden = true;
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
@@ -3758,7 +3791,7 @@ function spawnAt() { // the CNG parked on the office side of the road, a few ste
 function footSpawn(ride) { // the player stands outside the office door, turned towards the parked CNG
   const tries = [door.hw * .72, door.hw * .5, 0].map(k => ({ x: door.x + officeU.x * k - Math.cos(ride.a) * 1.5, y: door.y + officeU.y * k - Math.sin(ride.a) * 1.5 })); // on the road's edge, right at the office front
   const at = tries.find(o => !blocked(o.x, o.y, .45)) || { x: door.x, y: door.y };
-  return { x: at.x, y: at.y, a: Math.atan2(ride.y - at.y, ride.x - at.x), v: 0, walk: 0, hy: 3.3 };
+  return { x: at.x, y: at.y, a: Math.atan2(ride.y - at.y, ride.x - at.x), v: 0, walk: 0, hy: 2.8 };
 }
 function dayLook() { // how dark (dayN) and how golden (dayGold) the sky is at this hour of the game clock
   const h = clock / 60;
@@ -4196,7 +4229,7 @@ function render(t, dt) {
   }
   for (const n of traffic) if (!n.gone) { n.mesh.position.set(n.sx, n.kind === "rick" || n.v < .3 ? 0 : Math.sin(t * 40 + n.max) * .015, n.sy); n.mesh.rotation.y = -n.sa; }
   for (const w of cows) { w.mesh.position.set(w.x, 0, w.y); w.mesh.rotation.y = -w.a; w.mesh.userData.legs.forEach((l, i) => l.rotation.z = Math.sin(w.walk + (i % 2 ? Math.PI : 0)) * .35); }
-  for (const m of michils) { m.mesh.position.set(m.x, 0, m.y); m.mesh.rotation.y = -m.a; m.people.forEach((p, j) => { p.position.y = Math.abs(Math.sin(t * 7 + j)) * .12; p.userData.arm.rotation.z = -.2 - Math.max(0, Math.sin(t * 7 + j)) * .9; }); }
+  for (const m of michils) { m.mesh.position.set(m.x, 0, m.y); m.mesh.rotation.y = -m.a; m.people.forEach((p, j) => { p.position.y = Math.abs(Math.sin(t * 7 + j)) * .12; p.userData.arm.rotation.z = -.2 - Math.max(0, Math.sin(t * 7 + j)) * .9; p.userData.legs.forEach((l, i) => l.rotation.z = Math.sin(t * 3.5 + j + i * Math.PI) * .32); }); }
   if (sam && state !== "ending") { sam.mesh.position.set(sam.x, Math.abs(Math.sin(t * 4)) * .1, sam.y); sam.mesh.rotation.y = -sam.a; }
 
   // overlay: tags, bubbles, floaties projected into screen space
