@@ -68,12 +68,53 @@
   .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--paper-2); border: 2.5px solid var(--ink); border-radius: 999px; padding: 2px 12px 2px 3px; font-weight: 700; font-size: 14px; }
   .chip i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper) center/cover; }
   .btn.big { display: block; width: 100%; max-width: 340px; margin: 0 auto; font-size: 22px; padding: 14px 24px; border-radius: 14px; }
-  .start-sub { margin-top: 12px; }
-  details.how { text-align: left; margin: 14px 0 0; border-top: 2px dashed var(--paper-2); padding-top: 10px; }
-  details.how summary { cursor: pointer; font-weight: 700; font-size: 15px; list-style: none; text-align: center; color: var(--ink-soft); }
-  details.how summary::-webkit-details-marker { display: none; }
-  details.how summary::after { content: " ▾"; } details.how[open] summary::after { content: " ▴"; }
-  details.how .rules { margin: 10px 0 0; }
+  /* opening screen: a tilted poster collage of shots the game takes of itself at load, and a red title card */
+  #start { display: block; padding: 0; overflow: hidden; background: #14110f; }
+  #start.hidden { display: none; }
+  .collage { position: absolute; inset: -4vh -3vw 30px; display: grid; gap: 9px; padding: 9px; background: var(--paper);
+    grid-template-columns: 1.15fr 1.15fr 1.3fr 1fr; grid-template-rows: 1fr 1fr 1fr;
+    grid-template-areas: "bike bike title cop" "bike bike title cng" "scoot town town office"; transform: rotate(-2deg) scale(1.04); }
+  .pn { position: relative; overflow: hidden; border: 3px solid var(--ink); background: #2b2622 linear-gradient(135deg, #3a332d 0 25%, #2b2622 25% 50%, #3a332d 50% 75%, #2b2622 75%) 0 0/28px 28px; min-height: 0; }
+  .pn[data-k="bike"] { grid-area: bike; } .pn[data-k="cop"] { grid-area: cop; } .pn[data-k="cng"] { grid-area: cng; }
+  .pn[data-k="scoot"] { grid-area: scoot; } .pn[data-k="town"] { grid-area: town; } .pn[data-k="office"] { grid-area: office; }
+  .pn > i { position: absolute; inset: 0; background: center/cover no-repeat; opacity: 0; transition: opacity .9s ease; animation: kb 20s ease-in-out infinite alternate; }
+  .pn:nth-child(2n) > i { animation-duration: 24s; animation-direction: alternate-reverse; }
+  .pn.in > i { opacity: 1; }
+  .pn::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 60px rgba(0,0,0,.45); pointer-events: none; }
+  @keyframes kb { from { transform: scale(1.04) translate(0, 0); } to { transform: scale(1.16) translate(-2.5%, 1.5%); } }
+  .pn > b { position: absolute; left: 10px; bottom: 10px; z-index: 1; background: var(--ink); color: var(--paper); font: 700 13px var(--font-body); padding: 3px 10px; transform: skew(-10deg); max-width: calc(100% - 20px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pn[data-k="bike"] > b, .pn[data-k="scoot"] > b { left: auto; right: 10px; } /* the tilt pushes the left edge off screen */
+  .pn.title { grid-area: title; background: var(--red); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 14px 16px; gap: 6px; overflow: auto; }
+  .pn.title::after { box-shadow: inset 0 0 0 4px rgba(255,255,255,.12), inset 0 0 80px rgba(0,0,0,.3); }
+  .pn.title .kicker { color: #ffe3a0; letter-spacing: .02em; }
+  .pn.title h1 { margin: 0; color: var(--paper); font: 400 clamp(40px, 5.6vw, 76px)/.95 var(--font-display); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); transform: rotate(-3deg); }
+  .pn.title h1 span { display: block; color: var(--yellow); font-size: 1.32em; line-height: 1; }
+  .pn.title .start-meta { margin: 4px 0 2px; }
+  .pn.title .btn.big { background: var(--yellow); color: var(--ink); max-width: 300px; position: relative; z-index: 1; }
+  .gm-links { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center; position: relative; z-index: 1; }
+  .gm-links button, .gm-links a { background: none; border: 0; padding: 2px 0; color: var(--paper); font: 700 14px var(--font-body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .gm-links button:hover, .gm-links a:hover { color: var(--yellow); }
+  .pn.title .loading { color: #ffe3a0; margin: 0; max-width: 340px; position: relative; z-index: 1; }
+  .gm-tip { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; min-height: 34px; display: flex; align-items: center; gap: 12px; justify-content: space-between;
+    padding: 6px max(16px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)); background: rgba(10,9,8,.92); color: #f2ece0; font: 600 13px var(--font-body); }
+  #gmTip { transition: opacity .4s ease; } #gmTip.out { opacity: 0; } #gmTip em { font-style: normal; color: var(--yellow); margin-right: 6px; }
+  .gm-load { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; color: #bfb6a6; }
+  .gm-load i { width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid #5a5248; border-top-color: var(--yellow); animation: spin 1s linear infinite; }
+  .gm-load.done { visibility: hidden; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-height: 520px) and (min-aspect-ratio: 1/1) { /* phones held sideways */
+    .pn.title { padding: 8px 10px; gap: 4px; } .pn.title h1 { font-size: clamp(30px, 5vw, 46px); } .pn.title .kicker, .pn.title .start-meta, .pn.title .loading { display: none; }
+    .pn.title .btn.big { font-size: 18px; padding: 9px 18px; } .pn > b { font-size: 11.5px; }
+  }
+  @media (max-aspect-ratio: 1/1), (max-width: 700px) { /* portrait: two columns, the title card across the middle */
+    .collage { inset: -2vh -4vw 54px; gap: 7px; padding: 7px; grid-template-columns: 1fr 1fr; grid-template-rows: 1.25fr .85fr auto .85fr;
+      grid-template-areas: "bike bike" "cop cng" "title title" "scoot town"; transform: rotate(-1.5deg) scale(1.03); }
+    .pn[data-k="office"] { display: none; }
+    .pn.title { padding: 12px 14px 14px; overflow: visible; } .pn.title h1 { font-size: clamp(38px, 12vw, 60px); }
+    .pn > b { font-size: 12px; left: 18px; bottom: 8px; } .pn[data-k="bike"] > b, .pn[data-k="scoot"] > b { left: auto; right: 12px; }
+    .gm-tip { font-size: 12px; } .gm-load { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .pn > i { animation: none; } .gm-load i { animation-duration: 3s; } }
   .screen { transition: opacity .35s ease; } .screen.fade { opacity: 0; pointer-events: none; }
   .screen:not(#shop) .panel { animation: cardIn .4s cubic-bezier(.2, .9, .3, 1.15) both; }
   @keyframes cardIn { from { opacity: 0; transform: translateY(16px) scale(.97); } }
@@ -278,17 +319,30 @@
 <button id="doorBtn" hidden aria-label="গাড়ি থেকে নামো">নামো<small>F</small></button>
 
 <div class="screen" id="start">
+  <div class="collage">
+    <div class="pn" data-k="bike"><i></i><b>ইমাম ভাইয়ের রাজকীয় বাইক</b></div>
+    <div class="pn title">
+      <p class="kicker">কেসিপির খেলা · খোলা দুনিয়া</p>
+      <h1>কতোয়ালপুর<span>সিটি</span></h1>
+      <div class="start-meta"><span class="chip"><i style="background-image:url('../assets/people/ponki.jpg')"></i>পংকি ভাই</span><span class="wallet" id="startWallet">পকেটে: ৳০</span></div>
+      <button class="btn big" id="play" disabled>লোড হচ্ছে...</button>
+      <div class="gm-links"><button id="shopFromStart">দোকান 🛒</button><button id="howBtn">কিভাবে খেলবো?</button><a href="../">KCP তে ফিরে যান</a></div>
+      <p class="loading" id="loading">কতোয়ালপুর বানানো হচ্ছে...</p>
+    </div>
+    <div class="pn" data-k="cop"><i></i><b>🚓 পুলিশ</b></div>
+    <div class="pn" data-k="cng"><i></i><b>পংক পরিবহন</b></div>
+    <div class="pn" data-k="scoot"><i></i><b>তানিমের পংকি রাজ</b></div>
+    <div class="pn" data-k="town"><i></i><b>কতোয়ালপুর</b></div>
+    <div class="pn" data-k="office"><i></i><b>পার্টি অফিস</b></div>
+  </div>
+  <div class="gm-tip"><span id="gmTip"></span><span class="gm-load" id="gmLoad"><i></i>লোড হচ্ছে</span></div>
+</div>
+
+<div class="screen hidden" id="howScr">
   <div class="panel">
-    <p class="kicker">কেসিপির খেলা · খোলা দুনিয়া</p>
-    <h1>কতোয়ালপুর সিটি</h1>
+    <h2>কিভাবে খেলবো?</h2>
     <p class="lead">তুমি পংকি ভাই। শুরু পার্টি অফিসের সামনে থেকে: হেঁটে সিএনজিতে ওঠো, তারপর পুরো কতোয়ালপুর তোমার। ঘোরো, কাজ ধরো, টাকা কামাও।</p>
-    <div class="start-meta"><span class="chip"><i style="background-image:url('../assets/people/ponki.jpg')"></i>পংকি ভাই · 🛺 সিএনজি</span><span class="wallet" id="startWallet">পকেটে: ৳০</span></div>
-    <button class="btn big" id="play" disabled>লোড হচ্ছে...</button>
-    <div class="btns start-sub"><button class="btn alt" id="shopFromStart">দোকান 🛒</button><a class="btn ghost" href="../">KCP তে ফিরে যান</a></div>
-    <p class="loading" id="loading">কতোয়ালপুর বানানো হচ্ছে...</p>
-    <details class="how">
-      <summary>কিভাবে খেলবো?</summary>
-      <ul class="rules">
+    <ul class="rules">
       <li><span>🚶</span><span>শুরুতে তুমি <b>হেঁটে</b>, পার্টি অফিসের সামনে। সিএনজির কাছে গিয়ে <b>ওঠো</b> (F), যেকোনো সময় আবার <b>নামো</b>। গলিতে গাড়ি না ঢুকলে হেঁটেই যাও।</span></li>
       <li><span>🏍️</span><span>রাস্তার পাশে পার্ক করা <b>সিএনজি, পংকি রাজ আর ইমাম ভাইয়ের রাজকীয় বাইক</b>: যেটার কাছে যাবে সেটাতেই ওঠো। চলন্ত গাড়ির সামনে দাঁড়াও, থামলে কাছে গিয়ে F, চালককে নামিয়ে <b>ছিনতাই</b>! তবে 🚓 <b>পুলিশ</b> পিছে লাগবে: ৯০ মিটার দূরে পালিয়ে থাকো, ধরা পড়লে জরিমানা।</span></li>
       <li><span>🌆</span><span><b>ঘড়ি নেই, তাড়া নেই</b>: যেদিকে খুশি যাও। দিন গড়িয়ে রাত নামে, মাঝে মাঝে বৃষ্টি আর লোডশেডিং।</span></li>
@@ -298,7 +352,7 @@
       <li><span>🐄</span><span>রাস্তায় গরু আর মিছিল, ধাক্কা খেলে জরিমানা। <b>সাম ভাইয়ের</b> গায়ে গাড়ি তুললে সোজা হাসপাতাল, ৳৫০ গচ্চা!</span></li>
       <li><span>💰</span><span>যা কামাবে সাথে সাথে <b>পকেটে</b> জমবে। জমানো টাকায় <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।</span></li>
       </ul>
-    </details>
+    <button class="btn" id="howClose">ঠিক আছে</button>
   </div>
 </div>
 
@@ -2927,6 +2981,7 @@ addEventListener("keydown", e => {
   if (k === "m" && !e.repeat) toggleMute();
   if (k === "c" && !e.repeat && state === "play") nextCam();
   if (k === "f" && !e.repeat && state === "play" && !talk) { toggleRide(); flashDoor(); }
+  if ((k === "escape" || k === "enter") && howOpen()) { el("howScr").classList.add("hidden"); return; }
   if (k === "enter" && !garage && state === "menu" && !el("play").disabled) startGame();
   else if (k === "enter" && !garage && state === "over" && !el("play").disabled) startGame();
   if (k === "escape" && garage) closeShop();
@@ -4737,6 +4792,65 @@ cv.addEventListener("pointermove", e => { if (garage && garage.drag) garage.th =
 for (const ev of ["pointerup", "pointercancel"]) cv.addEventListener(ev, () => { if (garage) garage.drag = null; });
 syncWallet();
 
+// opening collage: the game photographs itself (rides, police, town, office) once at load, poster style
+let collageReady = false;
+function buildCollage() {
+  try {
+    const pose = spawnAt(), fx = Math.cos(pose.a), fz = Math.sin(pose.a), sx = -officeU.x, sz = -officeU.y; // side: away from the office, across the road
+    const at = (f, s, y) => [pose.x + fx * f + sx * s, y, pose.y + fz * f + sz * s];
+    const cvs = document.createElement("canvas"), g2 = cvs.getContext("2d"), fov0 = camera.fov;
+    const rides = [cng, scoot, bike], cop0 = makeCop(); cop0.g.visible = false; scene.add(cop0.g);
+    const stage = (r) => { for (const o of rides) { o.g.visible = o === r; o.drv.visible = true; } walker.g.visible = false; cop0.g.visible = r === cop0;
+      if (r) { r.g.position.set(pose.x, 0, pose.y); r.g.rotation.y = -pose.a; if (r.body) { r.body.position.y = 0; r.body.rotation.x = 0; } } };
+    const shot = (key, ride, cam, look, hfov, vmin = 34) => { // hfov / vmin: the cropped picture's horizontal view, and its least vertical view, in degrees
+      const pn = document.querySelector(`.pn[data-k="${key}"]`); if (!pn) return;
+      stage(ride);
+      const r = pn.getBoundingClientRect(), asp = r.width > 20 && r.height > 20 ? r.width / r.height : 1.5, cAsp = innerWidth / innerHeight;
+      const th = Math.max(Math.tan(hfov * Math.PI / 360), Math.tan(vmin * Math.PI / 360) * asp); // a long thin panel still shows the whole ride
+      camera.aspect = cAsp; camera.fov = 2 * Math.atan(th / Math.min(asp, cAsp)) * 180 / Math.PI; camera.updateProjectionMatrix();
+      camera.position.set(cam[0], cam[1], cam[2]); camera.lookAt(look[0], look[1], look[2]);
+      sun.position.set(look[0] + SUN_DIR.x * 120, SUN_DIR.y * 120, look[2] + SUN_DIR.z * 120); sun.target.position.set(look[0], 0, look[2]); sun.target.updateMatrixWorld();
+      renderer.render(scene, camera);
+      const src = renderer.domElement, W0 = src.width, H0 = src.height;
+      let cw = W0, ch = W0 / asp; if (ch > H0) { ch = H0; cw = H0 * asp; }
+      const ow = Math.round(Math.min(1000, Math.max(320, r.width * Math.min(devicePixelRatio, 2)))), oh = Math.round(ow / asp);
+      cvs.width = ow; cvs.height = oh; g2.filter = "contrast(1.12) saturate(1.28)";
+      g2.drawImage(src, (W0 - cw) / 2, (H0 - ch) / 2, cw, ch, 0, 0, ow, oh);
+      pn.querySelector("i").style.backgroundImage = `url(${cvs.toDataURL("image/jpeg", .85)})`; pn.classList.add("in");
+    };
+    shot("bike", bike, at(3.0, 2.3, .8), at(-.25, 0, .95), 52);  // low, three-quarter front
+    shot("cng", cng, at(4.6, 3.1, 1.5), at(0, 0, 1.15), 55);
+    shot("scoot", scoot, at(-3.3, 2.1, 1.1), at(.3, 0, .85), 55); // three-quarter rear
+    shot("cop", cop0, at(6.2, -3.4, 1.2), at(0, 0, 1.2), 58);
+    shot("town", null, [door.x - 70, 58, door.y + 52], [door.x, 0, door.y], 70);
+    shot("office", null, [door.x - officeU.x * 16, 3.2, door.y - officeU.y * 16], [office.cx, office.h * .45, office.cy], 70);
+    scene.remove(cop0.g); stage(ride()); camera.fov = fov0; resize();
+    collageReady = true;
+  } catch (e) { collageReady = false; resize(); } // no pictures: the striped panels and the live town still work
+  el("gmLoad").classList.add("done");
+}
+const TIPS = [
+  "চলন্ত গাড়ির সামনে দাঁড়াও, থামলে F চেপে চালককে নামাও। তবে 🚓 পুলিশ পিছে লাগবে।",
+  "পুলিশ থেকে ৯০ মিটার দূরে কয়েক সেকেন্ড থাকতে পারলেই ওরা হাল ছেড়ে দেয়। ধরা পড়লে প্রতি তারায় ৳৪০ জরিমানা।",
+  "ইমাম ভাইয়ের রাজকীয় বাইক সবচেয়ে জোরে ছোটে, কিন্তু পেছনে কাউকে বসানো যায় না।",
+  "সুফান ভাই আর গ্রামের লোকজনের মাথায় ❗ দেখলে কাছে যাও, কাজ পাবে।",
+  "ভাইয়ার দোকানে চা, রিয়েল মামুর দোকানে চিপস। ক্ষুধা লাগলে থামো।",
+  "সাম ভাইয়ের গায়ে গাড়ি তুললে সোজা হাসপাতাল, ৳৫০ গচ্চা!",
+  "জমানো টাকায় দোকান থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।",
+  "পার্ক করা সিএনজি, পংকি রাজ আর রাজকীয় বাইক ম্যাপ জুড়ে ছড়ানো: কাছে গিয়ে F চাপলেই তোমার।",
+];
+let tipI = (Math.random() * TIPS.length) | 0;
+function showTip() { const t = el("gmTip"); t.innerHTML = `<em>টিপ</em>${TIPS[tipI]}`; t.classList.remove("out"); }
+showTip();
+setInterval(() => {
+  if (el("start").classList.contains("hidden")) return;
+  el("gmTip").classList.add("out"); setTimeout(() => { tipI = (tipI + 1) % TIPS.length; showTip(); }, 400);
+}, 5500);
+const howOpen = () => !el("howScr").classList.contains("hidden");
+el("howBtn").addEventListener("click", () => el("howScr").classList.remove("hidden"));
+el("howClose").addEventListener("click", () => el("howScr").classList.add("hidden"));
+el("howScr").addEventListener("click", e => { if (e.target.id === "howScr") el("howScr").classList.add("hidden"); });
+
 /* ================= loop & start ================= */
 let last = performance.now(), paused = false;
 // a phone that can't keep up gets a softer picture instead of a choppy one: if frames average over 36 ms (under ~28 fps)
@@ -4769,7 +4883,8 @@ function loop(now) {
     trafficUpdate(dt); // the town goes on behind the menu
   }
   if (state === "play" || state === "ending") { drawHud(); engineUpdate(); }
-  render(t, dt);
+  // behind the finished collage nothing shows, so the GPU rests (the shop and every other screen still draw the town)
+  if (!(collageReady && state === "menu" && !garage && !el("start").classList.contains("hidden"))) render(t, dt);
   requestAnimationFrame(loop);
 }
 function startGame() {
@@ -4783,7 +4898,7 @@ function startGame() {
     startMusic();
   } catch (e) {}
   if (garage) { garage = null; camera.clearViewOffset(); resize(); el("shop").classList.add("hidden"); }
-  hideScreen("start"); hideScreen("end");
+  hideScreen("start"); hideScreen("end"); el("howScr").classList.add("hidden");
   ["hud", "mini", "horn", "doorBtn"].forEach(id => el(id).hidden = false);
   if (mobile) el("stickZone").hidden = false; else el("keys").hidden = false;
   camMode = 0; newGame(); state = "play"; hudKey = ""; last = performance.now();
@@ -4811,6 +4926,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) setPa
 requestAnimationFrame(loop);
 // ready once the first frame (and its shaders) are done
 requestAnimationFrame(() => requestAnimationFrame(() => {
+  buildCollage();
   el("play").disabled = false; el("play").textContent = "খেলা শুরু ▶";
   el("loading").textContent = mobile ? "◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস-ব্রেক আর হর্ন। গাড়িতে উঠতে-নামতে ‘ওঠো/নামো’ বোতাম।" : "W/↑ হাঁটো/চালাও · A D ঘোরাও · F গাড়িতে ওঠো/নামো · Space হর্ন · C ক্যামেরা · Enter শুরু";
 }));
@@ -4821,7 +4937,7 @@ window.__sim3 = {
   get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get parked() { return parked; }, get fleers() { return fleers; }, rideNear: () => W && rideNear(), enterRide, bike, get cop() { return cop; }, get wanted() { return wanted; }, callPolice, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
   get mission() { return mission; }, get offer() { return offer; }, makeOffer: k => { dropOffer(); return makeOffer(k); }, get misDone() { return misDone; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
-  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
+  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; }, get collageReady() { return collageReady; }, buildCollage,
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };
 </script>
