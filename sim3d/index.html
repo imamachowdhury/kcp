@@ -68,53 +68,59 @@
   .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--paper-2); border: 2.5px solid var(--ink); border-radius: 999px; padding: 2px 12px 2px 3px; font-weight: 700; font-size: 14px; }
   .chip i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper) center/cover; }
   .btn.big { display: block; width: 100%; max-width: 340px; margin: 0 auto; font-size: 22px; padding: 14px 24px; border-radius: 14px; }
-  /* opening screen: a tilted poster collage of shots the game takes of itself at load, and a red title card */
-  #start { display: block; padding: 0; overflow: hidden; background: #14110f; }
+  /* opening screen: one big poster the game renders of its own cast (rides, police, comrades on a rally stage),
+     a big title in the sky, and the menu along the bottom */
+  #start { display: block; padding: 0; overflow: hidden; background: linear-gradient(#6fb3e3, #a9d4ea 55%, #f1d9ae); }
   #start.hidden { display: none; }
-  .collage { position: absolute; inset: -4vh -3vw 30px; display: grid; gap: 9px; padding: 9px; background: var(--paper);
-    grid-template-columns: 1.15fr 1.15fr 1.3fr 1fr; grid-template-rows: 1fr 1fr 1fr;
-    grid-template-areas: "bike bike title cop" "bike bike title cng" "scoot town town office"; transform: rotate(-2deg) scale(1.04); }
-  .pn { position: relative; overflow: hidden; border: 3px solid var(--ink); background: #2b2622 linear-gradient(135deg, #3a332d 0 25%, #2b2622 25% 50%, #3a332d 50% 75%, #2b2622 75%) 0 0/28px 28px; min-height: 0; }
-  .pn[data-k="bike"] { grid-area: bike; } .pn[data-k="cop"] { grid-area: cop; } .pn[data-k="cng"] { grid-area: cng; }
-  .pn[data-k="scoot"] { grid-area: scoot; } .pn[data-k="town"] { grid-area: town; } .pn[data-k="office"] { grid-area: office; }
-  .pn > i { position: absolute; inset: 0; background: center/cover no-repeat; opacity: 0; transition: opacity .9s ease; animation: kb 20s ease-in-out infinite alternate; }
-  .pn:nth-child(2n) > i { animation-duration: 24s; animation-direction: alternate-reverse; }
-  .pn.in > i { opacity: 1; }
-  .pn::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 60px rgba(0,0,0,.45); pointer-events: none; }
-  @keyframes kb { from { transform: scale(1.04) translate(0, 0); } to { transform: scale(1.16) translate(-2.5%, 1.5%); } }
-  .pn > b { position: absolute; left: 10px; bottom: 10px; z-index: 1; background: var(--ink); color: var(--paper); font: 700 13px var(--font-body); padding: 3px 10px; transform: skew(-10deg); max-width: calc(100% - 20px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pn[data-k="bike"] > b, .pn[data-k="scoot"] > b { left: auto; right: 10px; } /* the tilt pushes the left edge off screen */
-  .pn.title { grid-area: title; background: var(--red); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 14px 16px; gap: 6px; overflow: auto; }
-  .pn.title::after { box-shadow: inset 0 0 0 4px rgba(255,255,255,.12), inset 0 0 80px rgba(0,0,0,.3); }
-  .pn.title .kicker { color: #ffe3a0; letter-spacing: .02em; }
-  .pn.title h1 { margin: 0; color: var(--paper); font: 400 clamp(40px, 5.6vw, 76px)/.95 var(--font-display); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); transform: rotate(-3deg); }
-  .pn.title h1 span { display: block; color: var(--yellow); font-size: 1.32em; line-height: 1; }
-  .pn.title .start-meta { margin: 4px 0 2px; }
-  .pn.title .btn.big { background: var(--yellow); color: var(--ink); max-width: 300px; position: relative; z-index: 1; }
-  .gm-links { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center; position: relative; z-index: 1; }
-  .gm-links button, .gm-links a { background: none; border: 0; padding: 2px 0; color: var(--paper); font: 700 14px var(--font-body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .poster { position: absolute; inset: 0; overflow: hidden; }
+  .poster > i { position: absolute; inset: 0; background: center/cover no-repeat; opacity: 0; transition: opacity 1s ease;
+    transform-origin: 50% 70%; animation: kb 28s ease-in-out infinite alternate; }
+  .poster.in > i { opacity: 1; }
+  .poster::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(rgba(0,0,0,0) 62%, rgba(10,9,8,.55) 84%, rgba(10,9,8,.9)), radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,.28)); }
+  @keyframes kb { from { transform: scale(1); } to { transform: scale(1.07); } }
+  .gm-head { position: absolute; left: 0; right: 0; top: max(3vh, env(safe-area-inset-top)); z-index: 1; text-align: center; pointer-events: none; }
+  .gm-head .kicker { display: inline-block; background: var(--ink); color: var(--paper); padding: 3px 12px; transform: rotate(-3deg); font-size: 13px; }
+  .gm-head h1 { margin: 2px 0 0; color: var(--paper); font: 400 clamp(54px, 9.5vw, 128px)/.9 var(--font-display); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+    text-shadow: 5px 5px 0 var(--ink), 0 0 30px rgba(0,0,0,.25); transform: rotate(-3deg); }
+  .gm-head h1 b { display: block; font-weight: 400; }
+  .gm-head h1 span { position: relative; display: inline-block; color: var(--yellow); font-size: 1.3em; line-height: .95; margin-top: -.06em; }
+  .gm-head h1 em { position: absolute; left: 100%; top: 50%; font: 700 .17em/1.05 var(--font-body); width: 4.8em; height: 4.8em; margin: -2.6em 0 0 .3em;
+    border-radius: 50%; display: grid; place-content: center; font-style: normal; color: var(--paper); -webkit-text-stroke: 0; text-shadow: none; background: var(--red);
+    border: .22em solid var(--ink); box-shadow: inset 0 0 0 .22em var(--red), inset 0 0 0 .34em var(--paper), .22em .22em 0 var(--ink); transform: rotate(14deg); }
+  .gm-head h1 em small { display: block; font-size: .55em; color: var(--yellow); }
+  .gm-meta { position: absolute; top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); z-index: 2; display: flex; gap: 6px; align-items: center; }
+  .gm-meta .chip { cursor: pointer; font-family: var(--font-body); color: var(--ink); }
+  .heroes { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; margin: 4px 0 14px; }
+  .heroes button { display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; background: var(--paper-2); border: 2.5px solid var(--ink); border-radius: 12px; cursor: pointer; font: 700 13px var(--font-body); color: var(--ink); }
+  .heroes button i { width: 56px; height: 56px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper) center/cover; }
+  .heroes button small { font-weight: 600; font-size: 11px; color: var(--ink-soft); }
+  .heroes button[aria-pressed="true"] { background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); }
+  .gm-meta .wallet { margin: 0; font-size: 14px; padding: 2px 12px; }
+  .gm-menu { position: absolute; left: 0; right: 0; bottom: calc(44px + env(safe-area-inset-bottom)); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 16px; text-align: center; }
+  .gm-menu .btn.big { background: var(--yellow); color: var(--ink); max-width: 320px; }
+  @media (min-aspect-ratio: 1/1) { .gm-menu { left: max(4vw, env(safe-area-inset-left)); right: auto; width: min(340px, 40vw); align-items: stretch; padding: 0; }
+    .gm-menu .gm-links { justify-content: flex-start; } .gm-menu .loading { text-align: left; font-size: 12px; } }
+  .gm-links { display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: center; }
+  .gm-links button, .gm-links a { background: none; border: 0; padding: 2px 0; color: var(--paper); font: 700 14px var(--font-body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-shadow: 0 1px 3px #000; }
   .gm-links button:hover, .gm-links a:hover { color: var(--yellow); }
-  .pn.title .loading { color: #ffe3a0; margin: 0; max-width: 340px; position: relative; z-index: 1; }
+  .gm-menu .loading { color: #e9e1d2; margin: 0; max-width: 420px; text-shadow: 0 1px 3px #000; }
   .gm-tip { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; min-height: 34px; display: flex; align-items: center; gap: 12px; justify-content: space-between;
-    padding: 6px max(16px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)); background: rgba(10,9,8,.92); color: #f2ece0; font: 600 13px var(--font-body); }
+    padding: 6px max(16px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)); background: rgba(10,9,8,.94); color: #f2ece0; font: 600 13px var(--font-body); }
   #gmTip { transition: opacity .4s ease; } #gmTip.out { opacity: 0; } #gmTip em { font-style: normal; color: var(--yellow); margin-right: 6px; }
   .gm-load { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; color: #bfb6a6; }
   .gm-load i { width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid #5a5248; border-top-color: var(--yellow); animation: spin 1s linear infinite; }
   .gm-load.done { visibility: hidden; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (max-height: 520px) and (min-aspect-ratio: 1/1) { /* phones held sideways */
-    .pn.title { padding: 8px 10px; gap: 4px; } .pn.title h1 { font-size: clamp(30px, 5vw, 46px); } .pn.title .kicker, .pn.title .start-meta, .pn.title .loading { display: none; }
-    .pn.title .btn.big { font-size: 18px; padding: 9px 18px; } .pn > b { font-size: 11.5px; }
+    .gm-head .kicker, .gm-menu .loading { display: none; } .gm-head h1 { font-size: clamp(40px, 7.5vw, 64px); }
+    .gm-menu { gap: 4px; bottom: 40px; } .gm-menu .btn.big { font-size: 18px; padding: 8px 18px; }
   }
-  @media (max-aspect-ratio: 1/1), (max-width: 700px) { /* portrait: two columns, the title card across the middle */
-    .collage { inset: -2vh -4vw 54px; gap: 7px; padding: 7px; grid-template-columns: 1fr 1fr; grid-template-rows: 1.25fr .85fr auto .85fr;
-      grid-template-areas: "bike bike" "cop cng" "title title" "scoot town"; transform: rotate(-1.5deg) scale(1.03); }
-    .pn[data-k="office"] { display: none; }
-    .pn.title { padding: 12px 14px 14px; overflow: visible; } .pn.title h1 { font-size: clamp(38px, 12vw, 60px); }
-    .pn > b { font-size: 12px; left: 18px; bottom: 8px; } .pn[data-k="bike"] > b, .pn[data-k="scoot"] > b { left: auto; right: 12px; }
-    .gm-tip { font-size: 12px; } .gm-load { display: none; }
+  @media (max-aspect-ratio: 1/1) { /* portrait */
+    .gm-head { top: max(7vh, env(safe-area-inset-top)); } .gm-head h1 { font-size: clamp(50px, 16vw, 92px); }
+    .gm-tip { font-size: 12px; } .gm-load { display: none; } .gm-menu { bottom: calc(58px + env(safe-area-inset-bottom)); }
   }
-  @media (prefers-reduced-motion: reduce) { .pn > i { animation: none; } .gm-load i { animation-duration: 3s; } }
+  @media (prefers-reduced-motion: reduce) { .poster > i { animation: none; } .gm-load i { animation-duration: 3s; } }
   .screen { transition: opacity .35s ease; } .screen.fade { opacity: 0; pointer-events: none; }
   .screen:not(#shop) .panel { animation: cardIn .4s cubic-bezier(.2, .9, .3, 1.15) both; }
   @keyframes cardIn { from { opacity: 0; transform: translateY(16px) scale(.97); } }
@@ -319,29 +325,30 @@
 <button id="doorBtn" hidden aria-label="গাড়ি থেকে নামো">নামো<small>F</small></button>
 
 <div class="screen" id="start">
-  <div class="collage">
-    <div class="pn" data-k="bike"><i></i><b>ইমাম ভাইয়ের রাজকীয় বাইক</b></div>
-    <div class="pn title">
-      <p class="kicker">কেসিপির খেলা · খোলা দুনিয়া</p>
-      <h1>কতোয়ালপুর<span>সিটি</span></h1>
-      <div class="start-meta"><span class="chip"><i style="background-image:url('../assets/people/ponki.jpg')"></i>পংকি ভাই</span><span class="wallet" id="startWallet">পকেটে: ৳০</span></div>
-      <button class="btn big" id="play" disabled>লোড হচ্ছে...</button>
-      <div class="gm-links"><button id="shopFromStart">দোকান 🛒</button><button id="howBtn">কিভাবে খেলবো?</button><a href="../">KCP তে ফিরে যান</a></div>
-      <p class="loading" id="loading">কতোয়ালপুর বানানো হচ্ছে...</p>
-    </div>
-    <div class="pn" data-k="cop"><i></i><b>🚓 পুলিশ</b></div>
-    <div class="pn" data-k="cng"><i></i><b>পংক পরিবহন</b></div>
-    <div class="pn" data-k="scoot"><i></i><b>তানিমের পংকি রাজ</b></div>
-    <div class="pn" data-k="town"><i></i><b>কতোয়ালপুর</b></div>
-    <div class="pn" data-k="office"><i></i><b>পার্টি অফিস</b></div>
+  <div class="poster" id="poster"><i></i></div>
+  <div class="gm-meta"><button class="chip" id="heroChip" aria-label="চরিত্র বদলাও"><i style="background-image:url('../assets/people/ponki.jpg')"></i><span>পংকি ভাই</span> ▾</button><span class="wallet" id="startWallet">পকেটে: ৳০</span></div>
+  <div class="gm-head"><p class="kicker">কেসিপির খেলা · খোলা দুনিয়া</p><h1><b>কতোয়ালপুর</b><span>সিটি<em aria-hidden="true">কেসিপি<small>★ ২০২৬ ★</small></em></span></h1></div>
+  <div class="gm-menu">
+    <button class="btn big" id="play" disabled>লোড হচ্ছে...</button>
+    <div class="gm-links"><button id="heroBtn">চরিত্র বাছাই 👤</button><button id="shopFromStart">দোকান 🛒</button><button id="howBtn">কিভাবে খেলবো?</button><a href="../">KCP তে ফিরে যান</a></div>
+    <p class="loading" id="loading">কতোয়ালপুর বানানো হচ্ছে...</p>
   </div>
   <div class="gm-tip"><span id="gmTip"></span><span class="gm-load" id="gmLoad"><i></i>লোড হচ্ছে</span></div>
+</div>
+
+<div class="screen hidden" id="heroScr">
+  <div class="panel">
+    <h2>কে হবে হিরো?</h2>
+    <p class="lead">যাকে বাছবে, সে-ই সিএনজি চালাবে আর পুরো কতোয়ালপুর তার। তাকে নিয়ে কোনো কাজ থাকলে সেটা আর আসবে না।</p>
+    <div class="heroes" id="heroList"></div>
+    <button class="btn" id="heroClose">ঠিক আছে</button>
+  </div>
 </div>
 
 <div class="screen hidden" id="howScr">
   <div class="panel">
     <h2>কিভাবে খেলবো?</h2>
-    <p class="lead">তুমি পংকি ভাই। শুরু পার্টি অফিসের সামনে থেকে: হেঁটে সিএনজিতে ওঠো, তারপর পুরো কতোয়ালপুর তোমার। ঘোরো, কাজ ধরো, টাকা কামাও।</p>
+    <p class="lead">তুমি <b id="howHero">পংকি ভাই</b>। শুরু পার্টি অফিসের সামনে থেকে: হেঁটে সিএনজিতে ওঠো, তারপর পুরো কতোয়ালপুর তোমার। ঘোরো, কাজ ধরো, টাকা কামাও।</p>
     <ul class="rules">
       <li><span>🚶</span><span>শুরুতে তুমি <b>হেঁটে</b>, পার্টি অফিসের সামনে। সিএনজির কাছে গিয়ে <b>ওঠো</b> (F), যেকোনো সময় আবার <b>নামো</b>। গলিতে গাড়ি না ঢুকলে হেঁটেই যাও।</span></li>
       <li><span>🏍️</span><span>রাস্তার পাশে পার্ক করা <b>সিএনজি, পংকি রাজ আর ইমাম ভাইয়ের রাজকীয় বাইক</b>: যেটার কাছে যাবে সেটাতেই ওঠো। চলন্ত গাড়ির সামনে দাঁড়াও, থামলে কাছে গিয়ে F, চালককে নামিয়ে <b>ছিনতাই</b>! তবে 🚓 <b>পুলিশ</b> পিছে লাগবে: ৯০ মিটার দূরে পালিয়ে থাকো, ধরা পড়লে জরিমানা।</span></li>
@@ -473,12 +480,19 @@ const RIDE_LINES = ["পংকি ভাই, মিটারে কত উঠল
 const FAST_LINES = ["মামা আস্তে চালান, চা পড়ে যাবে!", "আল্লাহ বাঁচাও!! 😱", "এইটা সিএনজি না রকেট?", "পংকি ভাই, লাইসেন্স আছে তো?"];
 // who drives today: Ponki Vai is fast and reckless, Neta Muhon Vai is careful but can't pass a procession
 const DRIVERS = {
-  ponki: { id: "ponki", n: "পংকি ভাই", label: "পংকি ভাইয়ের সিএনজি", shirt: "#e3d24a", speed: 1.18, turn: 1.15, crashy: true,
+  ponki: { id: "ponki", n: "পংকি ভাই", label: "পংকি ভাইয়ের সিএনজি", shirt: "#e3d24a", speed: 1.18, turn: 1.15,
     hello: "পংকি ভাই স্টিয়ারিংয়ে! শক্ত করে ধরেন, আজকে উড়াইয়া নিমু। প্যাঁ-পোঁ!" },
   muhon: { id: "muhon", n: "মুহন ভাই", label: "নেতা মুহন ভাই চালাচ্ছেন", shirt: "#a3122a", speed: 1, turn: 1, rally: true,
     hello: "মুহন ভাই স্টিয়ারিংয়ে। ধীরে চলি, নিরাপদে চলি। চলো কতোয়ালপুর ঘুরি!" },
 };
+// every comrade with a photo can be the hero too (Sufan bhai gives the jobs and Sam bhai patrols, so they stay in town)
+const HERO_SHIRTS = { tanim: "#c8102e", jihan: "#3b6fb0", tahmin: "#2f8a4f", milad: "#6b4fa0", ohbab: "#e07a1f", koyes: "#2f6db3", ikramul: "#3d3d3d", kayif: "#e8dba0", safayat: "#8a5a32", minhaz: "#f6efe1" };
+for (const c of COMRADES) if (!c.emoji && !DRIVERS[c.id]) DRIVERS[c.id] = { id: c.id, n: `${c.n} ভাই`, label: `${c.n} ভাইয়ের সিএনজি`, shirt: HERO_SHIRTS[c.id] || "#f6efe1", speed: 1.1, turn: 1.08,
+  hello: `${c.n} ভাই স্টিয়ারিংয়ে! "${c.b}"` };
 let driverId = "ponki";
+try { const d = localStorage.getItem("kcp-sim-driver"); if (d && DRIVERS[d]) driverId = d; } catch (e) {}
+// lines written for Ponki bhai name whoever is playing
+const heroText = t => driverId === "ponki" || typeof t !== "string" ? t : t.replace(/পংকি ভাই/g, DRIVERS[driverId].n);
 const DRV = () => DRIVERS[driverId];
 // the rides: Ponk Poribohon's CNG (5 seats), Tanim's old scooter Ponki Raj (1 seat, much faster) and Imam bhai's royal bike (1 seat, fastest)
 const VEHICLES = {
@@ -2810,6 +2824,7 @@ function project(x, y, z) { V3.set(x, y, z).project(camera); return { sx: (V3.x 
 function mkEl(cls, text) { const e = document.createElement("div"); e.className = cls; e.textContent = text; ov.appendChild(e); return e; }
 let bubbles = [], floaties = [];
 function say(who, text, dur = 3, delay = 0) {
+  text = heroText(text);
   for (const b of bubbles) if (b.who === who && b.t >= 0) b.t = Math.max(b.t, b.dur - .2);
   bubbles.push({ who, text, t: -delay, dur, el: null });
 }
@@ -2819,7 +2834,7 @@ function place(e, p, dy = 0, above = true) {
   e.style.display = ""; e.style.transform = `translate(${Math.round(p.sx)}px, ${Math.round(p.sy + dy)}px) translate(-50%, ${above ? "-100%" : "-50%"})`;
 }
 let bannerT = 0;
-function showBanner(text, sub = "", dur = 2) { el("banner").innerHTML = `<b>${text}</b>${sub ? `<small>${sub}</small>` : ""}`; bannerT = dur; }
+function showBanner(text, sub = "", dur = 2) { text = heroText(text); sub = heroText(sub); el("banner").innerHTML = `<b>${text}</b>${sub ? `<small>${sub}</small>` : ""}`; bannerT = dur; }
 
 /* ================= audio (same code-made sounds as the 2D game, plus music) ================= */
 let ac = null, muted = false;
@@ -2982,6 +2997,7 @@ addEventListener("keydown", e => {
   if (k === "c" && !e.repeat && state === "play") nextCam();
   if (k === "f" && !e.repeat && state === "play" && !talk) { toggleRide(); flashDoor(); }
   if ((k === "escape" || k === "enter") && howOpen()) { el("howScr").classList.add("hidden"); return; }
+  if ((k === "escape" || k === "enter") && !el("heroScr").classList.contains("hidden")) { el("heroScr").classList.add("hidden"); return; }
   if (k === "enter" && !garage && state === "menu" && !el("play").disabled) startGame();
   else if (k === "enter" && !garage && state === "over" && !el("play").disabled) startGame();
   if (k === "escape" && garage) closeShop();
@@ -3046,7 +3062,7 @@ let sufan = null, officeTag = null, drvTag = null, carTag = null, jackTag = null
    along with, a journalist to show round, a farmer's cow to drive home, a phone thief to run down, his hiding nephew
    to find by "hot or cold", a cut kite to catch before it lands, a CNG stuck in the mud to push out. And sometimes a
    tyre just bursts and you limp to the nearest mechanic. Take it, do it before the timer runs out, and it pays a bonus. */
-const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea", "leaf", "follow", "flat", "tour", "herd", "thief", "hide", "kite", "push", "ckpt", "tail", "dawat", "lunch"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
+const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea", "leaf", "follow", "tour", "herd", "thief", "hide", "kite", "push", "ckpt", "tail", "dawat", "lunch"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
 let offer = null, mission = null, offerCd = 4, misDone = 0, misRecent = [], misKey = "", misTalkCd = 0;
 const beacon = new THREE.Group(); // a tall see-through yellow column over wherever the job wants you
 {
@@ -3057,6 +3073,7 @@ const beacon = new THREE.Group(); // a tall see-through yellow column over where
   beacon.userData.col = col; beacon.visible = false; scene.add(beacon);
 }
 const chipsShop = () => SHOPS.find(s => s.item === "chips"), teaShop = () => SHOPS.find(s => s.item === "tea");
+const MIS_WHO = { lunch: "jihan" }; // jobs built around one comrade: skipped when that comrade is the one playing
 const isFlat = () => !!(mission && mission.kind === "flat");
 // a mechanic's roadside stall: a bench, a spare tyre and the mechanic himself
 function makeMechanic(R) {
@@ -3164,7 +3181,7 @@ function posterSpots(R) {
 }
 function setSufanTag(t) { if (sufan && sufan.tag.textContent !== t) sufan.tag.textContent = t; }
 function makeOffer(force) {
-  const kinds = force ? [force] : shuffle(MIS_KINDS.filter(k => !misRecent.includes(k)), rand);
+  const kinds = force ? [force] : shuffle(MIS_KINDS.filter(k => !misRecent.includes(k) && MIS_WHO[k] !== driverId), rand);
   for (const k of kinds) {
     if (k === "push") {
       const o = stuckSpot(); if (!o) continue;
@@ -4792,43 +4809,109 @@ cv.addEventListener("pointermove", e => { if (garage && garage.drag) garage.th =
 for (const ev of ["pointerup", "pointercancel"]) cv.addEventListener(ev, () => { if (garage) garage.drag = null; });
 syncWallet();
 
-// opening collage: the game photographs itself (rides, police, town, office) once at load, poster style
-let collageReady = false;
-function buildCollage() {
-  try {
-    const pose = spawnAt(), fx = Math.cos(pose.a), fz = Math.sin(pose.a), sx = -officeU.x, sz = -officeU.y; // side: away from the office, across the road
-    const at = (f, s, y) => [pose.x + fx * f + sx * s, y, pose.y + fz * f + sz * s];
-    const cvs = document.createElement("canvas"), g2 = cvs.getContext("2d"), fov0 = camera.fov;
-    const rides = [cng, scoot, bike], cop0 = makeCop(); cop0.g.visible = false; scene.add(cop0.g);
-    const stage = (r) => { for (const o of rides) { o.g.visible = o === r; o.drv.visible = true; } walker.g.visible = false; cop0.g.visible = r === cop0;
-      if (r) { r.g.position.set(pose.x, 0, pose.y); r.g.rotation.y = -pose.a; if (r.body) { r.body.position.y = 0; r.body.rotation.x = 0; } } };
-    const shot = (key, ride, cam, look, hfov, vmin = 34) => { // hfov / vmin: the cropped picture's horizontal view, and its least vertical view, in degrees
-      const pn = document.querySelector(`.pn[data-k="${key}"]`); if (!pn) return;
-      stage(ride);
-      const r = pn.getBoundingClientRect(), asp = r.width > 20 && r.height > 20 ? r.width / r.height : 1.5, cAsp = innerWidth / innerHeight;
-      const th = Math.max(Math.tan(hfov * Math.PI / 360), Math.tan(vmin * Math.PI / 360) * asp); // a long thin panel still shows the whole ride
-      camera.aspect = cAsp; camera.fov = 2 * Math.atan(th / Math.min(asp, cAsp)) * 180 / Math.PI; camera.updateProjectionMatrix();
-      camera.position.set(cam[0], cam[1], cam[2]); camera.lookAt(look[0], look[1], look[2]);
-      sun.position.set(look[0] + SUN_DIR.x * 120, SUN_DIR.y * 120, look[2] + SUN_DIR.z * 120); sun.target.position.set(look[0], 0, look[2]); sun.target.updateMatrixWorld();
-      renderer.render(scene, camera);
-      const src = renderer.domElement, W0 = src.width, H0 = src.height;
-      let cw = W0, ch = W0 / asp; if (ch > H0) { ch = H0; cw = H0 * asp; }
-      const ow = Math.round(Math.min(1000, Math.max(320, r.width * Math.min(devicePixelRatio, 2)))), oh = Math.round(ow / asp);
-      cvs.width = ow; cvs.height = oh; g2.filter = "contrast(1.12) saturate(1.28)";
-      g2.drawImage(src, (W0 - cw) / 2, (H0 - ch) / 2, cw, ch, 0, 0, ow, oh);
-      pn.querySelector("i").style.backgroundImage = `url(${cvs.toDataURL("image/jpeg", .85)})`; pn.classList.add("in");
-    };
-    shot("bike", bike, at(3.0, 2.3, .8), at(-.25, 0, .95), 52);  // low, three-quarter front
-    shot("cng", cng, at(4.6, 3.1, 1.5), at(0, 0, 1.15), 55);
-    shot("scoot", scoot, at(-3.3, 2.1, 1.1), at(.3, 0, .85), 55); // three-quarter rear
-    shot("cop", cop0, at(6.2, -3.4, 1.2), at(0, 0, 1.2), 58);
-    shot("town", null, [door.x - 70, 58, door.y + 52], [door.x, 0, door.y], 70);
-    shot("office", null, [door.x - officeU.x * 16, 3.2, door.y - officeU.y * 16], [office.cx, office.h * .45, office.cy], 70);
-    scene.remove(cop0.g); stage(ride()); camera.fov = fov0; resize();
-    collageReady = true;
-  } catch (e) { collageReady = false; resize(); } // no pictures: the striped panels and the live town still work
-  el("gmLoad").classList.add("done");
+// opening poster: the whole cast lined up in front of a rally stage, Kotalpur's skyline behind, rendered once at load
+// (and again when the screen turns), the way an ensemble film poster is staged. Everything here is the game's own models.
+let collageReady = false, PST = null, posterAsp = 0;
+function makePosterStage() {
+  const sc = new THREE.Scene(), R = rng32(7);
+  sc.background = canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, "#5aa4dc"); gr.addColorStop(.55, "#a6d2ec"); gr.addColorStop(.8, "#f3dcb2"); gr.addColorStop(1, "#f6cf96"); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  sc.fog = new THREE.Fog("#e9dcc2", 30, 175);
+  sc.add(new THREE.HemisphereLight("#e4f3ff", "#8a7a50", 1.5));
+  const sunL = new THREE.DirectionalLight("#ffe2b8", 2.7); sunL.position.set(-16, 22, 26); sunL.castShadow = true;
+  sunL.shadow.mapSize.set(2048, 2048); Object.assign(sunL.shadow.camera, { left: -16, right: 16, top: 14, bottom: -10, near: 1, far: 90 });
+  sunL.shadow.bias = -.0005; sunL.shadow.normalBias = .3; sc.add(sunL, sunL.target);
+  const M = c => lam({ color: c }), put = (o, x, y, z, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; sc.add(o); return o; };
+  const box = (w, h, d, c, x, y, z, sh = true) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.castShadow = m.receiveShadow = sh; return put(m, x, y, z); };
+  // ground: grass, and the road the cast stands on
+  const gr = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), M("#86a653")); gr.rotation.x = -Math.PI / 2; gr.receiveShadow = true; sc.add(gr);
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(600, 9), M("#6b665e")); road.rotation.x = -Math.PI / 2; road.position.set(0, .02, 1.2); road.receiveShadow = true; sc.add(road);
+  for (const z of [-3.3, 5.7]) { const e = new THREE.Mesh(new THREE.PlaneGeometry(600, .25), M("#d8cfbd")); e.rotation.x = -Math.PI / 2; e.position.set(0, .03, z); sc.add(e); }
+  // the rally stage, its skirt, bamboo posts, banner and bunting
+  box(12.6, 1.1, 3.4, "#8a5a32", 0, .55, -5.1); box(12.7, .9, .05, C.red, 0, .5, -3.38, false);
+  for (const x of [-6.1, 6.1]) box(.16, 4.8, .16, "#c8a96a", x, 2.4, -6.6);
+  const ban = new THREE.Mesh(new THREE.PlaneGeometry(11.8, 1.5), new THREE.MeshLambertMaterial({ map: textTex("কতোয়ালপুর কমিউনিস্ট পার্টি", C.red, C.paper, 1024, 130, 78, { border: false }) }));
+  put(ban, 0, 3.9, -6.62);
+  const flagCols = [C.red, C.yellow, C.green, C.paper];
+  for (let i = 0; i < 26; i++) { const t = i / 25, x = -6.1 + t * 12.2, y = 4.75 - Math.sin(t * Math.PI) * .55;
+    const f = new THREE.Mesh(new THREE.ConeGeometry(.16, .34, 3), new THREE.MeshLambertMaterial({ color: flagCols[i % 4], side: THREE.DoubleSide })); f.rotation.x = Math.PI; put(f, x, y - .2, -6.5); }
+  // Kotalpur behind: pastel houses with water tanks, a mosque, a phone tower, trees, palms, poles and clouds
+  const pastel = ["#ead9b6", "#d6e2c6", "#f1c9a6", "#cbd8e6", "#e8b9b4", "#f3e3a8", "#d9cbe6"];
+  for (let i = 0; i < 26; i++) { const x = -90 + i * 7.2 + (R() - .5) * 4, z = -26 - R() * 55, w = 6 + R() * 6, h = 6 + R() * 13, d = 6 + R() * 5;
+    if (Math.abs(x) < 9 && z > -40) continue;
+    box(w, h, d, pastel[(R() * pastel.length) | 0], x, h / 2, z, false); box(w + .3, .35, d + .3, "#e9e2d3", x, h + .17, z, false);
+    if (R() < .6) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(.7, .7, 1.3, 10), M("#2a2a2a")); put(tk, x + (R() - .5) * w * .5, h + .9, z); } }
+  { const mx = -24, mz = -58; box(14, 7, 10, "#f4f1e8", mx, 3.5, mz, false);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(4, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2), M("#4f9a6b")); put(dome, mx, 7, mz);
+    for (const dx of [-7.5, 7.5]) { box(1.3, 17, 1.3, "#f4f1e8", mx + dx, 8.5, mz + 4); const c = new THREE.Mesh(new THREE.ConeGeometry(1, 2.4, 8), M("#4f9a6b")); put(c, mx + dx, 18.2, mz + 4); } }
+  { const tx = 26, tz = -62; for (let k = 0; k < 7; k++) box(1.2 - k * .12, 6, 1.2 - k * .12, k % 2 ? "#f4f1e8" : "#c8102e", tx, 3 + k * 6, tz, false); }
+  const leaf = ["#3f7a34", "#4d8c3a", "#5f9a3f", "#356b2e"];
+  for (let i = 0; i < 46; i++) { const x = (R() - .5) * 150, z = -10 - R() * 40; if (Math.abs(x) < 8 && z > -16) continue;
+    const s2 = 1.6 + R() * 2.4; box(.35, s2 * 1.6, .35, "#6a4a2e", x, s2 * .8, z, false);
+    for (let k = 0; k < 3; k++) { const b2 = new THREE.Mesh(new THREE.SphereGeometry(s2 * (.75 + R() * .35), 9, 7), M(leaf[(R() * 4) | 0])); put(b2, x + (R() - .5) * s2, s2 * 1.7 + k * s2 * .45, z + (R() - .5) * s2); } }
+  for (let i = 0; i < 9; i++) { const x = (i % 2 ? 1 : -1) * (12 + R() * 40), z = -12 - R() * 30, hgt = 9 + R() * 5;
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(.18, .28, hgt, 6), M("#8a6a46")); tr.rotation.z = (R() - .5) * .25; put(tr, x, hgt / 2, z);
+    for (let k = 0; k < 7; k++) { const fr = new THREE.Mesh(new THREE.ConeGeometry(.5, 4, 4), M("#4a8a3a")); fr.rotation.set(Math.PI / 2 - .5, k * .9, 0); fr.rotateX(.9); put(fr, x + Math.cos(k * .9) * 1.4, hgt - .3, z + Math.sin(k * .9) * 1.4).rotation.y = -k * .9; } }
+  for (let i = -3; i <= 3; i++) { const x = i * 13 + 4; box(.25, 9, .25, "#9a9488", x, 4.5, -9.5, false); box(1.8, .15, .15, "#9a9488", x, 8.6, -9.5, false); }
+  for (const y of [8.4, 8.7]) { const w2 = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, 80, 4), M("#2a2a2a")); w2.rotation.z = Math.PI / 2; put(w2, 4, y, -9.5); }
+  const cloudM = new THREE.MeshLambertMaterial({ color: "#ffffff", emissive: "#c9d6e2", fog: false });
+  for (let i = 0; i < 9; i++) { const cx = -120 + i * 30 + (R() - .5) * 18, cy = 34 + R() * 26, cz = -150 - R() * 40;
+    for (let k = 0; k < 6; k++) { const b3 = new THREE.Mesh(new THREE.SphereGeometry(6 + R() * 6, 10, 8), cloudM); b3.scale.y = .55; put(b3, cx + (R() - .5) * 26, cy + (R() - .5) * 4, cz + (R() - .5) * 8); } }
+  // the cast
+  const facing = th => -Math.PI / 2 + th; // models face +x; th turns them from looking straight at the camera
+  const person = (c, shirt, ring, x, y, z, o = {}) => { const g = makePerson(shirt, faceTex(c, ring), o.face || 1, { kurta: o.kurta, wave: o.wave });
+    g.scale.setScalar(o.scale || 1); g.traverse(m => { if (m.isMesh) m.castShadow = true; }); return put(g, x, y, z, facing(o.th || 0)); };
+  const crew = ["jihan", "tahmin", "milad", "koyes", "ohbab", "minhaz", "ikramul", "safayat", "kayif"].filter(id => id !== driverId).slice(0, 8).map(id => COMRADES.find(c => c.id === id)).filter(Boolean);
+  crew.forEach((c, i) => person(c, SHIRTS[(i * 3 + 1) % SHIRTS.length], C.paper, -4.9 + i * 1.4, 1.1, i % 2 ? -5.6 : -4.5, { wave: i % 2 === 0, th: (i - 3.5) * -.06 }));
+  person(SUFAN, "#2f8a4f", C.paper, -2.1, 0, -1.2, { kurta: true, face: 1.1, th: .18 });
+  person(SAM, "#f6efe1", RING.sam, 2.1, 0, -1.2, { kurta: true, face: 1.15, scale: 1.04, th: -.18 });
+  const hero = person(DRV(), DRV().shirt, C.yellow, 0, 0, 1.3, { wave: true, face: 1.3, scale: 1.14 });
+  const rideClone = (r, who) => { const c = r.g.clone(true), rm = []; c.visible = true;
+    c.traverse(o => { if (o.isLight) rm.push(o); if (o.isMesh) o.castShadow = true;
+      if (o.isSprite && o.material === r.drvFace.material) { o.material = o.material.clone(); o.material.map = faceTex(who, C.yellow); o.scale.multiplyScalar(1.9); o.position.y += .12; }
+      if (o.isMesh && o.material === r.drvShirt.material) { o.material = o.material.clone(); o.material.color.set(who.shirt || "#2f6db3"); } });
+    for (const o of rm) o.parent && o.parent.remove(o); c.children[0].position.y = 0; c.children[0].rotation.x = 0; return c; };
+  const imam = COMRADES.find(c => c.id === "imam") || DRV(), tanim = COMRADES.find(c => c.id === (driverId === "tanim" ? "kayif" : "tanim")) || DRV();
+  const cngP = parkedClone(cng); cngP.traverse(o => { if (o.isMesh) o.castShadow = true; }); put(cngP, -5.0, 0, .2, -.95);
+  put(rideClone(scoot, { ...tanim, shirt: "#c8102e" }), -2.7, 0, 3.0, -1.15);
+  put(rideClone(bike, { ...imam, shirt: "#1d1a17" }), 2.8, 0, 3.0, -2.0);
+  const copP = makeCop(); copP.g.traverse(o => { if (o.isMesh) o.castShadow = true; }); put(copP.g, 5.7, 0, -.1, -2.3);
+  const cow = makeCow(() => 0); cow.traverse(o => { if (o.isMesh) o.castShadow = true; }); put(cow, -7.9, 0, 2.4, -.55);
+  return { sc, sunL, cam: new THREE.PerspectiveCamera(40, 1, .5, 400), hero };
 }
+// frame the cast with a level camera and a shifted lens, so verticals stay upright and the horizon sits low, leaving sky for the title
+function posterFrame(cam, a) {
+  const port = a < 1, d = port ? 17 : 16, camY = 1.15, Hc = 4.9, halfW = port ? 3.9 : 8.3;
+  const fb = port ? .7 : .84, ftWant = port ? .46 : .36; // screen heights, from the top, of the ground line and the top of the cast
+  const T = Math.max(Hc / (d * (fb - ftWant)), 2 * halfW / (d * a)); // the frame's full height at one metre
+  const tTop = fb * T - camY / d, n = cam.near;
+  cam.position.set(0, camY, d); cam.lookAt(0, camY, 0);
+  cam.projectionMatrix.makePerspective(-n * T * a / 2, n * T * a / 2, n * tTop, -n * (T - tTop), n, cam.far);
+  cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+}
+async function buildPoster() {
+  try {
+    const box = el("poster").getBoundingClientRect(); if (box.width < 20 || box.height < 20) return;
+    if (!PST) { // the cast's photo badges and the banner's font should be in before the one picture is taken
+      const ims = Object.values(PHOTOS).filter(im => !im.complete).map(im => new Promise(r => { im.addEventListener("load", r); im.addEventListener("error", r); }));
+      await Promise.race([Promise.all([...ims, document.fonts ? document.fonts.ready : 0]), new Promise(r => setTimeout(r, 3500))]);
+      PST = makePosterStage();
+    }
+    const a = box.width / box.height, pr = renderer.getPixelRatio(), W = Math.round(Math.min(2400, box.width * Math.min(devicePixelRatio, 2))), H = Math.round(W / a);
+    renderer.setSize(W / pr, H / pr, false); posterFrame(PST.cam, a);
+    renderer.render(PST.sc, PST.cam);
+    const cvs = document.createElement("canvas"); cvs.width = W; cvs.height = H; const g2 = cvs.getContext("2d");
+    g2.filter = "contrast(1.08) saturate(1.22)"; g2.drawImage(renderer.domElement, 0, 0, W, H);
+    el("poster").querySelector("i").style.backgroundImage = `url(${cvs.toDataURL("image/jpeg", .88)})`; el("poster").classList.add("in");
+    posterAsp = a; collageReady = true;
+  } catch (e) { console.warn(e); }
+  resize(); el("gmLoad").classList.add("done");
+}
+let posterT = 0;
+addEventListener("resize", () => { clearTimeout(posterT); posterT = setTimeout(() => {
+  if (!collageReady || el("start").classList.contains("hidden")) return;
+  const r = el("poster").getBoundingClientRect(), a = r.width / r.height; if (Math.abs(a - posterAsp) > .12) buildPoster();
+}, 400); });
 const TIPS = [
   "চলন্ত গাড়ির সামনে দাঁড়াও, থামলে F চেপে চালককে নামাও। তবে 🚓 পুলিশ পিছে লাগবে।",
   "পুলিশ থেকে ৯০ মিটার দূরে কয়েক সেকেন্ড থাকতে পারলেই ওরা হাল ছেড়ে দেয়। ধরা পড়লে প্রতি তারায় ৳৪০ জরিমানা।",
@@ -4846,6 +4929,25 @@ setInterval(() => {
   if (el("start").classList.contains("hidden")) return;
   el("gmTip").classList.add("out"); setTimeout(() => { tipI = (tipI + 1) % TIPS.length; showTip(); }, 400);
 }, 5500);
+// character select: the pick is saved, dresses every ride's driver, and re-shoots the poster with the new hero in front
+function syncHero() {
+  const d = DRV(), c = el("heroChip");
+  c.querySelector("i").style.backgroundImage = `url('../assets/people/${d.id}.jpg')`; c.querySelector("span").textContent = d.n;
+  el("howHero").textContent = d.n;
+  el("heroList").innerHTML = Object.values(DRIVERS).map(h => `<button data-hero="${h.id}" aria-pressed="${h.id === driverId}"><i style="background-image:url('../assets/people/${h.id}.jpg')"></i>${h.n}${h.id === "ponki" ? "<small>আসল চালক</small>" : h.id === "muhon" ? "<small>মিছিল দেখলে থামে</small>" : ""}</button>`).join("");
+}
+function setHero(id) {
+  if (!DRIVERS[id] || id === driverId) return;
+  driverId = id; try { localStorage.setItem("kcp-sim-driver", id); } catch (e) {}
+  applyLook(); syncHero(); sfx.pop();
+  if (collageReady) { PST = null; buildPoster(); }
+}
+syncHero();
+const openHeroes = () => { syncHero(); el("heroScr").classList.remove("hidden"); el("heroScr").scrollTop = 0; };
+el("heroChip").addEventListener("click", openHeroes); el("heroBtn").addEventListener("click", openHeroes);
+el("heroList").addEventListener("click", e => { const b = e.target.closest("[data-hero]"); if (b) setHero(b.dataset.hero); });
+el("heroClose").addEventListener("click", () => el("heroScr").classList.add("hidden"));
+el("heroScr").addEventListener("click", e => { if (e.target.id === "heroScr") el("heroScr").classList.add("hidden"); });
 const howOpen = () => !el("howScr").classList.contains("hidden");
 el("howBtn").addEventListener("click", () => el("howScr").classList.remove("hidden"));
 el("howClose").addEventListener("click", () => el("howScr").classList.add("hidden"));
@@ -4898,7 +5000,7 @@ function startGame() {
     startMusic();
   } catch (e) {}
   if (garage) { garage = null; camera.clearViewOffset(); resize(); el("shop").classList.add("hidden"); }
-  hideScreen("start"); hideScreen("end"); el("howScr").classList.add("hidden");
+  hideScreen("start"); hideScreen("end"); el("howScr").classList.add("hidden"); el("heroScr").classList.add("hidden");
   ["hud", "mini", "horn", "doorBtn"].forEach(id => el(id).hidden = false);
   if (mobile) el("stickZone").hidden = false; else el("keys").hidden = false;
   camMode = 0; newGame(); state = "play"; hudKey = ""; last = performance.now();
@@ -4926,7 +5028,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) setPa
 requestAnimationFrame(loop);
 // ready once the first frame (and its shaders) are done
 requestAnimationFrame(() => requestAnimationFrame(() => {
-  buildCollage();
+  buildPoster();
   el("play").disabled = false; el("play").textContent = "খেলা শুরু ▶";
   el("loading").textContent = mobile ? "◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস-ব্রেক আর হর্ন। গাড়িতে উঠতে-নামতে ‘ওঠো/নামো’ বোতাম।" : "W/↑ হাঁটো/চালাও · A D ঘোরাও · F গাড়িতে ওঠো/নামো · Space হর্ন · C ক্যামেরা · Enter শুরু";
 }));
@@ -4937,7 +5039,7 @@ window.__sim3 = {
   get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get parked() { return parked; }, get fleers() { return fleers; }, rideNear: () => W && rideNear(), enterRide, bike, get cop() { return cop; }, get wanted() { return wanted; }, callPolice, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
   get mission() { return mission; }, get offer() { return offer; }, makeOffer: k => { dropOffer(); return makeOffer(k); }, get misDone() { return misDone; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
-  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; }, get collageReady() { return collageReady; }, buildCollage,
+  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; }, get collageReady() { return collageReady; }, buildPoster, setHero, MIS_KINDS, get misWho() { return MIS_WHO; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };
 </script>
