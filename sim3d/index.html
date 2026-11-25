@@ -81,6 +81,12 @@
   @media (hover: hover) { .btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); } }
   @media (prefers-reduced-motion: reduce) { .screen, .btn { transition: none; } .screen .panel { animation: none !important; } }
   .tag.ask { background: var(--yellow); }
+  #wanted { position: fixed; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 4px); transform: translateX(-50%); z-index: 3; pointer-events: none;
+    display: flex; align-items: center; gap: 6px; font: 700 15px/1 var(--font-body); color: #fff; background: var(--ink); border: 2.5px solid #ff3b3b; border-radius: 999px; padding: 7px 12px;
+    animation: copflash .5s steps(2) infinite; }
+  #wanted[hidden] { display: none; } #wanted b { color: #ffd23f; letter-spacing: 1px; } #wanted i { font-style: normal; color: #8a8a8a; letter-spacing: 1px; }
+  @keyframes copflash { 50% { border-color: #2f6bff; } }
+  @media (max-width: 420px) { #wanted span { display: none; } }
   .tag.park { background: #dff3e4; } .tag.park.go { background: var(--yellow); } .tag.jack { background: var(--red); color: var(--paper); }
   .spacer { flex: 1; }
   .talk {
@@ -254,6 +260,7 @@
 <canvas id="mini" hidden></canvas>
 <div class="card" id="target" hidden></div>
 <div class="card" id="mission" hidden></div>
+<div id="wanted" hidden></div>
 <div id="stickZone" hidden></div>
 <div id="stick"><i></i></div>
 <div class="talk" id="talk" hidden role="dialog" aria-label="কমরেডের অজুহাত">
@@ -283,7 +290,7 @@
       <summary>কিভাবে খেলবো?</summary>
       <ul class="rules">
       <li><span>🚶</span><span>শুরুতে তুমি <b>হেঁটে</b>, পার্টি অফিসের সামনে। সিএনজির কাছে গিয়ে <b>ওঠো</b> (F), যেকোনো সময় আবার <b>নামো</b>। গলিতে গাড়ি না ঢুকলে হেঁটেই যাও।</span></li>
-      <li><span>🏍️</span><span>রাস্তার পাশে পার্ক করা <b>সিএনজি, পংকি রাজ আর ইমাম ভাইয়ের রাজকীয় বাইক</b>: যেটার কাছে যাবে সেটাতেই ওঠো। চলন্ত গাড়ির সামনে দাঁড়াও, থামলে কাছে গিয়ে F, চালককে নামিয়ে <b>ছিনতাই</b>!</span></li>
+      <li><span>🏍️</span><span>রাস্তার পাশে পার্ক করা <b>সিএনজি, পংকি রাজ আর ইমাম ভাইয়ের রাজকীয় বাইক</b>: যেটার কাছে যাবে সেটাতেই ওঠো। চলন্ত গাড়ির সামনে দাঁড়াও, থামলে কাছে গিয়ে F, চালককে নামিয়ে <b>ছিনতাই</b>! তবে 🚓 <b>পুলিশ</b> পিছে লাগবে: ৯০ মিটার দূরে পালিয়ে থাকো, ধরা পড়লে জরিমানা।</span></li>
       <li><span>🌆</span><span><b>ঘড়ি নেই, তাড়া নেই</b>: যেদিকে খুশি যাও। দিন গড়িয়ে রাত নামে, মাঝে মাঝে বৃষ্টি আর লোডশেডিং।</span></li>
       <li><span>📋</span><span><b>সুফান ভাই</b> আর গ্রামের লোকজনের মাথায় ❗ দেখলে কাছে যাও, কাজ দেবে। একটা শেষ হলেই আরেকটা আসবে।</span></li>
       <li><span>🧭</span><span>গোল <b>রাডারে</b> কমলা ফোঁটা আর মাথার উপরের হলুদ তীর পরের গন্তব্য দেখায়। লাল ফোঁটা পার্টি অফিস।</span></li>
@@ -2819,6 +2826,7 @@ const sfx = {
   moo() { this.play(t => { tone(210, t, .75, "triangle", .2, 120); tone(105, t, .75, "sine", .12, 70); }); },
   pop() { this.play(t => tone(500, t, .14, "square", .06, 950)); },
   whistle() { this.play(t => { tone(1900, t, .16, "sine", .12, 2700); tone(2700, t + .2, .3, "sine", .12, 1800); }); }, // on foot: a two-finger whistle instead of the horn
+  siren(vol) { this.play(t => { tone(620, t, .46, "sawtooth", .04 * vol, 1150); tone(1150, t + .48, .46, "sawtooth", .04 * vol, 620); }); }, // police: a two-tone wail
   beep(vol, p = 1) { this.play(t => { tone(560 * p, t, .1, "square", .05 * vol); tone(470 * p, t + .13, .16, "square", .05 * vol); }); }, // other vehicles' horns, quieter with distance
   bell(vol) { this.play(t => [0, .1, .2].forEach(d => tone(2350, t + d, .08, "sine", .08 * vol, 2250))); }, // a rickshaw bell
   door() { this.play(t => { noiseHit(t, .07, .35, "lowpass", 900, 200); tone(140, t, .12, "sine", .25, 70); }); },
@@ -3766,8 +3774,111 @@ function takeRide(nr) { // switch to another ride: the old one is parked where i
   if (!P.hello) { P.hello = true; startPending = false; } // the first ride of the round isn't the CNG, so no CNG hello
   if (!seenRide.has(vehId) && V.hello) say(P, V.hello, 3.2, .3);
   seenRide.add(vehId);
-  showBanner(`${V.ic} ${V.n}`, nr.type === "jack" ? "ছিনতাই! মালিক দৌড়ে পালাচ্ছে..." : `${bn(seats)} জনের সিট`, 2.2);
+  showBanner(`${V.ic} ${V.n}`, nr.type === "jack" ? "ছিনতাই! পুলিশ খবর পাইছে, পালাও! 🚨" : `${bn(seats)} জনের সিট`, 2.4);
+  if (nr.type === "jack") callPolice();
   return true;
+}
+
+/* ---- police: snatch a vehicle and a police pickup comes after you, siren wailing, one more star for every snatch.
+   Stay 90 m clear of it for a few seconds and they give up; let it catch you stopped, or on foot, and you pay a fine
+   (৳40 a star). It drives straight at you, slower off the road, and a new patrol takes over if it gets stuck. */
+let wanted = 0, cop = null;
+const FINE_PER_STAR = 40, LOSE_D = 90, LOSE_T = 7;
+const COP_LINES = ["থামেন! গাড়ি থামান!", "ওই চোর! পালাইবা কই?", "পুলিশ! সাইড করেন!", "চুরি করা গাড়ি নিয়া ঘুরেন? দাঁড়ান!"];
+const BUST_LINES = ["ধরছি! জরিমানা দেন, নাইলে থানায় চলেন!", "চুরি কইরা পালাইবেন? জরিমানা দেন!", "এইবার ছাড়লাম, পরের বার হাজত!"];
+function makeCop() { // a navy-blue police pickup with a white stripe, a flashing light bar and two constables in the back (faces +x)
+  const g = new THREE.Group();
+  g.add(npcModel(k => {
+    const blue = "#1f3c78", white = "#eef1f4", glass = "#a9d6e5", dark = "#1d1a17", uni = "#2c4f8a";
+    k.box(4.1, .5, 1.8, blue, 0, .72, 0); k.box(4.12, .12, 1.82, white, 0, .82, 0); k.box(.2, .26, 1.84, dark, 2.08, .58, 0); k.box(.2, .26, 1.84, dark, -2.08, .58, 0);
+    k.box(1.6, .78, 1.72, blue, .55, 1.36, 0); k.box(.05, .55, 1.5, glass, 1.36, 1.42, 0);
+    for (const z of [-.87, .87]) { k.box(1.2, .46, .04, glass, .55, 1.44, z); k.box(1.75, .34, .08, blue, -1.15, 1.14, z); }
+    k.box(.08, .34, 1.72, blue, -2.0, 1.14, 0); k.box(1.0, .14, 1.7, blue, 1.6, .98, 0);
+    for (const z of [-.6, .6]) { k.box(.05, .14, .3, "#fff6cc", 2.06, .82, z); k.box(.05, .14, .26, "#e0301e", -2.07, .9, z); }
+    for (const x of [1.35, -1.3]) for (const z of [-.86, .86]) k.wheel(.38, .26, x, z);
+    for (const z of [-.45, .45]) { k.box(.32, .5, .34, uni, -1.05, 1.3, z); k.head(-1.0, 1.72, z); k.ball(.18, "#1d2a44", -1.0, 1.82, z, .45); } // constables, navy caps
+  }));
+  const bar = (col, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(.3, .14, .5), new THREE.MeshBasicMaterial({ color: col })); m.position.set(.55, 1.83, z); g.add(m); return m; };
+  const red = bar("#ff2a2a", -.3), blue = bar("#2f6bff", .3);
+  for (const z of [-1, 1]) { // "পুলিশ" on both doors
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.1, .34), new THREE.MeshBasicMaterial({ map: textTex("পুলিশ", null, "#ffffff", 256, 80, 64, { border: false }), transparent: true }));
+    p.position.set(.5, 1.02, z * .915); p.rotation.y = z > 0 ? 0 : Math.PI; g.add(p);
+  }
+  return { g, red, blue, hy: 3.3 };
+}
+function copSpot(near, min, max) { return randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - near.x, y - near.y); return d > min && d < max && reachable(x, y) && !blocked(x, y, 1.2); }); }
+function callPolice() {
+  wanted = Math.min(3, wanted + 1);
+  if (cop) cop.leave = 0; // already about: it turns round and comes back
+  else {
+    const Me = me(), q = copSpot(Me, 70, 140) || copSpot(Me, 35, 240); if (!q) { syncWanted(); return; }
+    cop = makeCop(); dyn.add(cop.g); cop.tag = mkEl("tag warn", "🚓 পুলিশ");
+    Object.assign(cop, { x: q.x, y: q.y, a: Math.atan2(Me.y - q.y, Me.x - q.x), v: 0, leave: 0, sirenCd: 0, talkCd: 2.5, hitCd: 0, chkT: 0, stuckT: 0, px: q.x, py: q.y });
+  }
+  cop.loseT = 0; cop.bustT = 0;
+  syncWanted();
+}
+function syncWanted() { el("wanted").innerHTML = `🚨<span>পুলিশ পিছে</span><b>${"★".repeat(wanted)}</b><i>${"☆".repeat(3 - wanted)}</i>`; }
+function removeCop() { if (!cop) return; dyn.remove(cop.g); cop.tag.remove(); cop = null; }
+function copDone(leave) { wanted = 0; cop.leave = leave; cop.bustT = 0; cop.loseT = 0; syncWanted(); }
+function busted() {
+  const amt = FINE_PER_STAR * wanted, Me = me();
+  say(cop, BUST_LINES[(rand() * BUST_LINES.length) | 0], 2.8);
+  earn("fine", amt, Me.x, Me.y, "পুলিশের জরিমানা"); sfx.bonk(); shakeT = .3;
+  showBanner("🚨 পুলিশে ধরছে!", `ছিনতাইয়ের জরিমানা ৳${bn(amt)}`, 2.8);
+  if (!W) P.v = 0;
+  copDone(6);
+}
+function copUpdate(dt) {
+  if (!cop) return;
+  const Me = me(), dx = Me.x - cop.x, dy = Me.y - cop.y, d = Math.hypot(dx, dy) || 1e-3;
+  cop.talkCd -= dt; cop.sirenCd -= dt; cop.hitCd -= dt;
+  let aim, want;
+  if (cop.leave > 0) { // done with you: drive on the way it faces, then gone
+    cop.leave -= dt; aim = cop.a; want = 11;
+    if (cop.leave <= 0 || d > 160) { removeCop(); return; }
+  } else {
+    const lead = W ? 0 : P.v * .4; // aim a little ahead of a moving ride
+    aim = Math.atan2(dy + Math.sin(Me.a) * lead, dx + Math.cos(Me.a) * lead);
+    const err = Math.abs(wrapAng(aim - cop.a));
+    want = Math.min((15 + 2.5 * wanted) * (onRoad(cop.x, cop.y) ? 1 : .6) * (1 - Math.min(.6, err / 2.2)), Math.max(0, (d - 2.6) * 2.2)); // pull up beside you, not into you
+    if (d > LOSE_D) cop.loseT += dt; else cop.loseT = Math.max(0, cop.loseT - dt * 2);
+    if (cop.loseT > LOSE_T) { showBanner("পুলিশরে ফাঁকি দিছো! 😎", "এইবারের মতো বাঁচলা", 2.4); copDone(4); }
+    else {
+      const still = W ? true : Math.abs(P.v) < 4;
+      if (d < (W ? 2.7 : 3.9) && still) cop.bustT += dt; else cop.bustT = Math.max(0, cop.bustT - dt);
+      if (cop.bustT > .7) busted();
+      else {
+        if (cop.talkCd <= 0 && d < 45) { cop.talkCd = 4 + rand() * 3; say(cop, COP_LINES[(rand() * COP_LINES.length) | 0], 2); }
+        if (cop.sirenCd <= 0 && d < 200) { cop.sirenCd = 1; sfx.siren(clamp(1 - d / 200, .12, 1)); }
+      }
+    }
+  }
+  cop.a = wrapAng(cop.a + clamp(wrapAng(aim - cop.a), -2.3 * dt, 2.3 * dt) * clamp(Math.abs(cop.v) / 3 + .35, 0, 1));
+  cop.v += clamp(want - cop.v, -14 * dt, 6 * dt);
+  cop.x += Math.cos(cop.a) * cop.v * dt; cop.y += Math.sin(cop.a) * cop.v * dt;
+  pushOut(cop, 1.1); riverBlock(cop, 1.1);
+  for (const n of traffic) if (!n.gone) { // traffic pulls over for the siren, and the pickup squeezes past
+    const ex = cop.x - n.x, ey = cop.y - n.y, e = Math.hypot(ex, ey) || 1e-3, R = 1.2 + n.rad;
+    if (e < 25 && !cop.leave) n.yield = Math.max(n.yield, 1.5);
+    if (e < R) { cop.x = n.x + ex / e * R; cop.y = n.y + ey / e * R; }
+  }
+  { // nobody drives or walks through it
+    const o = W || P, R = W ? 1.55 : (vehId === "cng" ? 1.3 : .8) + 1.1, ex = o.x - cop.x, ey = o.y - cop.y, e = Math.hypot(ex, ey) || 1e-3;
+    if (e < R) {
+      if (!W && Math.abs(P.v) > 6 && cop.hitCd <= 0) { cop.hitCd = 2; P.v *= -.3; shakeT = .3; sfx.bonk(); floaty(cop.x, cop.y, "ঠাস!"); say(cop, "পুলিশের গাড়িতে ধাক্কা?!", 1.8); }
+      o.x = cop.x + ex / e * R; o.y = cop.y + ey / e * R;
+    }
+  }
+  cop.chkT += dt;
+  if (cop.chkT > 1.5) { // stuck against a wall: another patrol picks up the chase from a road nearby
+    const moved = Math.hypot(cop.x - cop.px, cop.y - cop.py);
+    cop.stuckT = !cop.leave && want > 4 && moved < 2 ? cop.stuckT + cop.chkT : 0; cop.chkT = 0; cop.px = cop.x; cop.py = cop.y;
+    if (cop.stuckT > 3) { const q = copSpot(Me, 45, 95); if (q) Object.assign(cop, { x: q.x, y: q.y, a: Math.atan2(Me.y - q.y, Me.x - q.x), v: 0, stuckT: 0, px: q.x, py: q.y }); }
+  }
+  const on = !cop.leave && Math.sin(time * 14) > 0;
+  cop.red.material.color.set(on ? "#ff2a2a" : "#4a0d0d"); cop.blue.material.color.set(on ? "#0d1a4a" : "#2f6bff");
+  cop.g.position.set(cop.x, 0, cop.y); cop.g.rotation.y = -cop.a;
 }
 function jackFlee(n, kind) { // a snatched vehicle's driver jumps off on the far side and runs off shouting
   const mesh = makeHuman({ R: rand, shirt: SHIRTS[(rand() * SHIRTS.length) | 0], armUp: true }); dyn.add(mesh);
@@ -3911,7 +4022,7 @@ const sufanPos = () => ({ x: door.x + officeU.x * (door.hw + 3) + officeV.x * 9,
 
 function newGame() {
   clearDyn(); gid++;
-  vehId = "cng"; seenRide = new Set(["cng"]); parked = []; fleers = []; // every round starts with Ponk Poribohon's CNG
+  vehId = "cng"; seenRide = new Set(["cng"]); parked = []; fleers = []; cop = null; wanted = 0; syncWanted(); // every round starts with Ponk Poribohon's CNG
   loadShop(); bannerT = 0; el("banner").innerHTML = "";
   rand = rng32((Math.random() * 2 ** 31) | 0);
   comrades = []; // the open world has no comrades to round up
@@ -4178,7 +4289,7 @@ function update(dt) {
       say(w, "হাম্বা!", 1.4); sfx.moo(); floaty(W.x, W.y, "ধাক্কা!");
     }
   }
-  trafficUpdate(dt); parkedUpdate(dt);
+  trafficUpdate(dt); parkedUpdate(dt); copUpdate(dt);
   // ---- posters, processions, Sam Vai, stalls
   for (const b of billboards) if (!b.seen && dist(b, Me) < 16) { b.seen = true; if (rand() < .5) say(P, ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই! 📢", "ভোটের মৌসুম! রাস্তায় শুধু পোস্টার আর পোস্টার।", "এই পোস্টার তো আগেও দেখছি!"][(rand() * 3) | 0], 2.4); }
   for (const m of michils) {
@@ -4463,6 +4574,7 @@ function render(t, dt) {
       if (p.key !== txt) { p.key = txt; p.tag.textContent = txt; p.tag.classList.toggle("go", go); }
       place(p.tag, project(p.x, 2.1, p.y));
     }
+    if (cop) near(cop.x, cop.y, 130) ? place(cop.tag, project(cop.x, 2.6, cop.y)) : (cop.tag.style.display = "none");
     if (nr && nr.type === "jack" && nr.d < 14) {
       const txt = nr.d <= BOARD_R ? `🚨 ছিনতাই করো${mobile ? "" : " (F)"}` : `🚨 ${VEHICLES[nr.kind].go}`;
       if (jackTag.textContent !== txt) jackTag.textContent = txt;
@@ -4498,6 +4610,7 @@ function render(t, dt) {
 /* ================= HUD & minimap ================= */
 let hudKey = "", miniBase = null;
 function drawHud() {
+  el("wanted").hidden = !(wanted && state === "play");
   const [part, hm] = clockText(), key = `${hm}|${shop.wallet}|${P.tea}|${P.chips}`;
   if (key !== hudKey) {
     hudKey = key;
@@ -4531,6 +4644,7 @@ function drawHud() {
   if (sam) dot(sam.x, sam.y, "#ffd2a6", 2.8);
   dot(door.x, door.y, C.red, 4.6, true); // the party office is always on the radar
   if (W) for (const p of parked) dot(p.x, p.y, "#8fd6a0", 2.4); // rides you could take
+  if (cop) dot(cop.x, cop.y, !cop.leave && Math.sin(time * 14) > 0 ? "#ff3b3b" : "#2f6bff", 4, !cop.leave); // the police, flashing
   if (W) dot(P.x, P.y, "#f6efe1", 3.6, true); // your parked ride
   const mt = misTarget(); if (mt && state === "play") dot(mt.x, mt.y, offer ? "#c9a2ff" : "#f5a623", 5.2, true);
   const nr = R - 10 * dpr; // north marker on the rim
@@ -4704,7 +4818,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 // test hook
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
-  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get parked() { return parked; }, get fleers() { return fleers; }, rideNear: () => W && rideNear(), enterRide, bike, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
+  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get parked() { return parked; }, get fleers() { return fleers; }, rideNear: () => W && rideNear(), enterRide, bike, get cop() { return cop; }, get wanted() { return wanted; }, callPolice, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
   get mission() { return mission; }, get offer() { return offer; }, makeOffer: k => { dropOffer(); return makeOffer(k); }, get misDone() { return misDone; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
