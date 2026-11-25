@@ -2488,6 +2488,141 @@ function makeMarcher(R) {
   g.userData.arm = arm; return g;
 }
 
+/* ================= traffic: other CNGs, rickshaws, easybikes and motorbikes on the roads =================
+   Each one keeps to the left of its road, slows and stops for whatever is ahead (you, cows, people, each other),
+   honks when it waits, turns round if it waits too long, and picks a road at every junction it reaches. */
+const npcMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+// a model built from coloured parts, baked into one mesh (one draw call) with every part's colour in its vertices
+function npcModel(build) {
+  const g = new THREE.Group(), mats = {};
+  const M = col => mats[col] || (mats[col] = new THREE.MeshBasicMaterial({ color: col }));
+  const put = (geo, col, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, M(col)); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); g.add(m); return m; };
+  const k = {
+    box: (w, h, d, col, x, y, z, rz = 0) => put(new THREE.BoxGeometry(w, h, d), col, x, y, z, 0, 0, rz),
+    wheel: (r, w, x, z) => put(new THREE.CylinderGeometry(r, r, w, 12), "#1d1a17", x, r, z, Math.PI / 2),
+    ball: (r, col, x, y, z, sy = 1) => { const m = put(new THREE.SphereGeometry(r, 8, 6), col, x, y, z); m.scale.y = sy; return m; },
+    hood: (r, len, col, x, y) => put(new THREE.CylinderGeometry(r, r, len, 10, 1, false, 0, Math.PI), col, x, y, 0, 0, 0, Math.PI / 2),
+    head: (x, y, z) => { k.ball(.16, "#c58f5e", x, y, z); k.ball(.165, "#1d1a17", x - .02, y + .05, z, .6); },
+  };
+  build(k);
+  g.updateMatrixWorld(true);
+  const pos = [], nor = [], col = [];
+  g.traverse(o => {
+    if (!o.isMesh) return;
+    const geo = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld), c = o.material.color;
+    const P = geo.attributes.position, N = geo.attributes.normal;
+    for (let i = 0; i < P.count; i++) { pos.push(P.getX(i), P.getY(i), P.getZ(i)); nor.push(N.getX(i), N.getY(i), N.getZ(i)); col.push(c.r, c.g, c.b); }
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3)); geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  geo.computeBoundingSphere();
+  const m = new THREE.Mesh(geo, npcMat); m.castShadow = true; m.receiveShadow = true; return m;
+}
+const LUNGI = ["#2f4f7a", "#6b3a2a", "#3d5a3d", "#5a3d6b", "#7a6a3a"];
+// all models face +x, like the player's CNG
+const NPC_KINDS = {
+  cng: { n: "সিএনজি", max: [9.5, 11.5], rad: 1, build: (k, R) => {
+    const paint = ["#2f8a4f", "#2b7d47", "#3b9455"][(R() * 3) | 0], canvas = "#1f2422", shirt = SHIRTS[(R() * SHIRTS.length) | 0];
+    k.box(2.5, .62, 1.28, paint, -.1, .75, 0); k.box(.5, .4, 1.0, paint, 1.2, .62, 0); k.box(2.1, .06, 1.3, "#f5c518", -.3, .99, 0);
+    k.box(1.85, .1, 1.34, canvas, -.45, 1.86, 0); k.box(.75, .1, 1.34, paint, .88, 1.86, 0); k.box(.06, .55, 1.24, canvas, -1.33, 1.36, 0);
+    for (const x of [-1.3, .42, 1.2]) for (const z of [-.62, .62]) k.box(.07, .8, .07, paint, x, 1.45, z);
+    k.box(.04, .5, 1.1, "#a9d6e5", 1.2, 1.42, 0);
+    k.wheel(.3, .2, -.8, .62); k.wheel(.3, .2, -.8, -.62); k.wheel(.27, .17, 1.15, 0);
+    k.box(.34, .42, .46, shirt, .5, 1.25, 0); k.head(.52, 1.6, 0);
+    if (R() < .6) { k.box(.34, .4, .4, SHIRTS[(R() * SHIRTS.length) | 0], -.75, 1.25, .25); k.head(-.73, 1.58, .25); }
+  } },
+  rick: { n: "রিকশা", max: [3.8, 4.8], rad: .9, build: (k, R) => {
+    const hood = ["#1d1a17", "#c8102e", "#2f6db3", "#e07a1f"][(R() * 4) | 0], body = ["#2f6db3", "#c8102e", "#2f8a4f", "#f5c518"][(R() * 4) | 0], steel = "#4a4f55";
+    k.wheel(.33, .07, 1.0, 0); k.wheel(.36, .07, -.75, .55); k.wheel(.36, .07, -.75, -.55);
+    k.box(1.6, .06, .06, steel, .2, .62, 0); k.box(.06, .75, .06, steel, 1.0, .72, 0); k.box(.06, .06, .55, steel, 1.0, 1.1, 0); k.box(.06, .06, 1.15, steel, -.75, .36, 0);
+    k.box(.7, .35, 1.05, body, -.75, .78, 0); k.box(.62, .1, 1.05, "#7a2e24", -.75, 1.0, 0); k.box(.1, .5, 1.05, "#7a2e24", -1.07, 1.25, 0);
+    k.box(.72, .05, 1.08, "#f6efe1", -.75, .6, 0); k.hood(.56, .75, hood, -.9, 1.35);
+    k.box(.25, .06, .2, "#1d1a17", .55, 1.02, 0); // the puller on his saddle
+    k.box(.12, .6, .12, LUNGI[(R() * LUNGI.length) | 0], .62, .72, .1, .3); k.box(.12, .6, .12, LUNGI[(R() * LUNGI.length) | 0], .62, .72, -.1, -.2);
+    k.box(.24, .52, .32, SHIRTS[(R() * SHIRTS.length) | 0], .52, 1.32, 0, -.25); k.head(.6, 1.7, 0);
+    if (R() < .55) { k.box(.34, .42, .44, SHIRTS[(R() * SHIRTS.length) | 0], -.78, 1.3, 0); k.head(-.76, 1.66, 0); }
+  } },
+  easy: { n: "ইজিবাইক", max: [6.5, 7.8], rad: 1, build: (k, R) => {
+    const trim = ["#2f6db3", "#c8102e", "#2f8a4f"][(R() * 3) | 0], white = "#e9eef2";
+    k.box(2.4, .3, 1.2, white, -.1, .55, 0); k.box(2.0, .32, .05, trim, -.3, .86, .6); k.box(2.0, .32, .05, trim, -.3, .86, -.6);
+    k.box(2.4, .08, 1.3, white, -.15, 2.0, 0); k.box(2.4, .05, 1.32, trim, -.15, 1.95, 0);
+    for (const x of [-1.3, .92]) for (const z of [-.6, .6]) k.box(.05, 1.2, .05, "#bfc6cc", x, 1.4, z);
+    k.box(.3, .9, 1.0, white, 1.05, .95, 0); k.box(.04, .45, .9, "#a9d6e5", 1.12, 1.62, 0);
+    k.box(.5, .1, 1.1, "#7a2e24", -.3, .95, 0); k.box(.5, .1, 1.1, "#7a2e24", -1.0, .95, 0);
+    k.wheel(.28, .16, -.9, .6); k.wheel(.28, .16, -.9, -.6); k.wheel(.25, .14, 1.1, 0);
+    k.box(.32, .42, .44, SHIRTS[(R() * SHIRTS.length) | 0], .55, 1.22, 0); k.head(.57, 1.56, 0);
+    for (const [x, z] of [[-.3, .3], [-1.0, -.3], [-1.0, .3]]) if (R() < .5) { k.box(.32, .4, .38, SHIRTS[(R() * SHIRTS.length) | 0], x, 1.2, z); k.head(x, 1.54, z); }
+  } },
+  bike: { n: "মোটরসাইকেল", max: [11, 13], rad: .5, build: (k, R) => {
+    const col = ["#c8102e", "#1d1a17", "#2f6db3"][(R() * 3) | 0], chrome = "#9aa3a8";
+    k.wheel(.3, .1, -.6, 0); k.wheel(.3, .1, .65, 0);
+    k.box(.9, .25, .25, col, 0, .62, 0); k.box(.38, .2, .3, col, .25, .82, 0); k.box(.5, .08, .26, "#1d1a17", -.2, .84, 0);
+    k.box(.05, .6, .05, chrome, .6, .65, 0, .3); k.box(.05, .05, .6, "#1d1a17", .48, 1.0, 0); k.box(.4, .08, .08, chrome, -.45, .4, .14);
+    for (const z of [-.14, .14]) { k.box(.42, .12, .12, "#3a3530", .02, .9, z); k.box(.12, .42, .12, "#3a3530", .2, .66, z); }
+    k.box(.26, .52, .34, SHIRTS[(R() * SHIRTS.length) | 0], -.15, 1.2, 0, -.2); k.head(-.06, 1.6, 0);
+    if (R() < .6) k.ball(.2, ["#f6efe1", "#c8102e", "#1d1a17"][(R() * 3) | 0], -.07, 1.64, 0, .85); // helmet
+  } },
+};
+const HONK = {
+  cng: ["সাইড দেন মামা!", "প্যাঁ-পোঁ! একটু চাপেন!", "রাস্তার মাঝখানে কী করেন ভাই?"],
+  rick: ["ক্রিং ক্রিং! সরেন ভাই!", "রিকশা যাইবো, সাইড দেন!"],
+  easy: ["ইজিবাইক আসতেছে, সাইড!", "চার্জ শেষ হওয়ার আগে যাইতে দেন!"],
+  bike: ["ভাই, একটু জায়গা দেন!", "হেলমেট আছে, ধৈর্য নাই!"],
+};
+const BUMPED = ["চোখ কই রাখেন ভাই!", "আমার গাড়ির রং উঠায় দিলেন!", "আস্তে চালান, ভাই!", "এইটা রাস্তা, রেস না!"];
+const traffic = [], trafficG = new THREE.Group(); scene.add(trafficG);
+{
+  const R = rng32(314);
+  for (const kind of ["cng", "cng", "cng", "cng", "cng", "rick", "rick", "rick", "rick", "easy", "easy", "easy", "bike", "bike"]) {
+    const K = NPC_KINDS[kind], mesh = npcModel(k => K.build(k, R));
+    trafficG.add(mesh);
+    traffic.push({ kind, mesh, rad: K.rad, max: K.max[0] + R() * (K.max[1] - K.max[0]), patience: R() * 3, hy: 3, x: 0, y: 0, a: 0, v: 0, off: 1.5 });
+  }
+}
+// junctions: every road point, bucketed by 2 m, so a vehicle at the end of one road can find the roads that meet it
+const JUNC = new Map();
+for (const r of roads) if (r.k !== "track") r.p.forEach(([x, y], j) => { const key = Math.round(x / 2) + "," + Math.round(y / 2); if (!JUNC.has(key)) JUNC.set(key, []); JUNC.get(key).push({ r, j }); });
+function turnAt(n, j) { // n has just reached node j of its road: carry on, turn into a road that meets here, or turn round at a dead end
+  const r = n.r, last = r.p.length - 1, through = n.dir > 0 ? j < last : j > 0, [x, y] = r.p[j], opts = [];
+  const gx = Math.round(x / 2), gy = Math.round(y / 2);
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (const e of JUNC.get((gx + dx) + "," + (gy + dy)) || []) {
+    if (e.r === r || Math.hypot(e.r.p[e.j][0] - x, e.r.p[e.j][1] - y) > 1.5) continue;
+    if (e.j < e.r.p.length - 1 && reachable(...e.r.p[e.j + 1])) opts.push({ r: e.r, i: e.j, f: 0, dir: 1 });
+    if (e.j > 0 && reachable(...e.r.p[e.j - 1])) opts.push({ r: e.r, i: e.j - 1, f: 1, dir: -1 });
+  }
+  if (opts.length && (!through || Math.random() < .3)) { Object.assign(n, opts[(Math.random() * opts.length) | 0]); return; }
+  if (through) { if (n.dir > 0) { n.i = j; n.f = 0; } else { n.i = j - 1; n.f = 1; } return; }
+  n.dir = -n.dir; n.i = Math.min(j, last - 1); n.f = j === 0 ? 0 : 1;
+}
+function driveRoad(n, ds) {
+  for (let guard = 0; ds > 0 && guard < 8; guard++) {
+    const [ax, ay] = n.r.p[n.i], [bx, by] = n.r.p[n.i + 1], L = Math.hypot(bx - ax, by - ay) || 1, nf = n.f + n.dir * ds / L;
+    if (nf >= 0 && nf <= 1) { n.f = nf; break; }
+    ds -= (n.dir > 0 ? 1 - n.f : n.f) * L;
+    turnAt(n, n.dir > 0 ? n.i + 1 : n.i);
+  }
+  const [ax, ay] = n.r.p[n.i], [bx, by] = n.r.p[n.i + 1];
+  n.a = Math.atan2(by - ay, bx - ax) + (n.dir < 0 ? Math.PI : 0);
+  const cx = ax + (bx - ax) * n.f, cy = ay + (by - ay) * n.f;
+  n.x = cx + Math.sin(n.a) * n.off; n.y = cy - Math.cos(n.a) * n.off;
+}
+function placeTraffic(R) {
+  const taken = [];
+  for (const n of traffic) {
+    let p = null;
+    for (let k = 0; k < 40 && !p; k++) {
+      const q = randomRoadPoint(R, (x, y) => { const d = Math.hypot(x - door.x, y - door.y); return d > 45 && d < 520 && reachable(x, y) && taken.every(t => Math.hypot(t.x - x, t.y - y) > 45); });
+      if (q && q.r.k !== "track") p = q;
+    }
+    n.gone = !p; n.mesh.visible = !!p; if (!p) continue;
+    taken.push(p);
+    Object.assign(n, { r: p.r, i: p.i, f: p.f, dir: p.dir, v: n.max * .5, wait: 0, honkCd: 1 + R() * 3, hitCd: 0, yield: 0, talkCd: 0 });
+    n.off = Math.min(n.r.hw * .45, 1.7); driveRoad(n, 0); n.sx = n.x; n.sy = n.y; n.sa = n.a;
+    n.mesh.position.set(n.x, 0, n.y); n.mesh.rotation.y = -n.a;
+  }
+}
+placeTraffic(rng32(5));
+
 /* ================= DOM overlay: name tags, speech bubbles, floaties ================= */
 const ov = el("ov"), V3 = new THREE.Vector3();
 function project(x, y, z) { V3.set(x, y, z).project(camera); return { sx: (V3.x * .5 + .5) * innerWidth, sy: (-V3.y * .5 + .5) * innerHeight, ok: V3.z < 1 && V3.z > -1 }; }
@@ -2564,6 +2699,8 @@ const sfx = {
   moo() { this.play(t => { tone(210, t, .75, "triangle", .2, 120); tone(105, t, .75, "sine", .12, 70); }); },
   pop() { this.play(t => tone(500, t, .14, "square", .06, 950)); },
   whistle() { this.play(t => { tone(1900, t, .16, "sine", .12, 2700); tone(2700, t + .2, .3, "sine", .12, 1800); }); }, // on foot: a two-finger whistle instead of the horn
+  beep(vol, p = 1) { this.play(t => { tone(560 * p, t, .1, "square", .05 * vol); tone(470 * p, t + .13, .16, "square", .05 * vol); }); }, // other vehicles' horns, quieter with distance
+  bell(vol) { this.play(t => [0, .1, .2].forEach(d => tone(2350, t + d, .08, "sine", .08 * vol, 2250))); }, // a rickshaw bell
   door() { this.play(t => { noiseHit(t, .07, .35, "lowpass", 900, 200); tone(140, t, .12, "sine", .25, 70); }); },
   chime() { this.play(t => [660, 880, 1175].forEach((f, i) => tone(f, t + i * .09, .35, "triangle", .12))); },
   boost() { this.play(t => tone(260, t, .45, "sawtooth", .05, 1100)); },
@@ -2782,6 +2919,71 @@ function followUpdate(dt) {
   }
 }
 
+/* ---- traffic, every frame of play (and quietly behind the menu) */
+function npcHonk(n, atYou) {
+  const d = dist(n, me()); if (d > 70) return;
+  const vol = clamp(1 - d / 70, .15, 1);
+  if (n.kind === "rick") sfx.bell(vol); else sfx.beep(vol, n.kind === "bike" ? 1.4 : n.kind === "easy" ? 1.2 : 1);
+  if (atYou && d < 45) { const L = HONK[n.kind]; say(n, L[(rand() * L.length) | 0], 1.8); }
+}
+function trafficUpdate(dt) {
+  const live = state === "play";
+  for (const n of traffic) {
+    if (n.gone) continue;
+    n.honkCd -= dt; n.hitCd -= dt; n.yield -= dt; n.talkCd -= dt;
+    // what's in my lane ahead, and how far
+    const fx = Math.cos(n.a), fy = Math.sin(n.a), look = 7 + n.v * 1.3;
+    let gap = 1e9, who = null;
+    const see = (o, rad) => {
+      const dx = o.x - n.x, dy = o.y - n.y, al = dx * fx + dy * fy;
+      if (al > 0 && al < look && al < gap && Math.abs(dx * fy - dy * fx) < 1.05 + rad) { gap = al; who = o; }
+    };
+    if (P && !garage) see(P, vehId === "cng" ? 1.2 : .6);
+    if (W) see(W, .45);
+    if (live) {
+      for (const w of cows) see(w, .8);
+      if (sam) see(sam, .5);
+      for (const m of michils) see(m, 2.4);
+      for (const c of comrades) if (c.state === "awake" || c.state === "flee") see(c, .45);
+    }
+    for (const o of traffic) if (o !== n && !o.gone) see(o, o.rad);
+    const stopAt = 3.2 + n.rad, want = gap < stopAt ? 0 : Math.min(n.max * (n.yield > 0 ? .5 : 1), (gap - stopAt) * 1.4);
+    n.v += clamp(want - n.v, -12 * dt, 3.5 * dt);
+    if (want < .5 && who) {
+      n.wait += dt;
+      if (live && n.honkCd <= 0 && n.wait > .7) {
+        n.honkCd = 3.5 + rand() * 2;
+        if (cows.includes(who)) { // a cow in the way: honk it off, the way you do
+          who.scare = 2.6; const [ax, ay] = who.r.p[who.i], [bx, by] = who.r.p[who.i + 1];
+          who.dir = (bx - ax) * (who.x - n.x) + (by - ay) * (who.y - n.y) >= 0 ? 1 : -1;
+        }
+        npcHonk(n, who === P || who === W);
+      }
+      if (n.wait > 4.5 + n.patience) { // waited long enough: turn round and go another way
+        n.dir = -n.dir; n.wait = 0; n.v = 0;
+        if (live && (who === P || who === W) && dist(n, me()) < 40) say(n, "ধুর! ঘুরাইয়া যাই।", 1.6);
+      }
+    } else n.wait = Math.max(0, n.wait - dt * 2);
+    n.off += ((n.yield > 0 ? Math.max(.6, n.r.hw - 1) : Math.min(n.r.hw * .45, 1.7)) - n.off) * Math.min(1, dt * 2);
+    driveRoad(n, n.v * dt);
+    // nobody drives through anybody: push the player's ride or the walker out, and a hard hit costs a fine
+    if (live && !W && P) {
+      const dx = P.x - n.x, dy = P.y - n.y, d = Math.hypot(dx, dy) || 1e-3, R = (vehId === "cng" ? 1.4 : .9) + n.rad;
+      if (d < R) {
+        if (Math.abs(P.v) > 4 && n.hitCd <= 0 && P.stun <= 0) {
+          n.hitCd = 2.5; n.v = 0; n.wait = 0; P.stun = has("up-bumper") ? .3 : .8; P.v = 0; shakeT = .35;
+          earn("fine", has("up-bumper") ? 5 : 10, P.x, P.y, "ধাক্কার জরিমানা");
+          say(n, BUMPED[(rand() * BUMPED.length) | 0], 2); sfx.bonk(); floaty(n.x, n.y, "ঠাস!");
+        }
+        P.x = n.x + dx / d * R; P.y = n.y + dy / d * R;
+      }
+    }
+    if (W) { const dx = W.x - n.x, dy = W.y - n.y, d = Math.hypot(dx, dy) || 1e-3, R = .45 + n.rad; if (d < R) { W.x = n.x + dx / d * R; W.y = n.y + dy / d * R; } }
+    // what you see glides after where it is, so turns and lane changes don't jump
+    const k = Math.min(1, dt * 8); n.sx += (n.x - n.sx) * k; n.sy += (n.y - n.sy) * k; n.sa += wrapAng(n.a - n.sa) * Math.min(1, dt * 6);
+  }
+}
+
 function clearDyn() {
   while (dyn.children.length) dyn.remove(dyn.children[0]);
   for (const e of ov.querySelectorAll(".tag,.bub,.floaty")) e.remove();
@@ -2823,6 +3025,7 @@ function newGame() {
     const w = randomRoadPoint(rand, (x, y) => Math.hypot(x - door.x, y - door.y) > 70 && reachable(x, y) && !cows.some(c => Math.hypot(c.x - x, c.y - y) < 90));
     if (!w) break; Object.assign(w, { sp: 1 + rand() * 1.2, scare: 0, hitCd: 0, walk: 0 }); w.mesh = makeCow(rand); dyn.add(w.mesh); cows.push(w);
   }
+  placeTraffic(rand);
   michils = [];
   for (let k = 0; k < 2; k++) {
     const m = randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - door.x, y - door.y); return d > 120 && d < 480 && reachable(x, y) && !michils.some(o => Math.hypot(o.x - x, o.y - y) < 250); });
@@ -2895,6 +3098,10 @@ function horn() { // on foot it's a whistle: shorter reach, no use on cows or pr
   if (sam && dist(sam, src) < (foot ? WHISTLE_R : 40) && sam.scare <= 0) {
     if (foot) { if (sam.talkCd <= 2) { sam.talkCd = 4; say(sam, "শিস দিয়া ডাকো? বেয়াদব! 😤", 1.6); } }
     else { sam.scare = 2.5; sam.dir = -sam.dir; say(sam, "হর্ন শুনছি, সরলাম!", 1.6); }
+  }
+  if (!foot) { // traffic near you pulls over and slows down to let you by
+    let talked = false;
+    for (const n of traffic) if (!n.gone && dist(n, P) < 35) { n.yield = 3; if (!talked && n.talkCd <= 0 && dist(n, P) < 22 && rand() < .5) { talked = true; n.talkCd = 8; say(n, "আচ্ছা আচ্ছা, সাইড দিলাম!", 1.6); } }
   }
   if (!foot) for (const m of michils) if (dist(m, P) < 40 && m.scare <= 0) { m.scare = 3; m.dir = -m.dir; say(m, "আচ্ছা আচ্ছা, সাইড দিলাম! জিন্দাবাদ!", 1.8); }
   for (const c of comrades) {
@@ -3050,6 +3257,7 @@ function update(dt) {
       say(w, "হাম্বা!", 1.4); sfx.moo(); floaty(W.x, W.y, "ধাক্কা!");
     }
   }
+  trafficUpdate(dt);
   // ---- posters, processions, Sam Vai, stalls
   for (const b of billboards) if (!b.seen && dist(b, Me) < 16) { b.seen = true; if (rand() < .5) say(P, ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই! 📢", "ভোটের মৌসুম! রাস্তায় শুধু পোস্টার আর পোস্টার।", "এই পোস্টার তো আগেও দেখছি!"][(rand() * 3) | 0], 2.4); }
   for (const m of michils) {
@@ -3302,6 +3510,7 @@ function render(t, dt) {
       c.person.position.set(c.x, hop, c.y); c.person.rotation.y = -c.ang;
     }
   }
+  for (const n of traffic) if (!n.gone) { n.mesh.position.set(n.sx, n.kind === "rick" || n.v < .3 ? 0 : Math.sin(t * 40 + n.max) * .015, n.sy); n.mesh.rotation.y = -n.sa; }
   for (const w of cows) { w.mesh.position.set(w.x, 0, w.y); w.mesh.rotation.y = -w.a; w.mesh.userData.legs.forEach((l, i) => l.rotation.z = Math.sin(w.walk + (i % 2 ? Math.PI : 0)) * .35); }
   for (const m of michils) { m.mesh.position.set(m.x, 0, m.y); m.mesh.rotation.y = -m.a; m.people.forEach((p, j) => { p.position.y = Math.abs(Math.sin(t * 7 + j)) * .12; p.userData.arm.rotation.z = -.2 - Math.max(0, Math.sin(t * 7 + j)) * .9; }); }
   if (sam && state !== "ending") { sam.mesh.position.set(sam.x, Math.abs(Math.sin(t * 4)) * .1, sam.y); sam.mesh.rotation.y = -sam.a; }
@@ -3516,6 +3725,7 @@ function loop(now) {
   if (state === "menu" && !garage) { // slow drone orbit over the party office
     if (!P) P = { x: door.x, y: door.y, a: 0, v: 0, riders: [], roll: 0 };
     P.a += dt * .12; camMode = 1;
+    trafficUpdate(dt); // the town goes on behind the menu
   }
   if (state === "play" || state === "ending") { drawHud(); engineUpdate(); }
   render(t, dt);
@@ -3565,7 +3775,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 // test hook
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
-  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
+  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
