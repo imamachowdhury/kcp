@@ -63,26 +63,23 @@
   .delta { position: absolute; right: 0; top: 100%; margin-top: 2px; font-size: 20px; color: #92e27e; opacity: 0; } .delta.minus { color: #ff8f7d; }
   .delta.go { animation: dpop 1.8s ease-out; }
   @keyframes dpop { 0% { opacity: 0; transform: translateY(8px); } 12% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
-  .steps { list-style: none; display: flex; gap: 6px; padding: 0; margin: 10px 0 14px; }
-  .steps li { flex: 1; font-size: 12px; font-weight: 700; color: var(--ink-soft); border-top: 5px solid var(--paper-2); padding-top: 4px; }
-  .steps li.done { border-color: var(--ink-soft); }
-  .steps li.on { border-color: var(--red); color: var(--red); }
-  .step[hidden] { display: none; }
-  .step > .btns { position: sticky; bottom: -1px; z-index: 1; background: var(--paper); padding: 10px 0 4px; box-shadow: 0 -12px 12px -8px var(--paper); }
-  .step:not([data-step="3"]) > .btns { flex-wrap: nowrap; }
-  .step > .btns .btn { padding-left: 14px; padding-right: 14px; }
-  a.driver { text-decoration: none; }
-  .drivers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
-  .drivers .sec { grid-column: 1 / -1; margin: 0; font-weight: 700; font-size: 14px; text-align: left; }
-  .driver { font: inherit; color: var(--ink); text-align: left; background: var(--paper-2); border: 2.5px solid var(--ink); border-radius: 12px;
-    padding: 8px; cursor: pointer; display: grid; grid-template-columns: 46px 1fr; gap: 4px 8px; align-items: center; box-shadow: 2px 2px 0 var(--ink); }
-  .driver .ph { width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper) center/cover; grid-row: span 2; }
-  .driver b { font-size: 15px; line-height: 1.2; }
-  .driver .ph.ic { display: grid; place-items: center; font-size: 26px; background: var(--yellow); }
-  .driver small { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
-  .driver.on { background: #fff3c2; box-shadow: 0 0 0 3px var(--red), 3px 3px 0 var(--ink); }
-  .driver.on b::after { content: " ✓"; color: var(--red); }
-  @media (max-width: 400px) { .drivers { grid-template-columns: 1fr; } }
+  .start-meta { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 2px 0 14px; }
+  .start-meta .wallet { margin: 0; font-size: 14px; padding: 3px 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--paper-2); border: 2.5px solid var(--ink); border-radius: 999px; padding: 2px 12px 2px 3px; font-weight: 700; font-size: 14px; }
+  .chip i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper) center/cover; }
+  .btn.big { display: block; width: 100%; max-width: 340px; margin: 0 auto; font-size: 22px; padding: 14px 24px; border-radius: 14px; }
+  .start-sub { margin-top: 12px; }
+  details.how { text-align: left; margin: 14px 0 0; border-top: 2px dashed var(--paper-2); padding-top: 10px; }
+  details.how summary { cursor: pointer; font-weight: 700; font-size: 15px; list-style: none; text-align: center; color: var(--ink-soft); }
+  details.how summary::-webkit-details-marker { display: none; }
+  details.how summary::after { content: " ▾"; } details.how[open] summary::after { content: " ▴"; }
+  details.how .rules { margin: 10px 0 0; }
+  .screen { transition: opacity .35s ease; } .screen.fade { opacity: 0; pointer-events: none; }
+  .screen:not(#shop) .panel { animation: cardIn .4s cubic-bezier(.2, .9, .3, 1.15) both; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+  .btn { transition: transform .12s, box-shadow .12s; }
+  @media (hover: hover) { .btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); } }
+  @media (prefers-reduced-motion: reduce) { .screen, .btn { transition: none; } .screen .panel { animation: none !important; } }
   .tag.ask { background: var(--yellow); }
   .spacer { flex: 1; }
   .talk {
@@ -155,7 +152,7 @@
     box-shadow: 4px 4px 0 var(--ink); cursor: pointer; text-decoration: none; }
   .btn.alt { background: var(--yellow); color: var(--ink); } .btn.ghost { background: var(--paper); color: var(--ink); }
   .btn:disabled { opacity: .6; cursor: wait; }
-  .btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:active:not(:disabled), .btn:hover:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
   .score { font: 700 34px var(--font-body); margin: 0 0 4px; }
   .verdict { margin: 0 0 10px; font-size: 15px; }
   .faces { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 0 10px; }
@@ -276,45 +273,23 @@
   <div class="panel">
     <p class="kicker">কেসিপির খেলা · খোলা দুনিয়া</p>
     <h1>কতোয়ালপুর সিটি</h1>
-    <ol class="steps" aria-label="ধাপ"><li>নিয়ম</li><li>গাড়ি</li><li>চালক</li></ol>
-
-    <section class="step" data-step="1" hidden>
-      <p class="lead">পংকি ভাইয়ের সিএনজি নিয়ে কতোয়ালপুরের আসল রাস্তায় খোলা দুনিয়া। ঘোরো, কাজ ধরো, টাকা কামাও।</p>
+    <p class="lead">তুমি পংকি ভাই। শুরু পার্টি অফিসের সামনে থেকে: হেঁটে সিএনজিতে ওঠো, তারপর পুরো কতোয়ালপুর তোমার। ঘোরো, কাজ ধরো, টাকা কামাও।</p>
+    <div class="start-meta"><span class="chip"><i style="background-image:url('../assets/people/ponki.jpg')"></i>পংকি ভাই · 🛺 সিএনজি</span><span class="wallet" id="startWallet">পকেটে: ৳০</span></div>
+    <button class="btn big" id="play" disabled>লোড হচ্ছে...</button>
+    <div class="btns start-sub"><button class="btn alt" id="shopFromStart">দোকান 🛒</button><a class="btn ghost" href="../">KCP তে ফিরে যান</a></div>
+    <p class="loading" id="loading">কতোয়ালপুর বানানো হচ্ছে...</p>
+    <details class="how">
+      <summary>কিভাবে খেলবো?</summary>
       <ul class="rules">
-      <li><span>🌆</span><span>কতোয়ালপুর এখন তোমার। <b>ঘড়ি নেই, তাড়া নেই</b>: যেদিকে খুশি চালাও। দিন গড়িয়ে রাত নামে, মাঝে মাঝে বৃষ্টি আর লোডশেডিং।</span></li>
+      <li><span>🚶</span><span>শুরুতে তুমি <b>হেঁটে</b>, পার্টি অফিসের সামনে। সিএনজির কাছে গিয়ে <b>ওঠো</b> (F), যেকোনো সময় আবার <b>নামো</b>। গলিতে গাড়ি না ঢুকলে হেঁটেই যাও।</span></li>
+      <li><span>🌆</span><span><b>ঘড়ি নেই, তাড়া নেই</b>: যেদিকে খুশি যাও। দিন গড়িয়ে রাত নামে, মাঝে মাঝে বৃষ্টি আর লোডশেডিং।</span></li>
       <li><span>📋</span><span><b>সুফান ভাই</b> আর গ্রামের লোকজনের মাথায় ❗ দেখলে কাছে যাও, কাজ দেবে। একটা শেষ হলেই আরেকটা আসবে।</span></li>
       <li><span>🧭</span><span>গোল <b>রাডারে</b> কমলা ফোঁটা আর মাথার উপরের হলুদ তীর পরের গন্তব্য দেখায়। লাল ফোঁটা পার্টি অফিস।</span></li>
-      <li><span>🚶</span><span>গলিতে গাড়ি ঢুকে না? <b>নামো</b> (F) আর হেঁটে যাও। গাড়ির কাছে ফিরে <b>ওঠো</b>।</span></li>
       <li><span>☕</span><span><b>ভাইয়ার দোকানে</b> থামলে চা, তিন রাস্তার মোড়ে <b>রিয়েল মামুর দোকানে</b> থামলে চিপস (৳৫ করে, ৩টা পর্যন্ত)।</span></li>
       <li><span>🐄</span><span>রাস্তায় গরু আর মিছিল, ধাক্কা খেলে জরিমানা। <b>সাম ভাইয়ের</b> গায়ে গাড়ি তুললে সোজা হাসপাতাল, ৳৫০ গচ্চা!</span></li>
       <li><span>💰</span><span>যা কামাবে সাথে সাথে <b>পকেটে</b> জমবে। জমানো টাকায় <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।</span></li>
-    </ul>
-      <div class="btns"><a class="btn ghost" href="../">KCP তে ফিরে যান</a><button class="btn" data-go="2">বুঝছি, গাড়ি বাছি →</button></div>
-    </section>
-
-    <section class="step" data-step="2" hidden>
-      <div class="drivers" id="vehicles">
-        <p class="sec">কোন গাড়িতে যাবা? একটাতে চাপ দাও</p>
-        <button class="driver" data-v="cng"><span class="ph ic">🛺</span><b>পংক পরিবহন সিএনজি</b><small>👥 পেছনে একসাথে ৫ জন।<br>🐢 কিন্তু পংকি রাজের চেয়ে ধীরে চলে।</small></button>
-        <button class="driver" data-v="scooter"><span class="ph" style="background-image:url('../assets/vehicles/ponkiraj.jpg')"></span><b>তানিমের পংকি রাজ</b><small>🚀 সিএনজির চেয়ে অনেক জোরে চলে।<br>👤 কিন্তু পেছনে মাত্র ১ জন।</small></button>
-      </div>
-      <div class="btns"><button class="btn ghost" data-go="1">← পিছনে</button></div>
-    </section>
-
-    <section class="step" data-step="3" hidden>
-      <div class="drivers" id="drivers">
-        <p class="sec" id="drvQ">আজকে সিএনজি চালাবেন কে?</p>
-        <button class="driver" data-d="ponki"><span class="ph" style="background-image:url('../assets/people/ponki.jpg')"></span><b>পংকি ভাই</b><small>🚀 পাকা চালক, স্পিড বেশি, মোড় ঘোরেন টানা।<br>⚠️ কিন্তু ফুল স্পিডে লম্বা মোড় নিলে এক্সিডেন্ট করেন।</small></button>
-        <button class="driver" data-d="muhon"><span class="ph" style="background-image:url('../assets/people/muhon.jpg')"></span><b>নেতা মুহন ভাই</b><small>✅ সব ঠিকঠাক, সাবধানে চালান।<br>📢 কিন্তু মিছিল দেখলে থেমে স্লোগান দিতে লেগে যান।</small></button>
-      </div>
-      <div class="wallet" id="startWallet">পকেটে: ৳০</div>
-      <div class="btns">
-        <button class="btn ghost" data-go="2">← পিছনে</button>
-        <button class="btn" id="play" disabled>লোড হচ্ছে...</button>
-        <button class="btn alt" id="shopFromStart">দোকান 🛒</button>
-      </div>
-      <p class="loading" id="loading">কতোয়ালপুর বানানো হচ্ছে...</p>
-    </section>
+      </ul>
+    </details>
   </div>
 </div>
 
@@ -441,7 +416,6 @@ const DRIVERS = {
     hello: "মুহন ভাই স্টিয়ারিংয়ে। ধীরে চলি, নিরাপদে চলি। চলো কতোয়ালপুর ঘুরি!" },
 };
 let driverId = "ponki";
-try { const d = localStorage.getItem("kcp-sim-driver"); if (DRIVERS[d]) driverId = d; } catch (e) {}
 const DRV = () => DRIVERS[driverId];
 // the ride: Ponk Poribohon's CNG (5 seats) or Tanim's old scooter, Ponki Raj (1 seat, much faster)
 const VEHICLES = {
@@ -450,7 +424,6 @@ const VEHICLES = {
     hello: "তানিমের পংকি রাজ! পেছনে একজনই বসবে, কিন্তু স্পিড দেখবা। ভটভটভট!" },
 };
 let vehId = "cng";
-try { const v = localStorage.getItem("kcp-sim-vehicle"); if (VEHICLES[v]) vehId = v; } catch (e) {}
 const VEH = () => VEHICLES[vehId];
 const rideLabel = () => vehId === "cng" ? DRV().label : `${DRV().n} · ${VEH().n}`;
 const CRASH_LINES = ["আরে আরে! ব্রেক কই গেল!", "ধড়াম! কিছু হয় নাই, কিছু হয় নাই... 😵", "পংকি ভাই: এইটা গাড়ির দোষ, আমার না!", "রিকশার সাথে লাগলো! মাফ কইরা দেন ভাই!", "সিএনজি উল্টাইতে উল্টাইতে বাঁচলো! 😱"];
@@ -2806,7 +2779,7 @@ addEventListener("keydown", e => {
   if (k === "m" && !e.repeat) toggleMute();
   if (k === "c" && !e.repeat && state === "play") nextCam();
   if (k === "f" && !e.repeat && state === "play" && !talk) { toggleRide(); flashDoor(); }
-  if (k === "enter" && !garage && state === "menu") { if (startStep < 3) goStep(startStep + 1); else if (!el("play").disabled) startGame(); }
+  if (k === "enter" && !garage && state === "menu" && !el("play").disabled) startGame();
   else if (k === "enter" && !garage && state === "over" && !el("play").disabled) startGame();
   if (k === "escape" && garage) closeShop();
   keys.add(k);
@@ -3329,7 +3302,7 @@ function missionUpdate(dt) {
     const cp = m.cps[m.k];
     if (!W && dist(P, cp) < 6.5) {
       m.k++; sfx.pop(); floaty(cp.x, cp.y, `🏁 ${bn(m.k)}/${bn(m.cps.length)}`, C.ink);
-      if (m.k >= m.cps.length) { m.reward = 40 + Math.min(30, Math.floor(m.t)); // a time bonus, up to ৳30 say(P, `জিতছি! ${bn(Math.floor(m.t))} সেকেন্ড বাকি থাকতে! 🏆`, 2.4); endMission(true); return; }
+      if (m.k >= m.cps.length) { m.reward = 40 + Math.min(30, Math.floor(m.t)); /* a time bonus, up to ৳30 */ say(P, `জিতছি! ${bn(Math.floor(m.t))} সেকেন্ড বাকি থাকতে! 🏆`, 2.4); endMission(true); return; }
     }
     if (W && misTalkCd <= 0) { misTalkCd = 4; floaty(W.x, W.y, "রেস চলতেছে! গাড়িতে ওঠো", C.ink); }
   } else if (m.kind === "tail") { // 10-55 m behind counts; too close for too long and he spots you, too far for too long and he's gone
@@ -3505,6 +3478,10 @@ function enterRide() {
   if (Math.hypot(W.x - P.x, W.y - P.y) > BOARD_R) { floaty(W.x, W.y, `${rideIcon()} এর কাছে যাও`, C.ink); return; }
   W = null; sfx.door(); syncRideUi(); // comrades walking behind climb in by the usual rule: awake and within 7 m of the ride
   for (const c of comrades) c.follow = false;
+  if (!P.hello) { // the first ride of the round
+    P.hello = true; say(P, DRV().hello, 3.2);
+    if (startPending && startBuf) sfx.cngStart();
+  }
 }
 function toggleRide() { if (W) enterRide(); else exitRide(); }
 function syncRideUi() {
@@ -3661,7 +3638,7 @@ function newGame() {
   offer = null; mission = null; offerCd = 4; misDone = 0; misRecent = []; misKey = ""; misTalkCd = 0; beacon.visible = false; el("mission").hidden = true;
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
   drvTag = mkEl("tag drv", ""); drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${rideLabel()}`;
-  carTag = mkEl("tag", ""); W = null; walkTip = false; syncRideUi(); // every round starts behind the wheel
+  carTag = mkEl("tag", ""); W = null; walkTip = false; // the round starts on foot, set up below once the CNG is parked
   placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")], [mamu, mkEl("tag", "রিয়েল মামুর দোকান 🍟")], [school, mkEl("tag", "কতোয়ালপুর সরকারি প্রাথমিক বিদ্যালয় 🏫")]].filter(([b]) => b);
   for (const sh of SHOPS) { // a dashed ring on the road where to stop
     const g = new THREE.Group();
@@ -3681,16 +3658,25 @@ function newGame() {
   clock = DAY_START; dayLook();
   shedLevel = 0; rainLevel = 0; flash = 0; area = null; chatCd = 8; warned30 = false; samWarnCd = 0; shakeT = 0;
   applyLook();
-  camPos.set(P.x - Math.cos(P.a) * 10, 6, P.y - Math.sin(P.a) * 10);
-  say(P, DRV().hello, 3.2);
-  if (VEH().hello) { const me = P; setTimeout(() => { if (P === me && state === "play") say(P, VEH().hello, 3); }, 3400); }
+  W = footSpawn(P); P.hello = false; syncRideUi(); // on foot, like stepping out of the office
+  camPos.set(W.x - Math.cos(W.a) * 6, 4, W.y - Math.sin(W.a) * 6); introT = 0;
+  say(W, "চলো, সিএনজিতে উঠি! আজকে কতোয়ালপুর ঘুরমু।", 3, 3.4);
+  showBanner("পার্টি অফিসের সামনে", mobile ? "হেঁটে সিএনজির কাছে যাও, তারপর ‘ওঠো’ চাপো" : "W/↑ দিয়ে হেঁটে সিএনজির কাছে যাও, তারপর F চাপো", 3.6);
 }
 
-function spawnAt() { // just outside the party office, facing along the road
+function spawnAt() { // the CNG parked on the office side of the road, a few steps from the party office door, nose towards Sufan bhai
   const s0 = roadSegs.reduce((b, s) => { const d = segD2(door.x, door.y, s.ax, s.ay, s.bx, s.by); return d < b.d ? { d, s } : b; }, { d: 1e18 }).s;
-  const a = Math.atan2(s0.by - s0.ay, s0.bx - s0.ax), p = { x: door.x + Math.cos(a) * 22, y: door.y + Math.sin(a) * 22, a };
+  let a = Math.atan2(s0.by - s0.ay, s0.bx - s0.ax);
+  if (Math.cos(a) * officeV.x + Math.sin(a) * officeV.y < 0) a += Math.PI;
+  const fx = Math.cos(a), fy = Math.sin(a), side = door.hw * .35;
+  const p = { x: door.x - fx * 7 + officeU.x * side, y: door.y - fy * 7 + officeU.y * side, a };
   if (!onRoad(p.x, p.y)) { p.x = door.x; p.y = door.y; }
   return p;
+}
+function footSpawn(ride) { // the player stands outside the office door, turned towards the parked CNG
+  const tries = [door.hw * .72, door.hw * .5, 0].map(k => ({ x: door.x + officeU.x * k - Math.cos(ride.a) * 1.5, y: door.y + officeU.y * k - Math.sin(ride.a) * 1.5 })); // on the road's edge, right at the office front
+  const at = tries.find(o => !blocked(o.x, o.y, .45)) || { x: door.x, y: door.y };
+  return { x: at.x, y: at.y, a: Math.atan2(ride.y - at.y, ride.x - at.x), v: 0, walk: 0, hy: 3.3 };
 }
 function dayLook() { // how dark (dayN) and how golden (dayGold) the sky is at this hour of the game clock
   const h = clock / 60;
@@ -4016,6 +4002,7 @@ function endGame() { // "call it a day" from the pause menu: the day's account (
 
 /* ================= per-frame visuals ================= */
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), tmp = new THREE.Vector3();
+let introT = 0; // seconds left of the slow camera glide as a round starts
 const ringMat = new THREE.MeshBasicMaterial({ color: C.yellow, transparent: true, side: THREE.DoubleSide, depthWrite: false });
 const ringGeo = new THREE.RingGeometry(.92, 1, 48); ringGeo.rotateX(-Math.PI / 2);
 // rain streaks around the camera
@@ -4064,7 +4051,8 @@ function render(t, dt) {
     const F = me(), cm = CAMS[camMode], fx = Math.cos(F.a), fz = Math.sin(F.a);
     const vk = W ? (camMode < 2 ? .62 : .7) : car === scoot && camMode < 2 ? .72 : 1; // the scooter is small, so the chase camera sits closer
     tmp.set(F.x - fx * cm.back * vk, cm.up * vk, F.y - fz * cm.back * vk);
-    camPos.lerp(tmp, Math.min(1, dt * (camMode === 2 ? 3 : 4.5)));
+    introT = Math.max(0, introT - dt);
+    camPos.lerp(tmp, Math.min(1, dt * (introT > 0 ? 1.2 + (1.8 - introT) * 1.2 : camMode === 2 ? 3 : 4.5)));
     camera.position.copy(camPos); camera.position.x += (Math.random() - .5) * sh; camera.position.y += (Math.random() - .5) * sh;
     camLook.set(F.x + fx * cm.look * vk, W ? 1.4 : 1.2, F.y + fz * cm.look * vk); camera.lookAt(camLook);
     if (garage) { if (!garage.drag) garage.th += dt * .3; camera.position.set(P.x + Math.cos(garage.th) * 5.4, 2.3, P.y + Math.sin(garage.th) * 5.4); camera.lookAt(P.x, .95, P.y); }
@@ -4271,31 +4259,11 @@ function closeShop() {
   el("shop").classList.add("hidden"); syncWallet(); el(shopFrom).classList.remove("hidden");
 }
 el("shopFromStart").addEventListener("click", () => { ensureAudio(); openShop("start"); });
-// start screen in steps: version → rules → vehicle → driver and start
-let startStep = 1;
-function goStep(n) {
-  startStep = n;
-  document.querySelectorAll("#start .step").forEach(x => { x.hidden = +x.dataset.step !== n; });
-  document.querySelectorAll("#start .steps li").forEach((li, i) => { li.classList.toggle("on", i === n - 1); li.classList.toggle("done", i < n - 1); }); // the menu starts at step 1, the rules
-  const scr = el("start"); scr.scrollTop = 0; scr.querySelector(".panel").scrollTop = 0;
+// hide a screen with a short fade, so the game shows through smoothly
+function hideScreen(id) {
+  const s = el(id); if (s.classList.contains("hidden") || s.classList.contains("fade")) return;
+  s.classList.add("fade"); setTimeout(() => { s.classList.add("hidden"); s.classList.remove("fade"); }, 350);
 }
-document.querySelectorAll("#start [data-go]").forEach(b => b.addEventListener("click", () => goStep(+b.dataset.go)));
-goStep(1);
-const syncDrivers = () => {
-  document.querySelectorAll(".driver[data-d]").forEach(b => b.classList.toggle("on", b.dataset.d === driverId));
-  document.querySelectorAll(".driver[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === vehId));
-  el("drvQ").textContent = `আজকে ${VEH().go} চালাবেন কে?`;
-  if (!el("play").disabled) el("play").textContent = `${VEH().go} স্টার্ট দাও`;
-};
-document.querySelectorAll(".driver[data-v]").forEach(b => b.addEventListener("click", () => {
-  vehId = b.dataset.v; syncDrivers(); goStep(3); applyLook();
-  try { localStorage.setItem("kcp-sim-vehicle", vehId); } catch (e) {}
-}));
-document.querySelectorAll(".driver[data-d]").forEach(b => b.addEventListener("click", () => {
-  driverId = b.dataset.d; syncDrivers(); applyLook();
-  try { localStorage.setItem("kcp-sim-driver", driverId); } catch (e) {}
-}));
-syncDrivers();
 el("shopFromEnd").addEventListener("click", () => { ensureAudio(); openShop("end"); });
 el("shopBack").addEventListener("click", closeShop);
 el("shopList").addEventListener("click", e => {
@@ -4363,15 +4331,16 @@ function startGame() {
     if (ac && !hornBuf) loadBuf("../sim/horn.mp3").then(b => hornBuf = b).catch(() => {});
     if (ac && !susBuf) loadBuf("../sim/sus.mp3").then(b => susBuf = b).catch(() => {});
     if (ac && !overBuf) loadBuf("../sim/game-over.mp3").then(b => overBuf = b).catch(() => {});
-    if (ac && !startBuf) loadBuf("../sim/cng-start.mp3").then(b => { startBuf = b; if (startPending && state === "play" && time < 2) sfx.cngStart(); }).catch(() => {});
+    if (ac && !startBuf) loadBuf("../sim/cng-start.mp3").then(b => { startBuf = b; if (startPending && state === "play" && !W && P && P.hello) sfx.cngStart(); }).catch(() => {});
     startMusic();
   } catch (e) {}
   if (garage) { garage = null; camera.clearViewOffset(); resize(); el("shop").classList.add("hidden"); }
-  el("start").classList.add("hidden"); el("end").classList.add("hidden");
+  hideScreen("start"); hideScreen("end");
   ["hud", "mini", "horn", "doorBtn"].forEach(id => el(id).hidden = false);
   if (mobile) el("stickZone").hidden = false; else el("keys").hidden = false;
   camMode = 0; newGame(); state = "play"; hudKey = ""; last = performance.now();
-  startPending = vehId === "cng"; if (startPending && startBuf) sfx.cngStart(); // the CNG's start tune, once per round
+  camPos.set(W.x - Math.cos(W.a) * 3, 26, W.y - Math.sin(W.a) * 3); introT = 1.8; // the camera drops from the sky to behind the player
+  startPending = vehId === "cng"; // the CNG's start tune plays when you first climb in
 }
 el("play").addEventListener("click", startGame);
 el("again").addEventListener("click", startGame);
@@ -4394,8 +4363,8 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) setPa
 requestAnimationFrame(loop);
 // ready once the first frame (and its shaders) are done
 requestAnimationFrame(() => requestAnimationFrame(() => {
-  el("play").disabled = false; syncDrivers();
-  el("loading").textContent = mobile ? "◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস-ব্রেক আর হর্ন। (আঙুল টেনেও চালানো যায়)" : "W/↑ চালাও · A D ঘোরাও · Space হর্ন · F নামো/ওঠো · C ক্যামেরা · Enter শুরু";
+  el("play").disabled = false; el("play").textContent = "খেলা শুরু ▶";
+  el("loading").textContent = mobile ? "◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস-ব্রেক আর হর্ন। গাড়িতে উঠতে-নামতে ‘ওঠো/নামো’ বোতাম।" : "W/↑ হাঁটো/চালাও · A D ঘোরাও · F গাড়িতে ওঠো/নামো · Space হর্ন · C ক্যামেরা · Enter শুরু";
 }));
 
 // test hook
