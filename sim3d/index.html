@@ -2868,8 +2868,9 @@ let sufan = null, officeTag = null, drvTag = null, carTag = null, placeTags = []
 /* ---- side missions: now and then a job turns up. A villager by the road wants a lift, or Sufan has a job: posters to
    put up, chips to fetch from Real Mamur Dukan, a para to announce the meeting in by horn, his runaway goat to catch on
    foot, hot tea to carry without a single bump, leaflets blown about by the wind to pick up, or a procession to walk
-   along with. And sometimes a tyre just bursts and you limp to the nearest mechanic. Take it, do it before the timer runs out, and it pays a bonus. */
-const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea", "leaf", "follow", "flat"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
+   along with, a journalist to show round, a farmer's cow to drive home, a phone thief to run down. And sometimes a
+   tyre just bursts and you limp to the nearest mechanic. Take it, do it before the timer runs out, and it pays a bonus. */
+const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea", "leaf", "follow", "flat", "tour", "herd", "thief"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
 let offer = null, mission = null, offerCd = 20, misDone = 0, misRecent = [], misKey = "", misTalkCd = 0;
 const beacon = new THREE.Group(); // a tall see-through yellow column over wherever the job wants you
 {
@@ -2899,7 +2900,8 @@ function makeGoat(R) {
     k.box(.06, .14, .14, dark, .73, 1.02, 0); k.box(.12, .08, .06, coat, -.5, .9, 0, .6);
   });
 }
-const paxN = () => mission && mission.kind === "pax" ? 1 : 0; // the passenger takes a seat
+const paxN = () => mission && (mission.kind === "pax" || mission.kind === "tour") ? 1 : 0; // the passenger (or the journalist) takes a seat
+const THIEF_LINES = ["ধরতে পারবা না! 😜", "মোবাইল আমার! 🏃", "সিএনজি দিয়া চোর ধরা যায়? হা হা!"];
 function paxDests() {
   const L = [[school, "স্কুল"], [mamu, "রিয়েল মামুর দোকান"], [palace, "সুফান প্যালেস"], [dukan, "ভাইয়ার দোকান"]].filter(([b]) => b).map(([b, n]) => ({ x: b.cx, y: b.cy, n }));
   for (const pl of PLACES) L.push({ x: pl.mx ?? pl.x, y: pl.my ?? pl.y, n: pl.mosque });
@@ -2925,7 +2927,7 @@ function setSufanTag(t) { if (sufan && sufan.tag.textContent !== t) sufan.tag.te
 function makeOffer(force) {
   const kinds = force ? [force] : shuffle(MIS_KINDS.filter(k => !misRecent.includes(k)), rand);
   for (const k of kinds) {
-    if (k === "pax") {
+    if (k === "pax" || k === "herd") {
       const Me = me(); let o = null;
       for (let i = 0; i < 400 && !o; i++) {
         const q = roadsidePoint(roadSegs[(rand() * roadSegs.length) | 0], rand(), 1.2); if (!q) continue;
@@ -2933,9 +2935,11 @@ function makeOffer(force) {
         if (d >= 70 && d <= 320 && reachable(q.x, q.y) && Math.hypot(q.x - door.x, q.y - door.y) > 40) o = q;
       }
       if (!o) continue;
+      const cowAt = k === "herd" ? randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - o.x, y - o.y); return d > 40 && d < 75 && reachable(x, y); }) : null;
+      if (k === "herd" && !cowAt) continue;
       const n = PAX_NAMES[(rand() * PAX_NAMES.length) | 0], mesh = makeMarcher(rand);
       mesh.position.set(o.x, 0, o.y); mesh.rotation.y = -Math.atan2(o.fy, o.fx); dyn.add(mesh);
-      offer = { kind: k, x: o.x, y: o.y, hy: 2.7, n, mesh, tag: mkEl("tag ask", `🙋 ${n} ❗`), t: 60 };
+      offer = { kind: k, x: o.x, y: o.y, hy: 2.7, n, mesh, cowAt, tag: mkEl("tag ask", k === "herd" ? `🧑‍🌾 ${n} ❗` : `🙋 ${n} ❗`), t: 60 };
     } else {
       const spots = k === "poster" ? posterSpots(rand) : null;
       if (k === "poster" && !spots) continue;
@@ -2948,7 +2952,9 @@ function makeOffer(force) {
       if (k === "follow" && !mich) continue;
       const leafAt = k === "leaf" ? randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - door.x, y - door.y); return d > 100 && d < 320 && reachable(x, y); }) : null;
       if (k === "leaf" && !leafAt) continue;
-      offer = { kind: k, x: sufan.x, y: sufan.y, spots, goatAt, mich, leafAt, place: PLACES[(rand() * PLACES.length) | 0], t: 60 }; setSufanTag("সুফান ❗");
+      const thiefAt = k === "thief" ? randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - sufan.x, y - sufan.y); return d > 35 && d < 80 && reachable(x, y); }) : null;
+      if (k === "thief" && !thiefAt) continue;
+      offer = { kind: k, x: sufan.x, y: sufan.y, spots, goatAt, mich, leafAt, thiefAt, place: PLACES[(rand() * PLACES.length) | 0], t: 60 }; setSufanTag("সুফান ❗");
     }
     sfx.welcome(); return true;
   }
@@ -2978,6 +2984,23 @@ function acceptOffer() {
     g.mesh.position.set(g.x, 0, g.y); dyn.add(g.mesh);
     mission = { kind: "goat", goat: g, t: 75, reward: 35 };
     say(sufan, "প্যালেসের ছাগলটা দড়ি ছিঁড়া পালাইছে! গাড়ি থেকে নাইমা দৌড়াইয়া ধরো। 🐐", 3);
+  } else if (o.kind === "tour") { // three landmarks, each passed slowly enough for a photo
+    const all = shuffle(paxDests().filter(d => d.n !== "ভাইয়ার দোকান"), rand), stops = [];
+    for (const d of all) if (stops.length < 3 && stops.every(q => dist(q, d) > 60)) stops.push(d);
+    let len = 0, at = P; for (const d of stops) { len += dist(at, d); at = d; }
+    mission = { kind: "tour", stops, k: 0, t: Math.round(len / 7 + 40), reward: 50 };
+    say(P, "সাংবাদিক: হ্যালো! কতোয়ালপুরের সুন্দর জায়গাগুলা দেখান, আস্তে চালাইয়েন, ছবি তুলবো। 📸", 3);
+  } else if (o.kind === "herd") {
+    const a = o.cowAt, cow = { x: a.x, y: a.y, a: a.a, hy: 2.4, scare: 0, mv: 0, walk: 0, mesh: makeCow(rand), tag: mkEl("tag warn", "🐄 গরু") };
+    cow.mesh.position.set(cow.x, 0, cow.y); dyn.add(cow.mesh);
+    o.mesh.visible = true; const farmer = { x: o.x, y: o.y, hy: 2.7, n: o.n, mesh: o.mesh, tag: mkEl("tag ask", `🧑‍🌾 ${o.n}`) };
+    mission = { kind: "herd", cow, farmer, t: 80, reward: 40 };
+    say(farmer, "মামা, আমার গরুটা ছুটছে! পিছন থেকে তাড়াইয়া আমার কাছে আনেন। হর্ন দিলে দৌড়ায়। 🐄", 3.2);
+  } else if (o.kind === "thief") {
+    const th = { ...o.thiefAt, hy: 2.7, mesh: makeMarcher(rand), tag: mkEl("tag warn", "🏃 চোর!"), cd: 1, caught: false };
+    th.mesh.position.set(th.x, 0, th.y); dyn.add(th.mesh);
+    mission = { kind: "thief", thief: th, stage: 0, t: 60, reward: 45 };
+    say(sufan, "চোর! চোর! আমার মোবাইল নিয়া দৌড় দিছে! গাড়ি নিয়া ধরো! 📱", 3); setSufanTag("সুফান 📱?");
   } else if (o.kind === "leaf") {
     const c = o.leafAt, leaves = [];
     for (let i = 0; i < 300 && leaves.length < 6; i++) {
@@ -3014,11 +3037,12 @@ function startFlat() {
   return true;
 }
 function misTitle(m) {
+  if (m.kind === "tour") return "📸 সাংবাদিককে ঘুরাও"; if (m.kind === "herd") return "🐄 গরু ফেরাও"; if (m.kind === "thief") return "🏃 মোবাইল চোর ধরো";
   return { pax: `🙋 ${m.n}কে নামাও`, poster: "📋 ৩টা পোস্টার লাগাও", chips: "🍟 সুফানের চিপস", mic: `📢 ${m.place ? m.place.n : ""}য় মাইকিং`, goat: "🐐 ছাগল ধরো", tea: "☕ গরম চা পৌঁছাও", leaf: "📄 লিফলেট কুড়াও", follow: "✊ মিছিলের পিছে পিছে", flat: "🔧 চাকা পাংচার!" }[m.kind];
 }
 function endMission(ok, why) {
   const m = mission; mission = null; misRecent = [m.kind, ...misRecent].slice(0, 2); offerCd = 12; setSufanTag("সুফান");
-  if (m.goat) m.goat.tag.remove();
+  for (const o of [m.goat, m.cow, m.farmer, m.thief]) if (o && o.tag) o.tag.remove();
   if (m.kind === "flat") {
     m.shop.tag.remove(); sfx.boost();
     if (ok) { earn("spend", 10, P.x, P.y, "চাকা সারাই"); showBanner("চাকা ঠিক!", "মিস্ত্রি ৳১০ নিল, এবার টানো", 1.8); say(m.shop, "নেন মামা, নতুন টিউব লাগাই দিলাম! 🔧", 2.2); }
@@ -3026,7 +3050,7 @@ function endMission(ok, why) {
     return;
   }
   if (ok) {
-    const at = m.kind === "pax" ? m.pax : m.kind === "chips" ? sufan : m.kind === "tea" ? m.dest : m.kind === "goat" ? m.goat : me();
+    const at = m.kind === "pax" ? m.pax : m.kind === "chips" || m.kind === "thief" ? sufan : m.kind === "herd" ? m.farmer : m.kind === "tea" ? m.dest : m.kind === "goat" ? m.goat : me();
     earn("bonus", m.reward, at.x, at.y, "মিশন"); misDone++;
     showBanner("মিশন শেষ!", `${misTitle(m)} · +৳${bn(m.reward)}`, 2); sfx.chime();
   } else { showBanner("মিশন ফেল!", why, 1.8); sfx.scratch(); }
@@ -3040,6 +3064,9 @@ function misTarget() {
   if (mission.kind === "tea") return mission.stage ? mission.dest : teaShop();
   if (mission.kind === "goat") return mission.goat;
   if (mission.kind === "flat") return mission.shop;
+  if (mission.kind === "tour") return mission.stops[mission.k];
+  if (mission.kind === "herd") return mission.cow;
+  if (mission.kind === "thief") return mission.stage ? sufan : mission.thief;
   if (mission.kind === "follow") return mission.mich;
   if (mission.kind === "leaf") {
     const Me = me(); if (dist(mission.c, Me) > 40) return mission.c;
@@ -3066,7 +3093,12 @@ function missionUpdate(dt) {
         if (P.riders.length >= seatCount()) { if (misTalkCd <= 0) { misTalkCd = 6; say(offer, "জায়গা নাই? থাক তাইলে, পরের গাড়িতে যাবো।", 2.2); } }
         else acceptOffer();
       } else if (W && d < 4 && misTalkCd <= 0) { misTalkCd = 6; say(offer, "গাড়ি নিয়া আসেন মামা! হাঁইটা যাবো না।", 2.2); }
-    } else if (dist(sufan, Me) < (W ? 4 : 10) && slow) acceptOffer();
+    } else if (offer.kind === "herd") { if (dist(offer, Me) < (W ? 4 : 9) && slow) acceptOffer(); }
+    else if (dist(sufan, Me) < (W ? 4 : 10) && slow) {
+      if (offer.kind === "tour" && W) { if (misTalkCd <= 0) { misTalkCd = 6; say(sufan, "গাড়ি নিয়া আসো! সাংবাদিক সাহেব হাঁটবেন না।", 2.2); } }
+      else if (offer.kind === "tour" && P.riders.length >= seatCount()) { if (misTalkCd <= 0) { misTalkCd = 6; say(sufan, "আগে সিট খালি করো, সাংবাদিক বসবেন কই?", 2.2); } }
+      else acceptOffer();
+    }
     return;
   }
   const m = mission; m.t -= dt;
@@ -3119,6 +3151,35 @@ function missionUpdate(dt) {
     if (d >= 6 && d <= 22) { const was = Math.floor(m.got / 5); m.got += dt; if (Math.floor(m.got / 5) > was && m.got < 25) floaty(Me.x, Me.y, `✊ ${bn(Math.floor(m.got))}/২৫ সে`, C.ink); }
     else if (misTalkCd <= 0) { misTalkCd = 3; floaty(Me.x, Me.y, d < 6 ? "একটু পিছাও!" : "মিছিল তো চলে গেল, কাছে যাও!", C.ink); }
     if (m.got >= 25) { say(m.mich, "জিন্দাবাদ! ড্রাইভার ভাইও মিছিলে! ✊", 2.4); endMission(true); return; }
+  } else if (m.kind === "tour") {
+    const st = m.stops[m.k];
+    if (!W && dist(P, st) < 14) {
+      if (Math.abs(P.v) < 8) {
+        m.k++; sfx.pop(); floaty(P.x, P.y, `📸 ক্লিক! ${bn(m.k)}/৩`, C.ink);
+        say(P, `সাংবাদিক: ${["অসাধারণ! এইটা প্রথম পাতায় যাবে!", "ওয়াও, কী সুন্দর!", "এইটা তো ভাইরাল হবে!"][m.k - 1]} 📸`, 2.2);
+        if (m.k >= 3) { endMission(true); return; }
+      } else if (misTalkCd <= 0) { misTalkCd = 3; floaty(P.x, P.y, "আস্তে! ছবি ঝাপসা হইলো", C.ink); }
+    }
+  } else if (m.kind === "herd") { // the cow walks away from you, and wanders home when nobody's pushing
+    const c = m.cow, d = dist(c, Me), hx = m.farmer.x - c.x, hy = m.farmer.y - c.y, hd = Math.hypot(hx, hy) || 1;
+    c.scare -= dt; let vx = hx / hd * .35, vy = hy / hd * .35;
+    if (d < 13 || c.scare > 0) { const sp = c.scare > 0 ? 4.2 : 2.6, ax = c.x - Me.x, ay = c.y - Me.y, L = Math.hypot(ax, ay) || 1; vx += ax / L * sp; vy += ay / L * sp; }
+    const ox = c.x, oy = c.y; c.x += vx * dt; c.y += vy * dt; pushOut(c, 1.2); riverBlock(c, 1.2);
+    c.x = clamp(c.x, X0 + 4, X1 - 4); c.y = clamp(c.y, Y0 + 4, Y1 - 4);
+    c.mv = Math.hypot(c.x - ox, c.y - oy) / dt; if (c.mv > .05) { c.a = Math.atan2(c.y - oy, c.x - ox); c.walk += dt * (2 + c.mv * 2.5); }
+    if (!W && d < 2.8) { const L = d || 1; c.x += (c.x - P.x) / L * .4; c.y += (c.y - P.y) / L * .4; } // the ride nudges, it doesn't hit
+    if (hd < 6) { say(c, "হাম্বা! 🐄", 1.4); say(m.farmer, "আল্লাহ বাঁচাইছে! ধন্যবাদ মামা, সভায় আসবো। 🙏", 2.6, .6); endMission(true); return; }
+  } else if (m.kind === "thief") {
+    const th = m.thief;
+    if (!m.stage) { // he runs along the roads, faster once you're on his tail; the ride can catch him, your legs can't
+      const d = dist(th, Me); th.cd -= dt;
+      walkRoad(th, (d < 25 ? 7.2 : 5.5) * dt);
+      if (th.cd <= 0 && d < 40) { th.cd = 5; say(th, THIEF_LINES[(rand() * THIEF_LINES.length) | 0], 1.8); }
+      if (d < (W ? 1.5 : 3.6)) {
+        m.stage = 1; th.caught = true; m.t += Math.round(dist(th, sufan) / 7 + 15); sfx.vineBoom(); shakeT = .25;
+        say(th, "আচ্ছা আচ্ছা, নেন মোবাইল! আর করবো না। 😓", 2.4); floaty(th.x, th.y, "ধরা! 📱", C.ink); th.tag.textContent = "😓 চোর";
+      }
+    } else if (dist(sufan, Me) < (W ? 5 : 10) && slow) { say(sufan, "আমার মোবাইল! ২৩টা মিসড কল, সব পার্টির। 📱", 2.6); endMission(true); return; }
   } else if (m.kind === "flat") {
     if (!W && dist(P, m.shop) < 9 && Math.abs(P.v) < 3) { endMission(true); return; }
     if (!W && P.v > 2) P.a = wrapAng(P.a + Math.sin(time * 7) * .5 * dt); // a flat pulls the steering about
@@ -3139,11 +3200,13 @@ function missionUpdate(dt) {
       px.mesh.position.set(px.x, 0, px.y); px.mesh.visible = true; say(px, "দেরি করলেন মামা, বাকিটা হেঁটেই যাই! 😤", 2.4);
     }
     if (m.kind === "goat") say(m.goat, "ম্যা-হা-হা! 🐐", 1.6);
-    endMission(false, { pax: "যাত্রী রাগ করে নেমে গেলেন", poster: "পোস্টার লাগানো হলো না", chips: "সুফানের চিপস খাওয়া হলো না", mic: "মাইকিং শেষ হলো না", goat: "ছাগল পালাইয়া গেল", tea: "চা ঠান্ডা হয়ে গেল", leaf: "লিফলেট বাতাসে হারাইয়া গেল", follow: "মিছিল চলে গেল", flat: "" }[m.kind]);
+    endMission(false, { pax: "যাত্রী রাগ করে নেমে গেলেন", poster: "পোস্টার লাগানো হলো না", chips: "সুফানের চিপস খাওয়া হলো না", mic: "মাইকিং শেষ হলো না", goat: "ছাগল পালাইয়া গেল", tea: "চা ঠান্ডা হয়ে গেল", leaf: "লিফলেট বাতাসে হারাইয়া গেল", follow: "মিছিল চলে গেল", flat: "", tour: "সাংবাদিক বিরক্ত হয়ে চলে গেলেন", herd: "গরু মাঠে হারাইয়া গেল", thief: m.stage ? "মোবাইল দিতে দেরি হইল" : "চোর পালাইয়া গেল" }[m.kind]);
   }
 }
 function misHorn(foot) {
-  const m = mission; if (!m || m.kind !== "mic") return;
+  const m = mission;
+  if (m && m.kind === "herd" && dist(m.cow, me()) < (foot ? 16 : 32)) { m.cow.scare = 1.6; say(m.cow, "হাম্বা!", 1); }
+  if (!m || m.kind !== "mic") return;
   const pl = m.place, src = me();
   if (Math.hypot(src.x - pl.x, src.y - pl.y) >= pl.r) { if (misTalkCd <= 0) { misTalkCd = 3; floaty(src.x, src.y, `আগে ${pl.n}য় যাও`, C.ink); } return; }
   if (foot) { if (misTalkCd <= 0) { misTalkCd = 3; floaty(src.x, src.y, "শিসে হবে না, গাড়ির হর্ন লাগবে!", C.ink); } return; }
@@ -3158,8 +3221,8 @@ function missionHud() {
   const tg = misTarget(), Me = me(), d = tg ? Math.round(Math.hypot(tg.x - Me.x, tg.y - Me.y)) : 0, t = Math.max(0, Math.ceil(m.t));
   let title, desc;
   if (offer) {
-    title = offer.kind === "pax" ? "❗ যাত্রী পাওয়া গেছে!" : "❗ সুফানের কাজ আছে";
-    desc = offer.kind === "pax" ? `${offer.n} রাস্তার পাশে হাত তুলছেন। গাড়ি নিয়া পাশে থামো।` : "পার্টি অফিসে সুফানের কাছে যাও।";
+    title = offer.kind === "pax" ? "❗ যাত্রী পাওয়া গেছে!" : offer.kind === "herd" ? "❗ কৃষক ডাকতেছেন" : "❗ সুফানের কাজ আছে";
+    desc = offer.kind === "pax" ? `${offer.n} রাস্তার পাশে হাত তুলছেন। গাড়ি নিয়া পাশে থামো।` : offer.kind === "herd" ? `${offer.n} কিছু বলতে চান, উনার কাছে যাও।` : "পার্টি অফিসে সুফানের কাছে যাও।";
   } else {
     title = misTitle(m);
     desc = m.kind === "pax" ? `${m.dest.n} পর্যন্ত, গাড়ি থামাইয়া নামাও` : m.kind === "poster" ? `লাগানো: ${bn(m.spots.filter(s => s.done).length)}/৩ · গাড়ি থেকে নেমে দেয়ালের সামনে দাঁড়াও`
@@ -3169,6 +3232,9 @@ function missionHud() {
       : m.kind === "leaf" ? `কুড়ানো: ${bn(m.leaves.filter(l => l.got).length)}/${bn(m.leaves.length)} · গাড়ি বা হেঁটে উপর দিয়া যাও`
       : m.kind === "follow" ? `সাথে: ${bn(Math.floor(m.got))}/২৫ সে · ৬–২২ মিটার দূরে থাকো`
       : m.kind === "flat" ? "গাড়ি আস্তে চলে! মিস্ত্রির পাশে থামো"
+      : m.kind === "tour" ? `ছবি: ${bn(m.k)}/৩ · পরের: ${m.stops[m.k].n} · আস্তে পার হও`
+      : m.kind === "herd" ? `গরুর পিছনে যাও, ${m.farmer.n}${m.farmer.n.endsWith("ই") ? "য়ের" : "র"} দিকে তাড়াও · হর্নে দৌড়ায়`
+      : m.kind === "thief" ? (m.stage ? "মোবাইল পাইছো! সুফানকে ফেরত দাও" : "গাড়ি নিয়া চোরের কাছে যাও")
       : `হর্ন: ${bn(m.pts.length)}/৫ · ${tg ? `${m.place.n}য় যাও` : "আলাদা আলাদা জায়গায় হর্ন দাও"}`;
   }
   const key = `${title}|${desc}|${t}|${d}`;
@@ -3184,6 +3250,19 @@ function missionRender(t) {
   if (tg) { beacon.position.set(tg.x, 0, tg.y); beacon.userData.col.material.opacity = .22 + .1 * Math.sin(t * 4); beacon.children[1].scale.setScalar(1 + .12 * Math.sin(t * 5)); }
   const car = ride(); car.body.rotation.z = isFlat() && !W ? .07 : 0; // sagging on the flat
   if (mission && mission.kind === "flat") { const s = mission.shop; s.mesh.userData.arm.rotation.x = .35 + Math.sin(t * 6) * .3; Math.hypot(s.x - me().x, s.y - me().y) < 140 ? place(s.tag, project(s.x, 2.9, s.y)) : (s.tag.style.display = "none"); }
+  if (mission && mission.kind === "herd") {
+    const c = mission.cow, f = mission.farmer; c.mesh.position.set(c.x, 0, c.y); c.mesh.rotation.y = -c.a;
+    c.mesh.userData.legs.forEach((l, i) => l.rotation.z = Math.sin(c.walk + (i % 2 ? Math.PI : 0)) * .35);
+    f.mesh.userData.arm.rotation.x = .35 + Math.sin(t * 9) * .35;
+    const nr = (x, y, r) => Math.hypot(x - me().x, y - me().y) < r;
+    nr(c.x, c.y, 100) ? place(c.tag, project(c.x, 2.6, c.y)) : (c.tag.style.display = "none");
+    nr(f.x, f.y, 140) ? place(f.tag, project(f.x, 2.9, f.y)) : (f.tag.style.display = "none");
+  }
+  if (mission && mission.kind === "thief") {
+    const th = mission.thief; th.mesh.position.set(th.x, th.caught ? 0 : Math.abs(Math.sin(t * 14)) * .15, th.y); th.mesh.rotation.y = -th.a;
+    th.mesh.userData.arm.rotation.z = th.caught ? 0 : -1.2 + Math.sin(t * 14) * .5;
+    Math.hypot(th.x - me().x, th.y - me().y) < 140 ? place(th.tag, project(th.x, 2.9, th.y)) : (th.tag.style.display = "none");
+  }
   if (mission && mission.kind === "leaf") for (const l of mission.leaves) if (!l.got) { l.mesh.position.set(l.x, .5 + Math.abs(Math.sin(t * 2 + l.ph)) * .9, l.y); l.mesh.rotation.set(Math.sin(t * 3 + l.ph) * .8, t * 2 + l.ph, 0); }
   if (mission && mission.goat) { // the goat: bobs as it runs, its tag over it
     const g = mission.goat; g.mesh.position.set(g.x, g.mv ? Math.abs(Math.sin(t * 16)) * .12 : 0, g.y); g.mesh.rotation.y = -g.a;
