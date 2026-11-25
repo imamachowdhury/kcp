@@ -3004,8 +3004,8 @@ function synthStart() {
   try { synBus(); SYN.on = true; SYN.n = 0; SYN.nextT = ac.currentTime + .08; synLevel(); clearInterval(SYN.timer); SYN.timer = setInterval(synTick, 40); synTick(); el("gmSong").hidden = false; } catch (e) { console.warn("synth", e); }
 }
 function synthStop() { if (!SYN.on) return; SYN.on = false; clearInterval(SYN.timer); synLevel(); el("gmSong").hidden = true; }
-// background music: the "সভায় আনো!" song, made by the user with Suno (shared with the 2D game)
-const MUSIC_URL = "../sim/bgm.mp3";
+// background music in a round: the user's "কতোয়ালপুর সিটি" song, made with Suno (the 2D game keeps "সভায় আনো!")
+const MUSIC_URL = "kotalpur-city.mp3";
 function startMusic(game) { // streamed, not decoded: a 2½-minute song would be ~55MB in memory
   if (!ac) return;
   if (!game && state === "menu") { synthStart(); return; } // the start screen has its own tune
@@ -5112,7 +5112,7 @@ window.__sim3 = {
   get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get parked() { return parked; }, get fleers() { return fleers; }, rideNear: () => W && rideNear(), enterRide, bike, get cop() { return cop; }, get wanted() { return wanted; }, callPolice, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
   get mission() { return mission; }, get offer() { return offer; }, makeOffer: k => { dropOffer(); return makeOffer(k); }, get misDone() { return misDone; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
-  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; }, get collageReady() { return collageReady; }, SYN, get ac() { return ac; }, buildPoster, setHero, MIS_KINDS, get misWho() { return MIS_WHO; },
+  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; }, get collageReady() { return collageReady; }, SYN, get ac() { return ac; }, get music() { return musicEl; }, buildPoster, setHero, MIS_KINDS, get misWho() { return MIS_WHO; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };
 </script>
