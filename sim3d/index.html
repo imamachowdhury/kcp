@@ -81,6 +81,7 @@
   @media (hover: hover) { .btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); } }
   @media (prefers-reduced-motion: reduce) { .screen, .btn { transition: none; } .screen .panel { animation: none !important; } }
   .tag.ask { background: var(--yellow); }
+  .tag.park { background: #dff3e4; } .tag.park.go { background: var(--yellow); } .tag.jack { background: var(--red); color: var(--paper); }
   .spacer { flex: 1; }
   .talk {
     position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 4;
@@ -282,6 +283,7 @@
       <summary>কিভাবে খেলবো?</summary>
       <ul class="rules">
       <li><span>🚶</span><span>শুরুতে তুমি <b>হেঁটে</b>, পার্টি অফিসের সামনে। সিএনজির কাছে গিয়ে <b>ওঠো</b> (F), যেকোনো সময় আবার <b>নামো</b>। গলিতে গাড়ি না ঢুকলে হেঁটেই যাও।</span></li>
+      <li><span>🏍️</span><span>রাস্তার পাশে পার্ক করা <b>সিএনজি, পংকি রাজ আর ইমাম ভাইয়ের রাজকীয় বাইক</b>: যেটার কাছে যাবে সেটাতেই ওঠো। চলন্ত গাড়ির সামনে দাঁড়াও, থামলে কাছে গিয়ে F, চালককে নামিয়ে <b>ছিনতাই</b>!</span></li>
       <li><span>🌆</span><span><b>ঘড়ি নেই, তাড়া নেই</b>: যেদিকে খুশি যাও। দিন গড়িয়ে রাত নামে, মাঝে মাঝে বৃষ্টি আর লোডশেডিং।</span></li>
       <li><span>📋</span><span><b>সুফান ভাই</b> আর গ্রামের লোকজনের মাথায় ❗ দেখলে কাছে যাও, কাজ দেবে। একটা শেষ হলেই আরেকটা আসবে।</span></li>
       <li><span>🧭</span><span>গোল <b>রাডারে</b> কমলা ফোঁটা আর মাথার উপরের হলুদ তীর পরের গন্তব্য দেখায়। লাল ফোঁটা পার্টি অফিস।</span></li>
@@ -417,11 +419,13 @@ const DRIVERS = {
 };
 let driverId = "ponki";
 const DRV = () => DRIVERS[driverId];
-// the ride: Ponk Poribohon's CNG (5 seats) or Tanim's old scooter, Ponki Raj (1 seat, much faster)
+// the rides: Ponk Poribohon's CNG (5 seats), Tanim's old scooter Ponki Raj (1 seat, much faster) and Imam bhai's royal bike (1 seat, fastest)
 const VEHICLES = {
-  cng: { id: "cng", n: "সিএনজি", go: "সিএনজি", seats: 5, speed: 1, turn: 1 },
-  scooter: { id: "scooter", n: "তানিমের পংকি রাজ", go: "পংকি রাজ", seats: 1, speed: 1.32, turn: 1.15,
+  cng: { id: "cng", n: "সিএনজি", go: "সিএনজি", ic: "🛺", seats: 5, speed: 1, turn: 1 },
+  scooter: { id: "scooter", n: "তানিমের পংকি রাজ", go: "পংকি রাজ", ic: "🛵", seats: 1, speed: 1.32, turn: 1.15,
     hello: "তানিমের পংকি রাজ! পেছনে একজনই বসবে, কিন্তু স্পিড দেখবা। ভটভটভট!" },
+  bike: { id: "bike", n: "ইমাম ভাইয়ের রাজকীয় বাইক", go: "রাজকীয় বাইক", ic: "🏍️", seats: 1, speed: 1.42, turn: 1.05,
+    hello: "ইমাম ভাইয়ের রাজকীয় বাইক! ধুগ-ধুগ-ধুগ... পুরা পাড়া টের পাবে কে আসতেছে!" },
 };
 let vehId = "cng";
 const VEH = () => VEHICLES[vehId];
@@ -2381,8 +2385,88 @@ function makeScooter() {
   return { g, body, spot, lens, drv, drvShirt, drvFace };
 }
 const scoot = makeScooter(); scene.add(scoot.g);
+// Imam bhai's royal bike: a long, heavy single-cylinder classic with a chrome tank and green side panels, a round chrome
+// headlamp with two pilot lamps, chrome mudguards, spoked wheels and a long chrome silencer. Our own model, no maker's badge (faces +x)
+function makeBike() {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const add = (m, cast = true, par = body) => { m.castShadow = cast; m.receiveShadow = true; par.add(m); return m; };
+  const green = new THREE.MeshPhongMaterial({ color: "#1f5e3c", specular: "#a9d3ba", shininess: 90 });
+  const chrome = new THREE.MeshPhongMaterial({ color: "#d3d9de", specular: "#ffffff", shininess: 140, emissive: "#2b2f33" });
+  const chromeDS = new THREE.MeshPhongMaterial({ color: "#d3d9de", specular: "#ffffff", shininess: 140, emissive: "#2b2f33", side: THREE.DoubleSide });
+  const ink = lam({ color: "#1d1a17" }), dark = lam({ color: "#34383c" }), alloy = lam({ color: "#9aa2a8" });
+  const box = (w, h, d, x, y, z, mat, par) => { const m = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat), true, par); m.position.set(x, y, z); return m; };
+  const rod = (ax, ay, az, bx, by, bz, r, mat, par) => {
+    const a = new THREE.Vector3(ax, ay, az), b = new THREE.Vector3(bx, by, bz), m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, a.distanceTo(b), 8), mat);
+    m.position.copy(a).add(b).multiplyScalar(.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); return add(m, true, par);
+  };
+  const ball = (r, x, y, z, sx, sy, sz, mat) => { const m = add(new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); return m; };
+  const axleZ = (r, len, x, y, z, mat, par = body) => { const m = add(new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 14), mat), true, par); m.rotation.x = Math.PI / 2; m.position.set(x, y, z); return m; };
+  const RW = .33, XR = -.72, XF = .76; // wheel radius, rear and front axles
+  // wheels (on g, so they don't bounce with the body): tyre, chrome rim, ten spokes a side, hub and brake drum
+  for (const x of [XR, XF]) {
+    const tyre = add(new THREE.Mesh(new THREE.TorusGeometry(RW - .055, .055, 8, 26), ink), true, g); tyre.position.set(x, RW, 0);
+    add(new THREE.Mesh(new THREE.TorusGeometry(RW - .11, .014, 6, 26), chrome), false, g).position.set(x, RW, 0);
+    for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, z = k % 2 ? .035 : -.035; rod(x, RW, z, x + Math.cos(a) * (RW - .115), RW + Math.sin(a) * (RW - .115), z * .2, .006, alloy, g); }
+    axleZ(.06, .14, x, RW, 0, alloy, g); axleZ(.1, .05, x, RW, x > 0 ? .06 : -.06, alloy, g);
+  }
+  // chrome mudguards over both wheels, the rear one longer
+  const fender = (x, t0, tl) => { const geo = new THREE.CylinderGeometry(RW + .045, RW + .045, .14, 18, 1, true, t0, tl); geo.rotateX(Math.PI / 2); add(new THREE.Mesh(geo, chromeDS)).position.set(x, RW, 0); };
+  fender(XF, Math.PI * .42, Math.PI * .72); fender(XR, Math.PI * .78, Math.PI * .78);
+  rod(XF - .05, RW + .38, 0, XF - .22, .98, 0, .018, chrome); // front mudguard stay
+  // frame: steering head, down tube, cradle under the engine, backbone, rear subframe and the swing arm
+  const fr = (a, b, r = .024) => rod(a[0], a[1], a[2] || 0, b[0], b[1], b[2] || 0, r, ink);
+  fr([.5, 1.04], [.3, .38]); fr([.3, .38], [-.26, .3]); fr([-.26, .3], [-.3, .86]); fr([.5, 1.06], [-.32, .9]); fr([-.3, .86], [XR - .12, .76]);
+  for (const z of [-.1, .1]) { fr([-.22, .4, z], [XR, RW, z], .026); rod(XR + .08, RW + .04, z * 1.05, -.42, .84, z * 1.05, .03, chrome); } // swing arm and the chrome rear shocks
+  box(.56, .06, .02, -.42, .4, -.12, ink); // chain guard
+  // telescopic front fork, chrome, from the steering head down to the front axle
+  for (const z of [-.085, .085]) rod(.47, 1.1, z, XF, RW, z, .032, chrome);
+  box(.12, .05, .26, .5, 1.1, 0, chrome); // top yoke
+  // round chrome headlamp with a warm lens, two little pilot lamps either side, a speedo on top
+  axleZ(.125, .17, .66, 1.02, 0, chrome).rotation.set(0, 0, Math.PI / 2);
+  const lens = add(new THREE.Mesh(new THREE.CircleGeometry(.105, 18), new THREE.MeshBasicMaterial({ color: "#ffe9a8" })), false); lens.position.set(.75, 1.02, 0); lens.rotation.y = Math.PI / 2;
+  for (const z of [-.17, .17]) { ball(.04, .62, .99, z, 1, 1, 1, chrome); rod(.55, 1.04, z * .5, .62, .99, z, .01, chrome); }
+  axleZ(.05, .05, .52, 1.17, 0, chrome).rotation.set(0, 0, 0);
+  // handlebar with black grips and round mirrors
+  for (const k of [-1, 1]) {
+    rod(.5, 1.13, 0, .42, 1.2, k * .36, .017, chrome); rod(.42, 1.2, k * .3, .4, 1.21, k * .43, .028, ink);
+    rod(.47, 1.17, k * .24, .43, 1.42, k * .3, .011, chrome); axleZ(.06, .014, .43, 1.45, k * .3, chrome).rotation.set(0, 0, Math.PI / 2);
+  }
+  // the tank: chrome, with green side panels; black knee pads
+  ball(.3, .18, 1.0, 0, 1.28, .56, .5, chrome); ball(.3, .17, .985, 0, .96, .4, .6, green); // the green panels bulge out past the chrome on both sides
+  for (const z of [-.168, .168]) box(.16, .09, .02, -.01, .93, z, ink);
+  // a sprung single seat for the rider, a small pillion behind with a chrome grab rail, green side boxes underneath
+  ball(.2, -.24, 1.0, 0, 1.4, .26, .72, ink); for (const z of [-.08, .08]) rod(-.36, .88, z, -.36, .98, z, .012, chrome);
+  box(.32, .06, .24, -.64, .93, 0, ink); rod(-.82, .92, -.13, -.82, .92, .13, .014, chrome); for (const z of [-.13, .13]) rod(-.5, .9, z, -.82, .92, z, .014, chrome);
+  for (const z of [-.13, .13]) box(.26, .22, .06, -.2, .72, z, green);
+  // the long-stroke single: round alloy crankcase, finned barrel leaning forward, rocker cover
+  axleZ(.15, .27, -.02, .44, 0, alloy); box(.4, .2, .22, .06, .4, 0, alloy);
+  for (let k = 0; k < 6; k++) { const m = add(new THREE.Mesh(new THREE.CylinderGeometry(.105, .105, .024, 14), dark)); m.position.set(.15 + k * .012, .58 + k * .045, 0); m.rotation.z = -.2; }
+  box(.17, .07, .17, .22, .86, 0, alloy).rotation.z = -.2;
+  // exhaust: chrome header curling down past the crash guard into the long silencer
+  rod(.27, .66, .05, .32, .42, .15, .032, chrome); rod(.32, .42, .15, .05, .3, .17, .032, chrome);
+  rod(.05, .3, .17, -.86, .44, .17, .056, chrome); rod(-.86, .44, .17, -.92, .45, .17, .04, chrome);
+  for (const z of [-.23, .23]) { rod(.4, .74, z, .4, .34, z, .02, chrome); rod(.4, .74, z, .46, .98, z * .3, .02, chrome); rod(.4, .34, z, .26, .34, z * .4, .02, chrome); } // crash guard
+  for (const z of [-1, 1]) rod(-.02, .36, z * .16, -.02, .36, z * .27, .02, ink); // foot pegs
+  // the tail: red lamp in a chrome cup, orange indicators, a plain plate
+  axleZ(.05, .06, -.95, .8, 0, chrome).rotation.set(0, 0, Math.PI / 2);
+  box(.03, .07, .08, -.985, .8, 0, new THREE.MeshBasicMaterial({ color: "#e0301e" }));
+  for (const z of [-.16, .16]) { ball(.03, -.92, .78, z, 1.4, 1, 1, lam({ color: "#f08a24", emissive: "#5a2a00" })); }
+  box(.02, .12, .22, -.98, .67, 0, lam({ color: "#f6efe1" }));
+  // the rider: legs bent to the pegs, panjabi, arms to the grips, photo face
+  const legs = lam({ color: "#3a3530" }), shirtMat = lam({ color: "#f6efe1" }), n0 = body.children.length;
+  for (const k of [-1, 1]) { rod(-.26, 1.07, k * .11, .12, 1.0, k * .16, .075, legs); rod(.12, 1.0, k * .16, -.01, .42, k * .21, .068, legs); box(.2, .07, .1, .02, .37, k * .22, ink); }
+  const drvShirt = box(.24, .5, .36, -.27, 1.36, 0, shirtMat); drvShirt.rotation.z = -.1;
+  for (const k of [-1, 1]) { rod(-.24, 1.55, k * .18, .06, 1.36, k * .28, .032, shirtMat); rod(.06, 1.36, k * .28, .4, 1.21, k * .37, .027, shirtMat); }
+  const drvFace = new THREE.Sprite(new THREE.SpriteMaterial()); drvFace.scale.set(.34, .34, 1); drvFace.position.set(-.22, 1.78, 0); body.add(drvFace);
+  const drv = new THREE.Group(); drv.add(...body.children.slice(n0)); body.add(drv);
+  const spot = new THREE.SpotLight("#ffe7b0", 0, 70, .55, .6, 1.2); spot.position.set(.78, 1.02, 0); const tgt = new THREE.Object3D(); tgt.position.set(14, 0, 0); g.add(spot, tgt); spot.target = tgt;
+  return { g, body, spot, lens, drv, drvShirt, drvFace };
+}
+const bike = makeBike(); scene.add(bike.g);
+const RIDES = { cng, scooter: scoot, bike };
 // and the vehicles: everything but the parts the shop and the driver choice swap or recolour is baked, per vehicle body
-for (const r of [cng, scoot]) {
+for (const r of [cng, scoot, bike]) {
+  r.drv.name = "drv"; r.spot.target.name = "spotTgt"; // so parked copies can leave them out
   const keep = new Set([r.stick, r.umb, r.bumper, r.led, r.lens, r.drv, r.spot].filter(Boolean)), live = new Set([paintMat, r.lens.material, r.drvShirt.material]);
   mergeUnder(r.body, keep, { live }); keep.add(r.body); mergeUnder(r.g, keep, { live });
   mergeUnder(r.drv, new Set([r.drvShirt]), { live }); // the driver bakes on his own, so he can step out
@@ -2445,16 +2529,24 @@ function makeWalker() {
   return { g, legs: g.userData.legs, arms: g.userData.arms, shirt, face: g.userData.face };
 }
 const walker = makeWalker();
-const ride = () => vehId === "scooter" && !garage ? scoot : cng; // the shop's garage always shows the CNG
+const ride = () => garage ? cng : RIDES[vehId]; // the shop's garage always shows the CNG
+// a parked copy of a ride: the same baked meshes, but no rider and no headlight
+function parkedClone(r) {
+  const c = r.g.clone(true), rm = [];
+  c.traverse(o => { if (o.isLight || o.name === "drv" || o.name === "spotTgt") rm.push(o); });
+  for (const o of rm) o.parent && o.parent.remove(o);
+  c.position.set(0, 0, 0); c.rotation.set(0, 0, 0); c.visible = true; c.children[0].position.y = 0; c.children[0].rotation.x = 0;
+  return c;
+}
 // paint, stickers and visible upgrades on the CNG; `paint` can be a paint the shop is only previewing
 function applyLook(paint = shop.paint) {
   paintMat.color.set(PAINT[paint] || C.green); paintMat.emissive.set(paint === "paint-gold" ? "#3a2a00" : "#000000");
   cng.stick.visible = paint === "paint-sticker"; cng.umb.visible = has("up-umbrella"); cng.bumper.visible = has("up-bumper");
   cng.led.visible = has("up-led"); cng.lens.material.color.set(has("up-led") ? "#ffffff" : "#ffe9a8");
   const d = DRV();
-  for (const r of [cng, scoot]) { r.drvShirt.material.color.set(d.shirt); r.drvFace.material.map = faceTex(d, C.yellow); r.drvFace.material.needsUpdate = true; }
+  for (const r of [cng, scoot, bike]) { r.drvShirt.material.color.set(d.shirt); r.drvFace.material.map = faceTex(d, C.yellow); r.drvFace.material.needsUpdate = true; }
   walker.shirt.color.set(d.shirt); walker.face.material.map = faceTex(d, C.yellow); walker.face.material.needsUpdate = true;
-  scoot.lens.material.color.set(has("up-led") ? "#ffffff" : "#ffe9a8");
+  for (const r of [scoot, bike]) r.lens.material.color.set(has("up-led") ? "#ffffff" : "#ffe9a8");
 }
 applyLook();
 // rider badges float above the CNG so you can see who you're carrying
@@ -2534,16 +2626,20 @@ function npcModel(build) {
 const LUNGI = ["#2f4f7a", "#6b3a2a", "#3d5a3d", "#5a3d6b", "#7a6a3a"];
 // all models face +x, like the player's CNG
 const NPC_KINDS = {
-  cng: { n: "সিএনজি", max: [9.5, 11.5], rad: 1, build: (k, R) => {
+  cng: { n: "সিএনজি", max: [9.5, 11.5], rad: 1, build: (k, R, empty) => {
     const paint = ["#2f8a4f", "#2b7d47", "#3b9455"][(R() * 3) | 0], canvas = "#1f2422", shirt = SHIRTS[(R() * SHIRTS.length) | 0];
     k.box(2.5, .62, 1.28, paint, -.1, .75, 0); k.box(.5, .4, 1.0, paint, 1.2, .62, 0); k.box(2.1, .06, 1.3, "#f5c518", -.3, .99, 0);
     k.box(1.85, .1, 1.34, canvas, -.45, 1.86, 0); k.box(.75, .1, 1.34, paint, .88, 1.86, 0); k.box(.06, .55, 1.24, canvas, -1.33, 1.36, 0);
     for (const x of [-1.3, .42, 1.2]) for (const z of [-.62, .62]) k.box(.07, .8, .07, paint, x, 1.45, z);
     k.box(.04, .5, 1.1, "#a9d6e5", 1.2, 1.42, 0);
     k.wheel(.3, .2, -.8, .62); k.wheel(.3, .2, -.8, -.62); k.wheel(.27, .17, 1.15, 0);
+    if (empty) return; // parked by the road, nobody in it
     k.box(.34, .42, .46, shirt, .5, 1.25, 0); k.head(.52, 1.6, 0);
     if (R() < .6) { k.box(.34, .4, .4, SHIRTS[(R() * SHIRTS.length) | 0], -.75, 1.25, .25); k.head(-.73, 1.58, .25); }
   } },
+  // the same Ponki Rajs and royal bikes you can ride, each with a stranger on it
+  praj: { n: "পংকি রাজ", max: [8, 10], rad: .55, model: R => twoWheeler("scooter", R, -.42, 1.12) },
+  royal: { n: "রাজকীয় বাইক", max: [10, 12.5], rad: .55, model: R => twoWheeler("bike", R, -.26, 1.04) },
   rick: { n: "রিকশা", max: [3.8, 4.8], rad: .9, build: (k, R) => {
     const hood = ["#1d1a17", "#c8102e", "#2f6db3", "#e07a1f"][(R() * 4) | 0], body = ["#2f6db3", "#c8102e", "#2f8a4f", "#f5c518"][(R() * 4) | 0], steel = "#4a4f55";
     k.wheel(.33, .07, 1.0, 0); k.wheel(.36, .07, -.75, .55); k.wheel(.36, .07, -.75, -.55);
@@ -2576,18 +2672,31 @@ const NPC_KINDS = {
     if (R() < .6) k.ball(.2, ["#f6efe1", "#c8102e", "#1d1a17"][(R() * 3) | 0], -.07, 1.64, 0, .85); // helmet
   } },
 };
+function twoWheeler(kind, R, x, seat) { // a ride model with a generic rider: trousers or a lungi, a shirt, a head, maybe a helmet
+  const gr = new THREE.Group(); gr.add(parkedClone(RIDES[kind]));
+  gr.add(npcModel(k => {
+    const leg = R() < .4 ? LUNGI[(R() * LUNGI.length) | 0] : "#3a3530";
+    for (const z of [-.13, .13]) { k.box(.42, .13, .13, leg, x + .2, seat + .04, z); k.box(.13, .52, .13, leg, x + .38, seat - .24, z); }
+    k.box(.26, .52, .34, SHIRTS[(R() * SHIRTS.length) | 0], x, seat + .33, 0, -.15); k.head(x + .08, seat + .74, 0);
+    for (const z of [-.2, .2]) k.box(.5, .08, .08, SHIRTS[0], x + .3, seat + .3, z, -.35);
+    if (R() < .5) k.ball(.2, ["#f6efe1", "#c8102e", "#1d1a17"][(R() * 3) | 0], x + .07, seat + .78, 0, .85);
+  }));
+  return gr;
+}
 const HONK = {
   cng: ["সাইড দেন মামা!", "প্যাঁ-পোঁ! একটু চাপেন!", "রাস্তার মাঝখানে কী করেন ভাই?"],
   rick: ["ক্রিং ক্রিং! সরেন ভাই!", "রিকশা যাইবো, সাইড দেন!"],
   easy: ["ইজিবাইক আসতেছে, সাইড!", "চার্জ শেষ হওয়ার আগে যাইতে দেন!"],
   bike: ["ভাই, একটু জায়গা দেন!", "হেলমেট আছে, ধৈর্য নাই!"],
+  praj: ["ভটভট! পংকি রাজ যাইবো, সাইড!", "পুরান গাড়ি, ব্রেক কম, সরেন!"],
+  royal: ["ধুগ-ধুগ-ধুগ! সাইড দেন!", "রাজকীয় বাইক যাইবো, রাস্তা ছাড়েন!"],
 };
 const BUMPED = ["চোখ কই রাখেন ভাই!", "আমার গাড়ির রং উঠায় দিলেন!", "আস্তে চালান, ভাই!", "এইটা রাস্তা, রেস না!"];
 const traffic = [], trafficG = new THREE.Group(); scene.add(trafficG);
 {
   const R = rng32(314);
-  for (const kind of ["cng", "cng", "cng", "cng", "cng", "rick", "rick", "rick", "rick", "easy", "easy", "easy", "bike", "bike"]) {
-    const K = NPC_KINDS[kind], mesh = npcModel(k => K.build(k, R));
+  for (const kind of ["cng", "cng", "cng", "cng", "cng", "rick", "rick", "rick", "rick", "easy", "easy", "easy", "bike", "bike", "praj", "praj", "royal", "royal"]) {
+    const K = NPC_KINDS[kind], mesh = K.model ? K.model(R) : npcModel(k => K.build(k, R));
     trafficG.add(mesh);
     traffic.push({ kind, mesh, rad: K.rad, max: K.max[0] + R() * (K.max[1] - K.max[0]), patience: R() * 3, hy: 3, x: 0, y: 0, a: 0, v: 0, off: 1.5 });
   }
@@ -2619,21 +2728,19 @@ function driveRoad(n, ds) {
   const cx = ax + (bx - ax) * n.f, cy = ay + (by - ay) * n.f;
   n.x = cx + Math.sin(n.a) * n.off; n.y = cy - Math.cos(n.a) * n.off;
 }
-function placeTraffic(R) {
-  const taken = [];
-  for (const n of traffic) {
-    let p = null;
-    for (let k = 0; k < 40 && !p; k++) {
-      const q = randomRoadPoint(R, (x, y) => { const d = Math.hypot(x - door.x, y - door.y); return d > 45 && d < 520 && reachable(x, y) && taken.every(t => Math.hypot(t.x - x, t.y - y) > 45); });
-      if (q && q.r.k !== "track") p = q;
-    }
-    n.gone = !p; n.mesh.visible = !!p; if (!p) continue;
-    taken.push(p);
-    Object.assign(n, { r: p.r, i: p.i, f: p.f, dir: p.dir, v: n.max * .5, wait: 0, honkCd: 1 + R() * 3, hitCd: 0, yield: 0, talkCd: 0 });
-    n.off = Math.min(n.r.hw * .45, 1.7); driveRoad(n, 0); n.sx = n.x; n.sy = n.y; n.sa = n.a;
-    n.mesh.position.set(n.x, 0, n.y); n.mesh.rotation.y = -n.a;
+function spawnTraffic(n, R, taken = [], away = null) { // put one vehicle somewhere on the roads (away from `away`, when given)
+  let p = null;
+  for (let k = 0; k < 40 && !p; k++) {
+    const q = randomRoadPoint(R, (x, y) => { const d = Math.hypot(x - door.x, y - door.y); return d > 45 && d < 520 && reachable(x, y) && taken.every(t => Math.hypot(t.x - x, t.y - y) > 45) && (!away || Math.hypot(x - away.x, y - away.y) > 140); });
+    if (q && q.r.k !== "track") p = q;
   }
+  n.gone = !p; n.respawn = 0; n.mesh.visible = !!p; if (!p) return null;
+  Object.assign(n, { r: p.r, i: p.i, f: p.f, dir: p.dir, v: n.max * .5, wait: 0, honkCd: 1 + R() * 3, hitCd: 0, yield: 0, talkCd: 0 });
+  n.off = Math.min(n.r.hw * .45, 1.7); driveRoad(n, 0); n.sx = n.x; n.sy = n.y; n.sa = n.a;
+  n.mesh.position.set(n.x, 0, n.y); n.mesh.rotation.y = -n.a;
+  return p;
 }
+function placeTraffic(R) { const taken = []; for (const n of traffic) { const p = spawnTraffic(n, R, taken); if (p) taken.push(p); } }
 placeTraffic(rng32(5));
 
 /* ================= DOM overlay: name tags, speech bubbles, floaties ================= */
@@ -2795,7 +2902,8 @@ function engineUpdate() {
     const on = state === "play" && !muted, v = P ? Math.abs(P.v) : 0, now = ac.currentTime;
     eng.rv.gain.setTargetAtTime(on ? rainLevel * .09 : 0, now, .3);
     eng.vol.gain.setTargetAtTime(on && !W ? .03 + v * .0016 : 0, now, .08); // the engine is off while the driver walks
-    eng.o.frequency.setTargetAtTime(46 + v * 3.2, now, .1); eng.lfo.frequency.setTargetAtTime(8 + v * .9, now, .1);
+    const ek = vehId === "bike" ? [30, 2.2, 5, .55] : vehId === "scooter" ? [62, 3.6, 12, 1] : [46, 3.2, 8, .9]; // the bike thumps low and slow, the scooter buzzes
+    eng.o.frequency.setTargetAtTime(ek[0] + v * ek[1], now, .1); eng.lfo.frequency.setTargetAtTime(ek[2] + v * ek[3], now, .1);
   } catch (e) {}
 }
 
@@ -2867,7 +2975,7 @@ let state = "menu", rand = Math.random, P = null, comrades = [], cows = [], mich
 let clock = DAY_START, dayN = 0, dayGold = 0, time = 0, lastTick = -1, sufanCd = 0, events = {}, shedLevel = 0, rainLevel = 0, flash = 0, area = null, chatCd = 0, warned30 = false, samWarnCd = 0, shakeT = 0, gid = 0;
 const dyn = new THREE.Group(); scene.add(dyn);
 const rings = [];
-let sufan = null, officeTag = null, drvTag = null, carTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
+let sufan = null, officeTag = null, drvTag = null, carTag = null, jackTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
 
 /* ---- side missions: now and then a job turns up. A villager by the road wants a lift, or Sufan has a job: posters to
    put up, chips to fetch from Real Mamur Dukan, a para to announce the meeting in by horn, his runaway goat to catch on
@@ -3570,7 +3678,7 @@ function missionRender(t) {
 let W = null, walkTip = false; // W: the driver on foot, null while driving
 const me = () => W || P; // whoever the player is right now
 const WALK_V = 5.2, BOARD_R = 3.4, WHISTLE_R = 26;
-const rideIcon = () => vehId === "cng" ? "🛺" : "🛵";
+const rideIcon = () => VEH().ic;
 const WAIT_LINES = ["মামা কই গেলেন? মিটার তো চলতেছে!", "আমরা কি এইখানেই বসে থাকবো?", "ড্রাইভার হাঁটতে গেছে, সভা হবে কেমনে?", "চাবি নিয়া গেলেন নাকি মামা?"];
 const SAM_WALK = ["হাইটা যাও কেন? গাড়ি কই?", "সালাম দিয়া যাও!", "হাঁটা ভালো, স্বাস্থ্য ভালো থাকে।"];
 const padBtn = k => document.querySelector(`#pad [data-k="${k}"]`);
@@ -3586,11 +3694,13 @@ function exitRide() {
   W = { x: at.x, y: at.y, a: P.a, v: 0, walk: 0, hy: 2.8 };
   sfx.door(); syncRideUi();
   if (!walkTip) { walkTip = true; showBanner("পায়ে হেঁটে!", "গলিতে ঢুকে যাও, কাজ শেষে গাড়িতে ফিরে এসো", 2.6); } // the first time, the tip says it
-  else say(W, vehId === "cng" ? "সিএনজি এখানে থাক, হাইটা যাই!" : "পংকি রাজ এখানে থাক, হাইটা যাই!", 2);
+  else say(W, `${VEH().go} এখানে থাক, হাইটা যাই!`, 2);
 }
 function enterRide() {
   if (!W || state !== "play" || talk) return;
-  if (Math.hypot(W.x - P.x, W.y - P.y) > BOARD_R) { floaty(W.x, W.y, `${rideIcon()} এর কাছে যাও`, C.ink); return; }
+  const nr = rideNear();
+  if (nr.d > BOARD_R) { floaty(W.x, W.y, `${rideIcon()} এর কাছে যাও`, C.ink); return; }
+  if (nr.type !== "own" && !takeRide(nr)) return;
   W = null; sfx.door(); syncRideUi(); // comrades walking behind climb in by the usual rule: awake and within 7 m of the ride
   for (const c of comrades) c.follow = false;
   if (!P.hello) { // the first ride of the round
@@ -3599,10 +3709,97 @@ function enterRide() {
   }
 }
 function toggleRide() { if (W) enterRide(); else exitRide(); }
+
+/* ---- other rides: CNGs, Ponki Rajs and royal bikes parked along the roads, and the ones people are driving.
+   On foot you can take any parked one, or stop a moving one by standing in its way and snatch it, the way it's done in
+   the crime games. The ride you leave stays parked where you left it, and you can come back for it. */
+let parked = [], fleers = [], seenRide = new Set();
+const JACK = { cng: "cng", praj: "scooter", royal: "bike" }; // traffic kinds you can snatch, and the ride you get
+const JACKED = {
+  cng: ["আরে আরে! আমার সিএনজি! মিটার তো চলতেছিল!", "আমার সিএনজি নিয়া গেল রে! চোর! চোর!"],
+  scooter: ["তানিমের পংকি রাজ নিয়া গেল রে! চোর! চোর!", "আরে আমার পংকি রাজ! ওইটার ব্রেক নাই ভাই!"],
+  bike: ["ইমাম ভাইয়ের বাইক! ইমাম ভাই শুনলে খবর আছে!", "আমার রাজকীয় বাইক! চোর! চোর! ধর ধর!"],
+};
+const PARK_MAX = 24;
+function addParked(kind, x, y, a, own) { // own: the ride you just left (a CNG keeps your paint and upgrades)
+  const mesh = own || kind !== "cng" ? parkedClone(RIDES[kind]) : npcModel(k => NPC_KINDS.cng.build(k, rand, true));
+  mesh.position.set(x, 0, y); mesh.rotation.y = -a; dyn.add(mesh);
+  const p = { kind, x, y, a, mesh, own: !!own, hitCd: 0, key: "", tag: mkEl("tag park", "") };
+  parked.push(p);
+  if (parked.length > PARK_MAX) { // too many: the one furthest from you quietly goes
+    const Me = me(), far = parked.filter(o => o !== p).reduce((b, o) => dist(o, Me) > dist(b, Me) ? o : b);
+    removeParked(far);
+  }
+  return p;
+}
+function removeParked(p) { dyn.remove(p.mesh); p.tag.remove(); const i = parked.indexOf(p); if (i >= 0) parked.splice(i, 1); }
+function placeParked(R) {
+  parked = [];
+  // scattered along the roads all over town, a fresh spread every round, each one on its own (never two together,
+  // and none by the party office, where only your CNG waits); on the kerb side, nose the way the traffic goes
+  const want = { cng: 4, scooter: 6, bike: 6 }, order = [];
+  for (const kind in want) for (let n = 0; n < want[kind]; n++) order.push(kind);
+  shuffle(order, R); // take turns, so no kind grabs the best spots first
+  for (const kind of order) for (let k = 0; k < 900; k++) {
+    const s = roadSegs[(R() * roadSegs.length) | 0]; if (s.hw < 3) continue; // not on the narrow dirt tracks
+    const f = R(), L = Math.hypot(s.bx - s.ax, s.by - s.ay) || 1, side = R() < .5 ? 1 : -1, nx = -(s.by - s.ay) / L, ny = (s.bx - s.ax) / L;
+    const off = s.hw - (kind === "cng" ? .7 : .4), x = s.ax + (s.bx - s.ax) * f + nx * side * off, y = s.ay + (s.by - s.ay) * f + ny * side * off;
+    const d = Math.hypot(x - door.x, y - door.y);
+    if (d < 90 || d > 560 || !reachable(x, y) || blocked(x, y, kind === "cng" ? 1.1 : .6) || parked.some(o => dist(o, { x, y }) < 70)) continue;
+    addParked(kind, x, y, Math.atan2(s.by - s.ay, s.bx - s.ax) + (side > 0 ? Math.PI : 0)); break;
+  }
+}
+function rideNear() { // the nearest thing the walker can climb onto: their own ride, a parked one, or a vehicle to snatch
+  let best = { type: "own", d: Math.hypot(W.x - P.x, W.y - P.y), kind: vehId, p: P };
+  for (const p of parked) { const d = dist(p, W); if (d < best.d) best = { type: "park", d, kind: p.kind, p }; }
+  for (const n of traffic) if (!n.gone && JACK[n.kind]) { const d = dist(n, W) - .3; if (d < best.d) best = { type: "jack", d, kind: JACK[n.kind], p: n }; }
+  return best;
+}
+function takeRide(nr) { // switch to another ride: the old one is parked where it stands, passengers move across
+  const V = VEHICLES[nr.kind], seats = V.seats + (nr.kind === "cng" && has("up-seat4") ? 1 : 0), src = nr.p;
+  if (P.riders.length + paxN() > seats) { floaty(W.x, W.y, `${V.go}-তে সবাই আঁটবে না!`, C.ink); sfx.bonk(); return false; }
+  addParked(vehId, P.x, P.y, P.a, true);
+  if (nr.type === "park") removeParked(src);
+  else { src.gone = true; src.mesh.visible = false; src.respawn = 35; jackFlee(src, nr.kind); } // the driver jumps off and runs
+  vehId = nr.kind; Object.assign(P, { x: src.x, y: src.y, a: src.a, v: 0, roll: 0, stun: 0, scrape: 0 });
+  if (drvTag) drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${rideLabel()}`;
+  if (!P.hello) { P.hello = true; startPending = false; } // the first ride of the round isn't the CNG, so no CNG hello
+  if (!seenRide.has(vehId) && V.hello) say(P, V.hello, 3.2, .3);
+  seenRide.add(vehId);
+  showBanner(`${V.ic} ${V.n}`, nr.type === "jack" ? "ছিনতাই! মালিক দৌড়ে পালাচ্ছে..." : `${bn(seats)} জনের সিট`, 2.2);
+  return true;
+}
+function jackFlee(n, kind) { // a snatched vehicle's driver jumps off on the far side and runs off shouting
+  const mesh = makeHuman({ R: rand, shirt: SHIRTS[(rand() * SHIRTS.length) | 0], armUp: true }); dyn.add(mesh);
+  const sx = n.x + Math.sin(n.a) * 1.3, sy = n.y - Math.cos(n.a) * 1.3, a = Math.atan2(sy - W.y, sx - W.x) + (rand() - .5) * .8;
+  const f = { x: sx, y: sy, a, t: 0, walk: 0, mesh, hy: 2.7 }; fleers.push(f);
+  const L = JACKED[kind]; say(f, L[(rand() * L.length) | 0], 2.6); say(f, "পুলিশ! পুলিশ!", 1.8, 2.8);
+  floaty(n.x, n.y, "ছিনতাই! 🚨"); sfx.bonk(); shakeT = .2;
+}
+function parkedUpdate(dt) {
+  for (const p of parked) {
+    p.hitCd -= dt;
+    const big = p.kind === "cng" ? 1 : .45;
+    if (W) { const dx = W.x - p.x, dy = W.y - p.y, d = Math.hypot(dx, dy) || 1e-3, R = .45 + big; if (d < R) { W.x = p.x + dx / d * R; W.y = p.y + dy / d * R; } continue; }
+    const dx = P.x - p.x, dy = P.y - p.y, d = Math.hypot(dx, dy) || 1e-3, R = (vehId === "cng" ? 1.3 : .8) + big;
+    if (d < R) {
+      if (Math.abs(P.v) > 6 && p.hitCd <= 0) { p.hitCd = 1.5; P.v *= -.25; shakeT = .25; sfx.bonk(); floaty(p.x, p.y, "ঠাস!"); }
+      P.x = p.x + dx / d * R; P.y = p.y + dy / d * R;
+    }
+  }
+  for (let i = fleers.length - 1; i >= 0; i--) { // the snatched drivers run off, then vanish into a lane
+    const f = fleers[i]; f.t += dt; const sp = f.t < .45 ? 0 : 6.2;
+    f.x += Math.cos(f.a) * sp * dt; f.y += Math.sin(f.a) * sp * dt; f.walk += dt * sp * 2.2; pushOut(f, .45); riverBlock(f, .45);
+    const sw = Math.sin(f.walk) * .8, u = f.mesh.userData;
+    f.mesh.position.set(f.x, Math.abs(Math.cos(f.walk)) * .08, f.y); f.mesh.rotation.y = -f.a;
+    u.legs[0].rotation.z = sw; u.legs[1].rotation.z = -sw; u.arms[0].rotation.z = -sw * .8; u.arm.rotation.z = -.3 - Math.max(0, Math.sin(f.t * 9)) * .8;
+    if (f.t > 9) { dyn.remove(f.mesh); fleers.splice(i, 1); }
+  }
+}
 function syncRideUi() {
   const walk = !!W, tip = mobile ? "" : "F";
   doorBtn.classList.toggle("walk", walk);
-  doorBtn.innerHTML = walk ? `ওঠো ${rideIcon()}<small>${tip}</small>` : `নামো 🚶<small>${tip}</small>`;
+  doorBtn.innerHTML = doorBtn._k = walk ? `ওঠো ${rideIcon()}<small>${tip}</small>` : `নামো 🚶<small>${tip}</small>`;
   doorBtn.setAttribute("aria-label", walk ? "গাড়িতে ওঠো" : "গাড়ি থেকে নামো");
   hornBtn.innerHTML = walk ? `শিস দাও!<small>${mobile ? "শিস" : "Space"}</small>` : `প্যাঁ-পোঁ!<small>${mobile ? "হর্ন" : "Space"}</small>`;
   padBtn("pad-gas").innerHTML = walk ? "<small>▲</small>হাঁটো" : "<small>▲</small>গ্যাস";
@@ -3637,13 +3834,13 @@ function followUpdate(dt) {
 function npcHonk(n, atYou) {
   const d = dist(n, me()); if (d > 70) return;
   const vol = clamp(1 - d / 70, .15, 1);
-  if (n.kind === "rick") sfx.bell(vol); else sfx.beep(vol, n.kind === "bike" ? 1.4 : n.kind === "easy" ? 1.2 : 1);
+  if (n.kind === "rick") sfx.bell(vol); else sfx.beep(vol, ({ bike: 1.4, praj: 1.3, royal: .75, easy: 1.2 })[n.kind] || 1);
   if (atYou && d < 45) { const L = HONK[n.kind]; say(n, L[(rand() * L.length) | 0], 1.8); }
 }
 function trafficUpdate(dt) {
   const live = state === "play";
   for (const n of traffic) {
-    if (n.gone) continue;
+    if (n.gone) { if (n.respawn > 0 && (n.respawn -= dt) <= 0 && !spawnTraffic(n, rand, [], me())) n.respawn = 10; continue; }
     n.honkCd -= dt; n.hitCd -= dt; n.yield -= dt; n.talkCd -= dt;
     // what's in my lane ahead, and how far
     const fx = Math.cos(n.a), fy = Math.sin(n.a), look = 7 + n.v * 1.3;
@@ -3659,6 +3856,7 @@ function trafficUpdate(dt) {
       if (sam) see(sam, .5);
       for (const m of michils) see(m, 2.4);
       for (const c of comrades) if (c.state === "awake" || c.state === "flee") see(c, .45);
+      for (const p of parked) see(p, 0); // kerbside ones sit clear of the lane; one left in the road is in the way
     }
     for (const o of traffic) if (o !== n && !o.gone) see(o, o.rad);
     const stopAt = 3.2 + n.rad, want = gap < stopAt ? 0 : Math.min(n.max * (n.yield > 0 ? .5 : 1), (gap - stopAt) * 1.4);
@@ -3713,6 +3911,7 @@ const sufanPos = () => ({ x: door.x + officeU.x * (door.hw + 3) + officeV.x * 9,
 
 function newGame() {
   clearDyn(); gid++;
+  vehId = "cng"; seenRide = new Set(["cng"]); parked = []; fleers = []; // every round starts with Ponk Poribohon's CNG
   loadShop(); bannerT = 0; el("banner").innerHTML = "";
   rand = rng32((Math.random() * 2 ** 31) | 0);
   comrades = []; // the open world has no comrades to round up
@@ -3753,7 +3952,7 @@ function newGame() {
   offer = null; mission = null; offerCd = 4; misDone = 0; misRecent = []; misKey = ""; misTalkCd = 0; beacon.visible = false; el("mission").hidden = true;
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
   drvTag = mkEl("tag drv", ""); drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${rideLabel()}`;
-  carTag = mkEl("tag", ""); W = null; walkTip = false; // the round starts on foot, set up below once the CNG is parked
+  carTag = mkEl("tag", ""); jackTag = mkEl("tag jack", ""); W = null; walkTip = false; // the round starts on foot, set up below once the CNG is parked
   placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")], [mamu, mkEl("tag", "রিয়েল মামুর দোকান 🍟")], [school, mkEl("tag", "কতোয়ালপুর সরকারি প্রাথমিক বিদ্যালয় 🏫")]].filter(([b]) => b);
   for (const sh of SHOPS) { // a dashed ring on the road where to stop
     const g = new THREE.Group();
@@ -3773,6 +3972,7 @@ function newGame() {
   clock = DAY_START; dayLook();
   shedLevel = 0; rainLevel = 0; flash = 0; area = null; chatCd = 8; warned30 = false; samWarnCd = 0; shakeT = 0;
   applyLook();
+  placeParked(rand);
   W = footSpawn(P); P.hello = false; syncRideUi(); // on foot, like stepping out of the office
   camPos.set(W.x - Math.cos(W.a) * 6, 4, W.y - Math.sin(W.a) * 6); introT = 0;
   say(W, "চলো, সিএনজিতে উঠি! আজকে কতোয়ালপুর ঘুরমু।", 3, 3.4);
@@ -3978,7 +4178,7 @@ function update(dt) {
       say(w, "হাম্বা!", 1.4); sfx.moo(); floaty(W.x, W.y, "ধাক্কা!");
     }
   }
-  trafficUpdate(dt);
+  trafficUpdate(dt); parkedUpdate(dt);
   // ---- posters, processions, Sam Vai, stalls
   for (const b of billboards) if (!b.seen && dist(b, Me) < 16) { b.seen = true; if (rand() < .5) say(P, ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই! 📢", "ভোটের মৌসুম! রাস্তায় শুধু পোস্টার আর পোস্টার।", "এই পোস্টার তো আগেও দেখছি!"][(rand() * 3) | 0], 2.4); }
   for (const m of michils) {
@@ -4144,8 +4344,8 @@ function render(t, dt) {
   sun.intensity = (2.4 - gold * .4) * (1 - rainLevel * .75) * (1 - Math.max(shedLevel * .97, night * .9)) + flash * 2;
   hemi.intensity = (1.6 - gold * .2) * (1 - rainLevel * .3) * (1 - Math.max(shedLevel * .85, night * .76)) + flash * 1.5;
   hemi.color.copy(COL.hemiA).lerp(COL.hemiB, gold);
-  const car = ride(); cng.g.visible = car === cng; scoot.g.visible = car === scoot; cng.spot.intensity = scoot.spot.intensity = 0;
-  cng.drv.visible = scoot.drv.visible = !W; walker.g.visible = !!W;
+  const car = ride(); for (const r of [cng, scoot, bike]) { r.g.visible = car === r; r.spot.intensity = 0; r.drv.visible = !W; }
+  walker.g.visible = !!W;
   if (W) { // the driver walking: legs and arms swing with his stride
     const sw = Math.sin(W.walk) * .65 * clamp(Math.abs(W.v) / WALK_V, 0, 1);
     walker.g.position.set(W.x, Math.abs(Math.cos(W.walk)) * .05 * clamp(Math.abs(W.v), 0, 1), W.y); walker.g.rotation.y = -W.a;
@@ -4160,11 +4360,11 @@ function render(t, dt) {
   if (P) {
     // CNG body and a little engine shake
     car.g.position.set(P.x, 0, P.y); car.g.rotation.y = -P.a;
-    car.body.position.y = Math.abs(P.v) > .5 ? Math.sin(t * 60) * .025 : Math.sin(t * 38) * .012; car.body.rotation.x = -P.roll * (car === scoot ? 2.2 : 1);
+    car.body.position.y = Math.abs(P.v) > .5 ? Math.sin(t * 60) * .025 : Math.sin(t * 38) * .012; car.body.rotation.x = -P.roll * (car === cng ? 1 : 2.2);
     const sh = shakeT; shakeT = Math.max(0, shakeT - dt);
     // camera follows behind whoever you are: the ride, or the driver on foot (closer and lower)
     const F = me(), cm = CAMS[camMode], fx = Math.cos(F.a), fz = Math.sin(F.a);
-    const vk = W ? (camMode < 2 ? .62 : .7) : car === scoot && camMode < 2 ? .72 : 1; // the scooter is small, so the chase camera sits closer
+    const vk = W ? (camMode < 2 ? .62 : .7) : car !== cng && camMode < 2 ? .72 : 1; // two-wheelers are small, so the chase camera sits closer
     tmp.set(F.x - fx * cm.back * vk, cm.up * vk, F.y - fz * cm.back * vk);
     introT = Math.max(0, introT - dt);
     camPos.lerp(tmp, Math.min(1, dt * (introT > 0 ? 1.2 + (1.8 - introT) * 1.2 : camMode === 2 ? 3 : 4.5)));
@@ -4178,7 +4378,7 @@ function render(t, dt) {
       const c = P.riders[i]; s.visible = !!c && state !== "menu";
       if (c) {
         const m = faceTex(c, RING.ride); if (s.material.map !== m) { s.material.map = m; s.material.needsUpdate = true; }
-        const off = (i - (P.riders.length - 1) / 2) * (P.riders.length > 4 ? .95 : 1.25); s.position.set(P.x - Math.sin(P.a) * off, (car === scoot ? 2.75 : 3.3) + Math.sin(t * 9 + i) * .08, P.y + Math.cos(P.a) * off);
+        const off = (i - (P.riders.length - 1) / 2) * (P.riders.length > 4 ? .95 : 1.25); s.position.set(P.x - Math.sin(P.a) * off, (car === cng ? 3.3 : 2.75) + Math.sin(t * 9 + i) * .08, P.y + Math.cos(P.a) * off);
       }
     });
     // arrow to the next job
@@ -4253,8 +4453,26 @@ function render(t, dt) {
       const d = W ? Math.hypot(W.x - P.x, W.y - P.y) : 0, txt = d <= BOARD_R ? `${rideIcon()} ওঠো${mobile ? "" : " (F)"}` : `${rideIcon()} ${VEH().go} · ${bn(Math.round(d))} মি`;
       if (W && carTag.textContent !== txt) carTag.textContent = txt;
       W && state === "play" && d < 140 ? place(carTag, project(P.x, 2.6, P.y)) : (carTag.style.display = "none");
-      doorBtn.classList.toggle("far", !!W && d > BOARD_R);
     }
+    // parked rides near you on foot, and the vehicle you could snatch
+    const nr = W && state === "play" ? rideNear() : null;
+    for (const p of parked) {
+      const d = dist(p, Me); p.mesh.visible = d < 280;
+      if (!nr || d > 40) { p.tag.style.display = "none"; continue; }
+      const V = VEHICLES[p.kind], go = nr.p === p && nr.d <= BOARD_R, txt = go ? `${V.ic} ${V.go} · ওঠো${mobile ? "" : " (F)"}` : `${V.ic} ${V.go}`;
+      if (p.key !== txt) { p.key = txt; p.tag.textContent = txt; p.tag.classList.toggle("go", go); }
+      place(p.tag, project(p.x, 2.1, p.y));
+    }
+    if (nr && nr.type === "jack" && nr.d < 14) {
+      const txt = nr.d <= BOARD_R ? `🚨 ছিনতাই করো${mobile ? "" : " (F)"}` : `🚨 ${VEHICLES[nr.kind].go}`;
+      if (jackTag.textContent !== txt) jackTag.textContent = txt;
+      place(jackTag, project(nr.p.sx, nr.kind === "cng" ? 2.6 : 2.3, nr.p.sy));
+    } else jackTag.style.display = "none";
+    if (W) {
+      const ok = nr && nr.d <= BOARD_R, html = ok && nr.type === "jack" ? `ছিনতাই 🚨<small>${mobile ? "" : "F"}</small>` : `ওঠো ${ok ? VEHICLES[nr.kind].ic : rideIcon()}<small>${mobile ? "" : "F"}</small>`;
+      if (doorBtn._k !== html) doorBtn.innerHTML = doorBtn._k = html;
+      doorBtn.classList.toggle("far", !ok);
+    } else doorBtn.classList.remove("far");
     if (officeTag) near(office.cx, office.cy, 170) ? place(officeTag, project(office.cx, office.h + 6.5, office.cy)) : (officeTag.style.display = "none");
     for (const [b, tg] of placeTags) near(b.cx, b.cy, 110) ? place(tg, project(b.cx, b.h + 3, b.cy)) : (tg.style.display = "none");
     if (sufan) near(sufan.x, sufan.y) ? place(sufan.tag, project(sufan.x, 3.05, sufan.y)) : (sufan.tag.style.display = "none");
@@ -4312,7 +4530,8 @@ function drawHud() {
   for (const s of SHOPS) dot(s.x, s.y, P[s.item] >= 3 ? "rgba(138,90,43,.45)" : "#c98a4b", 3.2);
   if (sam) dot(sam.x, sam.y, "#ffd2a6", 2.8);
   dot(door.x, door.y, C.red, 4.6, true); // the party office is always on the radar
-  if (W) dot(P.x, P.y, "#f6efe1", 3.6, true); // the parked ride
+  if (W) for (const p of parked) dot(p.x, p.y, "#8fd6a0", 2.4); // rides you could take
+  if (W) dot(P.x, P.y, "#f6efe1", 3.6, true); // your parked ride
   const mt = misTarget(); if (mt && state === "play") dot(mt.x, mt.y, offer ? "#c9a2ff" : "#f5a623", 5.2, true);
   const nr = R - 10 * dpr; // north marker on the rim
   m.beginPath(); m.arc(R + sn * nr, R - cs * nr, 8 * dpr, 0, Math.PI * 2); m.fillStyle = C.ink; m.fill();
@@ -4485,10 +4704,10 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 // test hook
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
-  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
+  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get parked() { return parked; }, get fleers() { return fleers; }, rideNear: () => W && rideNear(), enterRide, bike, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
   get mission() { return mission; }, get offer() { return offer; }, makeOffer: k => { dropOffer(); return makeOffer(k); }, get misDone() { return misDone; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
-  renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
+  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };
 </script>
