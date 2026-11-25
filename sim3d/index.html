@@ -111,6 +111,15 @@
     background: var(--yellow); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); font: 400 22px var(--font-display); cursor: pointer; color: var(--ink); }
   #horn small { display: block; font: 600 11px var(--font-body); }
   #horn.hit { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  /* get out of the CNG and walk, or get back in: sits above the horn */
+  #doorBtn { position: fixed; right: 28px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 6px + 96px + 14px); width: 72px; height: 72px; border-radius: 50%; z-index: 3;
+    background: var(--paper); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); font: 700 15px/1.15 var(--font-body); cursor: pointer; color: var(--ink); padding: 0;
+    touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #doorBtn small { display: block; font: 600 10px var(--font-body); opacity: .8; }
+  #doorBtn.walk { background: #2f8a4f; color: var(--paper); }
+  #doorBtn.far { opacity: .6; }
+  #doorBtn.hit { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+  #doorBtn[hidden] { display: none; }
   #stickZone { position: fixed; left: 0; bottom: 0; width: 55%; height: 60%; z-index: 2; }
   #stick { position: fixed; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; border: 3px solid rgba(29,26,23,.6);
     background: rgba(246,239,225,.35); z-index: 2; pointer-events: none; display: none; }
@@ -175,6 +184,7 @@
     .count small, .money small, .clock small { display: none; }
     .count { white-space: nowrap; } .seats { margin-left: 4px; }
     #horn { width: 84px; height: 84px; font-size: 17px; }
+    #doorBtn { right: 24px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 6px + 84px + 12px); width: 64px; height: 64px; font-size: 14px; }
   }
   @media (max-width: 420px) {
     .hud { gap: 5px; left: 6px; right: 6px; }
@@ -206,10 +216,14 @@
     #horn { --b: clamp(54px, 17.5vw, 72px); right: max(14px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px + var(--b) * 1.45 + 14px);
       width: calc(var(--b) + 6px); height: calc(var(--b) + 6px); font-size: calc(var(--b) * .24); line-height: 1.1; white-space: nowrap; padding: 0; }
     #horn small { font-size: 10px; margin-top: 2px; }
+    /* the door button sits over the brake, level with the horn */
+    #doorBtn { --b: clamp(54px, 17.5vw, 72px); width: var(--b); height: var(--b); font-size: calc(var(--b) * .22);
+      right: calc(max(14px, env(safe-area-inset-right)) + var(--b) + 6px + 10px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px + var(--b) * 1.45 + 14px); }
   }
-  /* phone on its side: little height, so the horn joins the bottom row next to the brake */
+  /* phone on its side: little height, so the horn joins the bottom row next to the brake, and the door button next to the horn */
   @media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
     #horn { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px); right: calc(max(14px, env(safe-area-inset-right)) + var(--b) * 2 + 6px + 20px); }
+    #doorBtn { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px); right: calc(max(14px, env(safe-area-inset-right)) + var(--b) * 3 + 12px + 30px); }
   }
   @media (pointer: coarse) { #target { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 92px); } }
 </style>
@@ -248,7 +262,8 @@
 </div>
 <button id="horn" hidden>প্যাঁ-পোঁ!<small>Space</small></button>
 <div class="pad" id="pad"><button class="pl" data-k="pad-l" aria-label="বামে ঘোরাও">◀</button><button class="pr" data-k="pad-r" aria-label="ডানে ঘোরাও">▶</button><button class="pb" data-k="pad-brake" aria-label="ব্রেক, চেপে রাখলে পিছে যাবে">ব্রেক<small>পিছে ▼</small></button><button class="pg" data-k="pad-gas"><small>▲</small>গ্যাস</button></div>
-<div class="keys" id="keys" hidden>W/↑ চালাও · S/↓ ব্রেক · A D/← → ঘোরাও · Space হর্ন · C ক্যামেরা</div>
+<div class="keys" id="keys" hidden>W/↑ চালাও · S/↓ ব্রেক · A D/← → ঘোরাও · Space হর্ন · F নামো/ওঠো · C ক্যামেরা</div>
+<button id="doorBtn" hidden aria-label="গাড়ি থেকে নামো">নামো<small>F</small></button>
 
 <div class="screen" id="start">
   <div class="panel">
@@ -261,6 +276,7 @@
       <ul class="rules">
       <li><span>📯</span><span>ঘুমন্ত কমরেডের কাছে গিয়ে <b>হর্ন</b> দাও। কেউ কেউ ঘুম ভেঙে পালায়, ধাওয়া করে ধরো!</span></li>
       <li><span>🛺</span><span>সিএনজিতে ৫টা সিট, তানিমের পংকি রাজে ১টা। ভরে গেলে পার্টি অফিসে নামিয়ে দাও। মাথার উপরের হলুদ তীর পথ দেখাবে।</span></li>
+      <li><span>🚶</span><span>গলিতে গাড়ি ঢুকে না? <b>নামো</b> (F) আর হেঁটে যাও। শিস দিয়ে ডাকো, জাগলে কমরেড পিছে পিছে আসবে। গাড়ির কাছে ফিরে <b>ওঠো</b>।</span></li>
       <li><span>🗣️</span><span>কেউ কেউ ঘুম ভেঙে <b>অজুহাত</b> দেবে। শুনে ঠিক জবাব বাছো: চা, চিপস, নাকি "এমরান ভাই আসতেছেন!" ভুল হলে পালাবে।</span></li>
       <li><span>☕</span><span><b>ভাইয়ার দোকানে</b> থামলে চা, তিন রাস্তার মোড়ে <b>রিয়েল মামুর দোকানে</b> থামলে চিপস (৳৫ করে, ৩টা পর্যন্ত)।</span></li>
       <li><span>🐄</span><span>রাস্তায় গরু আর মিছিল। ধাক্কা খেলে জরিমানা। আর <b>সাম ভাইয়ের</b> গায়ে গাড়ি তুললেই গেম ওভার!</span></li>
@@ -2311,6 +2327,7 @@ function makeCNG() {
   // inside: Ponki Vai at the handlebar, and the passengers' bench
   const drvShirt = pBox(.36, .42, .5, .5, 1.17, 0, lam({ color: "#f6efe1" })); // the driver's panjabi, coloured per driver
   const drvFace = new THREE.Sprite(new THREE.SpriteMaterial()); drvFace.scale.set(.34, .34, 1); drvFace.position.set(.54, 1.4, 0); body.add(drvFace);
+  const drv = new THREE.Group(); body.add(drv); drv.add(drvShirt, drvFace); // hidden while the driver is out walking
   pBox(.05, .05, .62, .86, 1.22, 0, ink);
   pBox(.7, .14, W - .16, -.75, 1.12, 0, lam({ color: "#7a2e24" })); pBox(.12, .36, W - .16, -1.18, 1.3, 0, lam({ color: "#7a2e24" }));
 
@@ -2326,7 +2343,7 @@ function makeCNG() {
   const stickU = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .5, 6), ink); stickU.position.y = 2.1; umb.add(stickU); umb.position.x = -.5;
   // headlight beam for load-shedding
   const spot = new THREE.SpotLight("#ffe7b0", 0, 70, .55, .6, 1.2); spot.position.set(1.5, .7, 0); const tgt = new THREE.Object3D(); tgt.position.set(16, 0, 0); g.add(spot, tgt); spot.target = tgt;
-  return { g, body, stick, spot, umb, bumper, led, lens, drvShirt, drvFace };
+  return { g, body, stick, spot, umb, bumper, led, lens, drv, drvShirt, drvFace };
 }
 const cng = makeCNG(); scene.add(cng.g);
 // Tanim's old scooter, Ponki Raj: rusty coral-red paint, round rear cowl, black seat, light on the handlebar (faces +x)
@@ -2373,20 +2390,34 @@ function makeScooter() {
     const hub = new THREE.Mesh(wheelGeo, chrome); hub.scale.set(.11, .11, .11); hub.position.copy(wh.position); g.add(hub);
   }
   // the driver on the seat: legs down to the floorboard, panjabi, arms to the grips, photo face
-  const legs = lam({ color: "#3a3530" }), shirtMat = lam({ color: "#f6efe1" });
+  const legs = lam({ color: "#3a3530" }), shirtMat = lam({ color: "#f6efe1" }), n0 = body.children.length;
   for (const k of [-1, 1]) { box(.48, .13, .13, -.08, .96, k * .11, legs); box(.13, .62, .13, .2, .64, k * .11, legs); }
   const drvShirt = box(.24, .46, .34, -.33, 1.17, 0, shirtMat); drvShirt.rotation.z = -.12;
   for (const k of [-1, 1]) { rod(-.27, 1.34, k * .17, .1, 1.18, k * .28, .03, shirtMat); rod(.1, 1.18, k * .28, .63, 1.09, k * .34, .026, shirtMat); }
   const drvFace = new THREE.Sprite(new THREE.SpriteMaterial()); drvFace.scale.set(.34, .34, 1); drvFace.position.set(-.29, 1.56, 0); body.add(drvFace);
+  const drv = new THREE.Group(); drv.add(...body.children.slice(n0)); body.add(drv); // the whole rider, hidden while he is out walking
   const spot = new THREE.SpotLight("#ffe7b0", 0, 70, .55, .6, 1.2); spot.position.set(.85, 1.08, 0); const tgt = new THREE.Object3D(); tgt.position.set(14, 0, 0); g.add(spot, tgt); spot.target = tgt;
-  return { g, body, spot, lens, drvShirt, drvFace };
+  return { g, body, spot, lens, drv, drvShirt, drvFace };
 }
 const scoot = makeScooter(); scene.add(scoot.g);
 // and the vehicles: everything but the parts the shop and the driver choice swap or recolour is baked, per vehicle body
 for (const r of [cng, scoot]) {
-  const keep = new Set([r.stick, r.umb, r.bumper, r.led, r.lens, r.drvShirt, r.spot].filter(Boolean)), live = new Set([paintMat, r.lens.material, r.drvShirt.material]);
+  const keep = new Set([r.stick, r.umb, r.bumper, r.led, r.lens, r.drv, r.spot].filter(Boolean)), live = new Set([paintMat, r.lens.material, r.drvShirt.material]);
   mergeUnder(r.body, keep, { live }); keep.add(r.body); mergeUnder(r.g, keep, { live });
+  mergeUnder(r.drv, new Set([r.drvShirt]), { live }); // the driver bakes on his own, so he can step out
 }
+// the driver on foot: legs and arms swing from the hip and shoulder, photo face like everyone else (faces +x)
+function makeWalker() {
+  const g = new THREE.Group(), legMat = lam({ color: "#3a3530" }), shirt = lam({ color: "#f6efe1" }), skin = lam({ color: "#c58f5e" });
+  const limb = (w, h, d, mat, x, y, z) => { const geo = new THREE.BoxGeometry(w, h, d); geo.translate(0, -h / 2, 0); const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
+  const legs = [-1, 1].map(s => limb(.17, .82, .19, legMat, 0, .84, s * .13));
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.27, .36, .95, 8), shirt); body.position.y = 1.28; body.castShadow = true; g.add(body);
+  const arms = [-1, 1].map(s => { const a = limb(.12, .7, .12, shirt, 0, 1.7, s * .34); const hand = new THREE.Mesh(new THREE.SphereGeometry(.08, 6, 5), skin); hand.position.y = -.72; a.add(hand); return a; });
+  const face = new THREE.Sprite(new THREE.SpriteMaterial()); face.scale.set(1.15, 1.15, 1); face.position.y = 2.2; g.add(face);
+  g.visible = false; scene.add(g);
+  return { g, legs, arms, shirt, face };
+}
+const walker = makeWalker();
 const ride = () => vehId === "scooter" && !garage ? scoot : cng; // the shop's garage always shows the CNG
 // paint, stickers and visible upgrades on the CNG; `paint` can be a paint the shop is only previewing
 function applyLook(paint = shop.paint) {
@@ -2395,6 +2426,7 @@ function applyLook(paint = shop.paint) {
   cng.led.visible = has("up-led"); cng.lens.material.color.set(has("up-led") ? "#ffffff" : "#ffe9a8");
   const d = DRV();
   for (const r of [cng, scoot]) { r.drvShirt.material.color.set(d.shirt); r.drvFace.material.map = faceTex(d, C.yellow); r.drvFace.material.needsUpdate = true; }
+  walker.shirt.color.set(d.shirt); walker.face.material.map = faceTex(d, C.yellow); walker.face.material.needsUpdate = true;
   scoot.lens.material.color.set(has("up-led") ? "#ffffff" : "#ffe9a8");
 }
 applyLook();
@@ -2531,6 +2563,8 @@ const sfx = {
   }); },
   moo() { this.play(t => { tone(210, t, .75, "triangle", .2, 120); tone(105, t, .75, "sine", .12, 70); }); },
   pop() { this.play(t => tone(500, t, .14, "square", .06, 950)); },
+  whistle() { this.play(t => { tone(1900, t, .16, "sine", .12, 2700); tone(2700, t + .2, .3, "sine", .12, 1800); }); }, // on foot: a two-finger whistle instead of the horn
+  door() { this.play(t => { noiseHit(t, .07, .35, "lowpass", 900, 200); tone(140, t, .12, "sine", .25, 70); }); },
   chime() { this.play(t => [660, 880, 1175].forEach((f, i) => tone(f, t + i * .09, .35, "triangle", .12))); },
   boost() { this.play(t => tone(260, t, .45, "sawtooth", .05, 1100)); },
   run() { this.play(t => [700, 560, 450].forEach((f, i) => tone(f, t + i * .07, .1, "square", .04))); },
@@ -2610,7 +2644,7 @@ function engineUpdate() {
     }
     const on = state === "play" && !muted, v = P ? Math.abs(P.v) : 0, now = ac.currentTime;
     eng.rv.gain.setTargetAtTime(on ? rainLevel * .09 : 0, now, .3);
-    eng.vol.gain.setTargetAtTime(on ? .03 + v * .0016 : 0, now, .08);
+    eng.vol.gain.setTargetAtTime(on && !W ? .03 + v * .0016 : 0, now, .08); // the engine is off while the driver walks
     eng.o.frequency.setTargetAtTime(46 + v * 3.2, now, .1); eng.lfo.frequency.setTargetAtTime(8 + v * .9, now, .1);
   } catch (e) {}
 }
@@ -2626,6 +2660,7 @@ addEventListener("keydown", e => {
   if (talk && ["1", "2", "3"].includes(k)) answerTalk(["tea", "chips", "emran"][+k - 1]);
   if (k === "m" && !e.repeat) toggleMute();
   if (k === "c" && !e.repeat && state === "play") nextCam();
+  if (k === "f" && !e.repeat && state === "play" && !talk) { toggleRide(); flashDoor(); }
   if (k === "enter" && !garage && state === "menu") { if (startStep < 3) goStep(startStep + 1); else if (!el("play").disabled) startGame(); }
   else if (k === "enter" && !garage && state === "over" && !el("play").disabled) startGame();
   if (k === "escape" && garage) closeShop();
@@ -2643,6 +2678,10 @@ const hornBtn = el("horn");
 hornBtn.addEventListener("pointerdown", e => { e.preventDefault(); horn(); flashHorn(); });
 function flashHorn() { hornBtn.classList.add("hit"); setTimeout(() => hornBtn.classList.remove("hit"), 120); }
 if (mobile) hornBtn.querySelector("small").textContent = "হর্ন";
+const doorBtn = el("doorBtn");
+doorBtn.addEventListener("pointerdown", e => { e.preventDefault(); if (state === "play" && !talk && !paused) { toggleRide(); flashDoor(); } });
+doorBtn.addEventListener("contextmenu", e => e.preventDefault());
+function flashDoor() { doorBtn.classList.add("hit"); setTimeout(() => doorBtn.classList.remove("hit"), 120); }
 // phone buttons press "pad-*" keys while a finger is on them
 for (const b of document.querySelectorAll("#pad button")) {
   const k = b.dataset.k, off = () => { keys.delete(k); b.classList.remove("on"); };
@@ -2678,7 +2717,70 @@ let state = "menu", rand = Math.random, P = null, comrades = [], cows = [], mich
 let time = 0, lastTick = -1, sufanCd = 0, events = {}, shedLevel = 0, rainLevel = 0, flash = 0, area = null, chatCd = 0, warned30 = false, samWarnCd = 0, shakeT = 0, gid = 0;
 const dyn = new THREE.Group(); scene.add(dyn);
 const rings = [];
-let sufan = null, officeTag = null, drvTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
+let sufan = null, officeTag = null, drvTag = null, carTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
+
+/* ---- on foot: park the ride, walk where it can't go (lanes, yards), whistle comrades awake, lead them back */
+let W = null, walkTip = false; // W: the driver on foot, null while driving
+const me = () => W || P; // whoever the player is right now
+const WALK_V = 5.2, BOARD_R = 3.4, WHISTLE_R = 26;
+const rideIcon = () => vehId === "cng" ? "🛺" : "🛵";
+const WAIT_LINES = ["মামা কই গেলেন? মিটার তো চলতেছে!", "আমরা কি এইখানেই বসে থাকবো?", "ড্রাইভার হাঁটতে গেছে, সভা হবে কেমনে?", "চাবি নিয়া গেলেন নাকি মামা?"];
+const SAM_WALK = ["হাইটা যাও কেন? গাড়ি কই?", "সালাম দিয়া যাও!", "হাঁটা ভালো, স্বাস্থ্য ভালো থাকে।"];
+const padBtn = k => document.querySelector(`#pad [data-k="${k}"]`);
+function exitRide() {
+  if (state !== "play" || talk || W) return;
+  if (Math.abs(P.v) > 2.5) { floaty(P.x, P.y, "আগে থামো!", C.ink); return; }
+  const fx = Math.cos(P.a), fy = Math.sin(P.a), s = vehId === "cng" ? 1.6 : 1.2;
+  // step out on the left (the kerb side in Bangladesh), else the right, else behind
+  const tries = [[fy * s - fx * .3, -fx * s - fy * .3], [-fy * s - fx * .3, fx * s - fy * .3], [-fx * 2.6, -fy * 2.6]];
+  const at = tries.map(([dx, dy]) => ({ x: P.x + dx, y: P.y + dy })).find(o => !blocked(o.x, o.y, .45));
+  if (!at) { floaty(P.x, P.y, "দরজা খোলে না!", C.ink); sfx.bonk(); return; }
+  P.v = 0; P.risk = 0;
+  W = { x: at.x, y: at.y, a: P.a, v: 0, walk: 0, hy: 3.3 };
+  sfx.door(); syncRideUi();
+  if (!walkTip) { walkTip = true; showBanner("পায়ে হেঁটে!", "গলিতে ঢুকে শিস দাও, কমরেডরা পিছে পিছে আসবে", 2.6); } // the first time, the tip says it
+  else say(W, vehId === "cng" ? "সিএনজি এখানে থাক, হাইটা যাই!" : "পংকি রাজ এখানে থাক, হাইটা যাই!", 2);
+}
+function enterRide() {
+  if (!W || state !== "play" || talk) return;
+  if (Math.hypot(W.x - P.x, W.y - P.y) > BOARD_R) { floaty(W.x, W.y, `${rideIcon()} এর কাছে যাও`, C.ink); return; }
+  W = null; sfx.door(); syncRideUi(); // comrades walking behind climb in by the usual rule: awake and within 7 m of the ride
+  for (const c of comrades) c.follow = false;
+}
+function toggleRide() { if (W) enterRide(); else exitRide(); }
+function syncRideUi() {
+  const walk = !!W, tip = mobile ? "" : "F";
+  doorBtn.classList.toggle("walk", walk);
+  doorBtn.innerHTML = walk ? `ওঠো ${rideIcon()}<small>${tip}</small>` : `নামো 🚶<small>${tip}</small>`;
+  doorBtn.setAttribute("aria-label", walk ? "গাড়িতে ওঠো" : "গাড়ি থেকে নামো");
+  hornBtn.innerHTML = walk ? `ডাক দাও!<small>${mobile ? "শিস" : "Space"}</small>` : `প্যাঁ-পোঁ!<small>${mobile ? "হর্ন" : "Space"}</small>`;
+  padBtn("pad-gas").innerHTML = walk ? "<small>▲</small>হাঁটো" : "<small>▲</small>গ্যাস";
+  padBtn("pad-brake").innerHTML = walk ? "পিছে<small>▼</small>" : "ব্রেক<small>পিছে ▼</small>";
+}
+function walkUpdate(inp, dt) {
+  W.a = wrapAng(W.a + inp.steer * 3.2 * dt); // a person turns on the spot
+  const want = inp.gas > 0 ? WALK_V * inp.gas : inp.gas < 0 ? -2.2 * -inp.gas : 0;
+  W.v += clamp(want - W.v, -30 * dt, 20 * dt);
+  W.x += Math.cos(W.a) * W.v * dt; W.y += Math.sin(W.a) * W.v * dt;
+  W.walk += dt * Math.abs(W.v) * 2.2;
+  pushOut(W, .45); riverBlock(W, .45);
+  const dx = W.x - P.x, dy = W.y - P.y, L = Math.hypot(dx, dy), R = vehId === "cng" ? 1.5 : 1; // the parked ride is solid too
+  if (L < R && L > 1e-3) { W.x = P.x + dx / L * R; W.y = P.y + dy / L * R; }
+  W.x = clamp(W.x, X0 + 4, X1 - 4); W.y = clamp(W.y, Y0 + 4, Y1 - 4);
+}
+// comrades who are awake walk behind the driver in a line
+function followUpdate(dt) {
+  let k = 0;
+  for (const c of comrades) {
+    if (c.state !== "awake") { c.follow = false; continue; }
+    const d = dist(c, W);
+    if (!c.follow && d < 14) { c.follow = true; say(c, ["চলেন, আপনার পিছে পিছে আসি।", "হাইটা যামু? আচ্ছা চলো!", "কমরেড, আস্তে হাঁটেন!"][(rand() * 3) | 0], 2); }
+    if (!c.follow) continue;
+    const gap = 1.6 + k * 1.2; k++;
+    if (d > gap) { const sp = Math.min(WALK_V * 1.08, (d - gap) * 3 + 1.5), dx = W.x - c.x, dy = W.y - c.y; c.x += dx / d * sp * dt; c.y += dy / d * sp * dt; c.ang = Math.atan2(dy, dx); pushOut(c, .45); riverBlock(c, .45); }
+    if (d > 60) { c.follow = false; say(c, "আমারে ফালাইয়া গেলেন? আমি এখানেই আছি।", 2.2); }
+  }
+}
 
 function clearDyn() {
   while (dyn.children.length) dyn.remove(dyn.children[0]);
@@ -2751,6 +2853,7 @@ function newGame() {
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
   drvTag = mkEl("tag drv", ""); drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${rideLabel()}`;
+  carTag = mkEl("tag", ""); W = null; walkTip = false; syncRideUi(); // every round starts behind the wheel
   placeTags = [[dukan, mkEl("tag", "ভাইয়ার দোকান ☕")], [palace, mkEl("tag", "সুফান প্যালেস 🏠")], [mamu, mkEl("tag", "রিয়েল মামুর দোকান 🍟")], [school, mkEl("tag", "কতোয়ালপুর সরকারি প্রাথমিক বিদ্যালয় 🏫")]].filter(([b]) => b);
   for (const sh of SHOPS) { // a dashed ring on the road where to stop
     const g = new THREE.Group();
@@ -2784,18 +2887,25 @@ function earn(kind, amt, x, y, label) { // fare/bonus add, fine/spend (tea, chip
   floaty(x, y, `${minus ? "−" : "+"}৳${bn(amt)}${label ? " " + label : ""}`, kind === "fine" ? C.red : kind === "spend" ? "#8a5a2b" : "#2f8a4f");
   if (!minus || kind === "spend") sfx.cash();
 }
-function horn() {
+function horn() { // on foot it's a whistle: shorter reach, no use on cows or processions, but right at a comrade's ear it counts double
   if (state !== "play" || talk || P.hornCd > 0) return;
-  P.hornCd = .32; sfx.horn();
-  rings.push({ x: P.x, y: P.y, t: 0, mesh: null });
-  if (sam && dist(sam, P) < 40 && sam.scare <= 0) { sam.scare = 2.5; sam.dir = -sam.dir; say(sam, "হর্ন শুনছি, সরলাম!", 1.6); }
-  for (const m of michils) if (dist(m, P) < 40 && m.scare <= 0) { m.scare = 3; m.dir = -m.dir; say(m, "আচ্ছা আচ্ছা, সাইড দিলাম! জিন্দাবাদ!", 1.8); }
+  const src = me(), foot = !!W, range = foot ? WHISTLE_R : hornRange();
+  P.hornCd = .32; if (foot) sfx.whistle(); else sfx.horn();
+  rings.push({ x: src.x, y: src.y, t: 0, mesh: null, r: range });
+  if (sam && dist(sam, src) < (foot ? WHISTLE_R : 40) && sam.scare <= 0) {
+    if (foot) { if (sam.talkCd <= 2) { sam.talkCd = 4; say(sam, "শিস দিয়া ডাকো? বেয়াদব! 😤", 1.6); } }
+    else { sam.scare = 2.5; sam.dir = -sam.dir; say(sam, "হর্ন শুনছি, সরলাম!", 1.6); }
+  }
+  if (!foot) for (const m of michils) if (dist(m, P) < 40 && m.scare <= 0) { m.scare = 3; m.dir = -m.dir; say(m, "আচ্ছা আচ্ছা, সাইড দিলাম! জিন্দাবাদ!", 1.8); }
   for (const c of comrades) {
-    if (c.state !== "sleep" || dist(c, P) > hornRange()) continue;
-    c.need -= shop.horn === "horn-gaan" ? 2 : 1; c.shake = .45;
+    const d = dist(c, src);
+    if (c.state !== "sleep" || d > range) continue;
+    const ear = foot && d < 4.5;
+    c.need -= (shop.horn === "horn-gaan" && !foot ? 2 : 1) + (ear ? 1 : 0); c.shake = .45;
+    if (ear) floaty(c.x, c.y, "কানের কাছে!", C.ink);
     if (c.need <= 0) wake(c); else if (c.cd <= 0) { say(c, SNORES[(rand() * SNORES.length) | 0], 1.6); c.cd = 1.2; }
   }
-  for (const w of cows) {
+  if (!foot) for (const w of cows) {
     if (dist(w, P) > hornRange() * .8) continue;
     w.scare = 2.6; const [ax, ay] = w.r.p[w.i], [bx, by] = w.r.p[w.i + 1];
     w.dir = (bx - ax) * (w.x - P.x) + (by - ay) * (w.y - P.y) >= 0 ? 1 : -1;
@@ -2810,7 +2920,7 @@ function flee(c, line) {
 }
 function wake(c) {
   c.khat.userData.body.visible = false; c.sleepFace.visible = false; c.person.visible = true;
-  c.ang = Math.atan2(P.y - c.y, P.x - c.x);
+  c.ang = Math.atan2(me().y - c.y, me().x - c.x);
   if (!c.fled && !talk && rand() < .45) openTalk(c);       // an excuse, and you pick the answer
   else if (!c.fled && rand() < .12) flee(c, EXCUSES[(rand() * EXCUSES.length) | 0]); // some just run
   else { c.state = "awake"; say(c, WAKES[(rand() * WAKES.length) | 0], 2.4); sfx.pop(); setFace(c); }
@@ -2831,13 +2941,13 @@ function openTalk(c) {
   el("talkTea").textContent = left("tea", "ভাইয়ার দোকানে পাবে");
   el("talkChips").textContent = left("chips", "মামুর দোকানে পাবে");
   talkBtns[0].disabled = P.tea <= 0; talkBtns[1].disabled = P.chips <= 0;
-  talkEl.hidden = false; el("horn").hidden = true; el("stickZone").hidden = true;
-  keys.clear(); stick = null; stickEl.style.display = "none"; P.v = 0;
+  talkEl.hidden = false; el("horn").hidden = true; el("stickZone").hidden = true; doorBtn.hidden = true;
+  keys.clear(); stick = null; stickEl.style.display = "none"; P.v = 0; if (W) W.v = 0;
   sfx.scratch();
 }
 function closeTalk() {
   talk = null; talkEl.hidden = true;
-  if (state === "play") { el("horn").hidden = false; if (mobile) el("stickZone").hidden = false; }
+  if (state === "play") { el("horn").hidden = false; doorBtn.hidden = false; if (mobile) el("stickZone").hidden = false; }
 }
 function answerTalk(r) {
   if (!talk || state !== "play") return;
@@ -2879,16 +2989,18 @@ function update(dt) {
   const fade = (lv, on) => clamp(lv + (on ? dt / 1.2 : -dt / 1.5), 0, 1);
   shedLevel = fade(shedLevel, events.shed.on); rainLevel = fade(rainLevel, events.rain.on);
   if (events.rain.on && rand() < dt * .08) { flash = 1; sfx.thunder(); }
-  let here = null; for (const pl of PLACES) if (Math.hypot(P.x - pl.x, P.y - pl.y) < pl.r) here = pl;
+  const Me = me();
+  let here = null; for (const pl of PLACES) if (Math.hypot(Me.x - pl.x, Me.y - pl.y) < pl.r) here = pl;
   if (here !== area) { if (here && time > 2) { showBanner(`${here.n}য় স্বাগতম!`, here.mosque, 1.6); sfx.welcome(); } area = here; }
   chatCd -= dt;
-  if (chatCd <= 0 && P.riders.length) { const pool = P.v > 15 || P.boost > 0 ? FAST_LINES : RIDE_LINES; say(P, `${P.riders[(rand() * P.riders.length) | 0].n}: ${pool[(rand() * pool.length) | 0].replace("পংকি ভাই", DRV().n)}`, 2.6); chatCd = 9 + rand() * 6; }
+  if (chatCd <= 0 && P.riders.length) { const pool = W ? WAIT_LINES : P.v > 15 || P.boost > 0 ? FAST_LINES : RIDE_LINES; say(P, `${P.riders[(rand() * P.riders.length) | 0].n}: ${pool[(rand() * pool.length) | 0].replace("পংকি ভাই", DRV().n)}`, 2.6); chatCd = 9 + rand() * 6; }
 
   // ---- the CNG: gas, brake, reverse and steering like a three-wheeler
   const inp = readInput(), road = onRoad(P.x, P.y);
   const maxV = 18 * DRV().speed * VEH().speed * (road ? 1 : .45) * (P.boost > 0 ? 1.6 : 1) * (1 - .05 * P.riders.length) * (1 - (has("up-umbrella") ? 0 : .22) * rainLevel) * (has("up-engine") ? 1.12 : 1);
   P.hornCd -= dt; P.boost -= dt;
-  if (P.rally) { // Muhon Vai has stopped to chant with the procession
+  if (W) { P.v += clamp(-P.v, -26 * dt, 26 * dt); walkUpdate(inp, dt); followUpdate(dt); } // parked, and the driver walks
+  else if (P.rally) { // Muhon Vai has stopped to chant with the procession
     P.rally.t -= dt; P.rally.cd -= dt; P.v *= Math.pow(.01, dt);
     if (P.rally.cd <= 0) { P.rally.cd = 1.5; say(P, `মুহন ভাই: ${CHANTS[(rand() * CHANTS.length) | 0]} ✊`, 1.5); sfx.megaphone(); }
     if (P.rally.t <= 0) { P.rally = null; say(P, "মুহন ভাই: আচ্ছা আচ্ছা, সভা আছে। চলো!", 1.8); }
@@ -2905,7 +3017,7 @@ function update(dt) {
   }
   if (P.v > maxV) P.v = Math.max(maxV, P.v - 22 * dt);
   P.x += Math.cos(P.a) * P.v * dt; P.y += Math.sin(P.a) * P.v * dt;
-  if (DRV().crashy && P.stun <= 0 && !P.rally) { // Ponki Vai takes corners flat out: a long hard turn near top speed skids, then crashes
+  if (DRV().crashy && P.stun <= 0 && !P.rally && !W) { // Ponki Vai takes corners flat out: a long hard turn near top speed skids, then crashes
     const risky = Math.abs(inp.steer) > .5 && P.v > maxV * .8;
     P.risk = Math.max(0, P.risk + (risky ? dt * (1 + rainLevel) : -dt * 1.5));
     if (P.risk === 0) P.warned = false;
@@ -2927,20 +3039,25 @@ function update(dt) {
   // ---- cows
   for (const w of cows) {
     w.scare -= dt; w.hitCd -= dt; walkRoad(w, (w.scare > 0 ? 7 : w.sp) * dt); w.walk += dt * (w.scare > 0 ? 14 : 5);
-    if (w.hitCd <= 0 && P.stun <= 0 && dist(w, P) < 3.2) {
+    if (!W && w.hitCd <= 0 && P.stun <= 0 && dist(w, P) < 3.2) {
       w.hitCd = 2.2; P.stun = has("up-bumper") ? .3 : 1; shakeT = has("up-bumper") ? .15 : .4;
       earn("fine", has("up-bumper") ? 5 : 10, P.x, P.y, "গরুর জরিমানা");
       P.x -= Math.cos(P.a) * 2.5; P.y -= Math.sin(P.a) * 2.5; P.v = 0; pushOut(P, 1.6);
       say(w, "হাম্বা!", 1.4); sfx.bonk(); setTimeout(() => sfx.moo(), 140); floaty(w.x, w.y, "ধুম!");
     }
+    if (W && w.hitCd <= 0 && dist(w, W) < 1.9) { // on foot a cow just shoves you aside
+      w.hitCd = 2; const dx = W.x - w.x, dy = W.y - w.y, L = Math.hypot(dx, dy) || 1; W.x += dx / L * 1.4; W.y += dy / L * 1.4; W.v = 0; pushOut(W, .45);
+      say(w, "হাম্বা!", 1.4); sfx.moo(); floaty(W.x, W.y, "ধাক্কা!");
+    }
   }
   // ---- posters, processions, Sam Vai, stalls
-  for (const b of billboards) if (!b.seen && dist(b, P) < 16) { b.seen = true; if (rand() < .5) say(P, ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই! 📢", "ভোটের মৌসুম! রাস্তায় শুধু পোস্টার আর পোস্টার।", "এই পোস্টার তো আগেও দেখছি!"][(rand() * 3) | 0], 2.4); }
+  for (const b of billboards) if (!b.seen && dist(b, Me) < 16) { b.seen = true; if (rand() < .5) say(P, ["আমার ভাই তোমার ভাই, এমরান ভাই এমরান ভাই! 📢", "ভোটের মৌসুম! রাস্তায় শুধু পোস্টার আর পোস্টার।", "এই পোস্টার তো আগেও দেখছি!"][(rand() * 3) | 0], 2.4); }
   for (const m of michils) {
     m.scare -= dt; m.hitCd -= dt; m.chantCd -= dt; walkRoad(m, (m.scare > 0 ? 4.5 : 1.1) * dt);
     const d = dist(m, P);
-    if (m.chantCd <= 0 && d < 70) { m.chantCd = 4 + rand() * 3; say(m, rand() < .45 ? CHANTS[0] : CHANTS[(rand() * CHANTS.length) | 0], 2.6); sfx.megaphone(); }
+    if (m.chantCd <= 0 && dist(m, Me) < 70) { m.chantCd = 4 + rand() * 3; say(m, rand() < .45 ? CHANTS[0] : CHANTS[(rand() * CHANTS.length) | 0], 2.6); sfx.megaphone(); }
     m.rallyCd = (m.rallyCd || 0) - dt;
+    if (W) continue; // a parked ride is in nobody's way
     if (DRV().rally && !P.rally && m.rallyCd <= 0 && d < 24) { // Muhon Vai can't drive past a procession
       m.rallyCd = 40; m.scare = 0; P.rally = { t: 5, cd: 1.2 };
       showBanner("মুহন ভাই মিছিলে!", "স্লোগান না দিয়া উনি নড়বেন না", 1.8);
@@ -2951,28 +3068,29 @@ function update(dt) {
   }
   if (sam) {
     sam.scare -= dt; sam.talkCd -= dt; samWarnCd -= dt; walkRoad(sam, (sam.scare > 0 ? 4 : 1.2) * dt);
-    const d = dist(sam, P);
-    if (d < 30 && samWarnCd <= 0) { samWarnCd = 14; showBanner("সামনে সাম ভাই!", "সাবধান! হর্ন দাও, সাইড দিবেন", 1.6); sfx.sus(); }
-    if (d < 22 && sam.talkCd <= 0) { sam.talkCd = 6; say(sam, SAM_LINES[(rand() * SAM_LINES.length) | 0].replace("পংকি", DRV().n.split(" ")[0]), 2.2); }
-    if (d < 2.8 && Math.abs(P.v) > 3) { samCrash(); return; }
-    if (d < 2.8) { P.v = 0; P.x -= Math.cos(P.a) * .5; P.y -= Math.sin(P.a) * .5; }
+    const d = dist(sam, Me);
+    if (d < 30 && samWarnCd <= 0 && !W) { samWarnCd = 14; showBanner("সামনে সাম ভাই!", "সাবধান! হর্ন দাও, সাইড দিবেন", 1.6); sfx.sus(); }
+    if (d < 22 && sam.talkCd <= 0) { sam.talkCd = 6; const pool = W ? SAM_WALK : SAM_LINES; say(sam, pool[(rand() * pool.length) | 0].replace("পংকি", DRV().n.split(" ")[0]), 2.2); }
+    if (W) { if (d < 1.3) { const dx = W.x - sam.x, dy = W.y - sam.y; W.x = sam.x + dx / (d || 1) * 1.3; W.y = sam.y + dy / (d || 1) * 1.3; } } // walk into him and you just bump
+    else if (d < 2.8 && Math.abs(P.v) > 3) { samCrash(); return; }
+    else if (d < 2.8) { P.v = 0; P.x -= Math.cos(P.a) * .5; P.y -= Math.sin(P.a) * .5; }
   }
   for (const s of SHOPS) { // tea at Vhaiyar Dukan, chips at Real Mamur Dukan
     s.cd -= dt;
-    const d = dist(s, P), have = P[s.item];
-    if (d < STOP_R && Math.abs(P.v) < 2.5 && have < 3) {
+    const d = dist(s, Me), have = P[s.item];
+    if (d < STOP_R && (W || Math.abs(P.v) < 2.5) && have < 3) { // on foot, walking up to the counter is enough
       if ((s.wait += dt) > .5) {
         const n = 3 - have; P[s.item] = 3; s.wait = 0;
         earn("spend", n * 5, s.x, s.y, `${s.n} ×${bn(n)}`);
         say(s.keeper, s.lines[(rand() * s.lines.length) | 0], 2.2);
-        if (s.item === "tea") { P.boost = Math.max(P.boost, 4); say(P, `${DRV().n}ও এক কাপ মারলেন। চা পাওয়ার! ☕`, 2, .9); sfx.boost(); }
+        if (s.item === "tea") { P.boost = Math.max(P.boost, 4); say(Me, `${DRV().n}ও এক কাপ মারলেন। চা পাওয়ার! ☕`, 2, .9); sfx.boost(); }
       }
     } else s.wait = 0;
     if (d < 30 && d > 10 && have < 3 && s.cd <= 0) { s.cd = 22; say(s.keeper, s.call, 2.2); }
   }
   for (const s of stalls) {
     s.cd -= dt;
-    if (s.cd <= 0 && dist(s, P) < 7) { s.cd = 25; P.boost = 6; say(P, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড বুস্ট!"); sfx.boost(); sfx.slide(); earn("spend", 5, s.x, s.y, "সিঙ্গারা"); }
+    if (s.cd <= 0 && dist(s, Me) < 7) { s.cd = 25; P.boost = 6; say(Me, "সিঙ্গারা পাওয়ার! 🥟", 2); floaty(s.x, s.y, "স্পিড বুস্ট!"); sfx.boost(); sfx.slide(); earn("spend", 5, s.x, s.y, "সিঙ্গারা"); }
   }
   // ---- comrades
   for (const c of comrades) {
@@ -2981,6 +3099,10 @@ function update(dt) {
       const dx = c.tx - c.x, dy = c.ty - c.y, L = Math.hypot(dx, dy); c.fleeT -= dt;
       if (L < 2 || c.fleeT <= 0) { c.state = "awake"; setFace(c); say(c, "আচ্ছা আচ্ছা, আসছি... 😮‍💨", 2.2); }
       else { c.x += dx / L * 3.6 * dt; c.y += dy / L * 3.6 * dt; c.ang = Math.atan2(dy, dx); pushOut(c, 1); riverBlock(c, 1); }
+      if (c.state === "flee" && W && dist(c, W) < 2.2) { // on foot you can run one down and grab him
+        c.state = "awake"; c.follow = true; setFace(c); say(c, "ধরা খাইলাম! আচ্ছা, আসতেছি। 😅", 2.4); floaty(c.x, c.y, "ধরা!", C.ink);
+        sfx.vineBoom(); shakeT = .2; earn("bonus", 10, c.x, c.y, "ধরার বোনাস");
+      }
     }
     if ((c.state === "awake" || c.state === "flee") && dist(c, P) < 7) {
       if (P.riders.length < seatCount()) {
@@ -2990,24 +3112,30 @@ function update(dt) {
       } else if (c.cd <= 0) { say(c, `${VEH().go} ফুল মামা! আগে এদের অফিসে নামাও।`, 2.2); c.cd = 5; }
     }
   }
-  // ---- drop-off at the party office
-  if (P.riders.length && Math.hypot(P.x - door.x, P.y - door.y) < DROP_R) {
-    const n = P.riders.length;
-    const fare = P.riders.reduce((s, c) => s + 20 + Math.round(Math.hypot(c.hx - door.x, c.hy - door.y) / 25), 0);
-    P.riders.forEach((c, k) => {
-      c.state = "done"; c.slot = delivered.length; delivered.push(c);
-      const s = slotPos(c.slot); c.x = s.x; c.y = s.y; c.person.visible = true; c.person.position.set(s.x, 0, s.y); setFace(c);
-      c.tag.hidden = false; say(c, c.q, 3, k * 1.1);
-    });
-    floaty(door.x, door.y, `+${bn(n)} কমরেড`, C.ink); earn("fare", fare, door.x, door.y, "ভাড়া");
-    P.riders = []; sfx.chime();
-    if (n >= 3) { earn("bonus", 50, door.x, door.y, "হ্যাটট্রিক"); showBanner(n > 3 ? "সুপার হ্যাটট্রিক!" : "হ্যাটট্রিক!", `একসাথে ${bn(n)} জন সভায়!`, 1.8); setTimeout(() => sfx.airhorn(), 250); }
-    if (delivered.length === comrades.length) { state = "ending"; const g = gid; setTimeout(() => g === gid && endGame(true), 1800); }
+  // ---- drop-off at the party office: by the ride they pay the fare, walked in they pay nothing (a small bonus for the effort)
+  if (P.riders.length && Math.hypot(P.x - door.x, P.y - door.y) < DROP_R) { const list = P.riders; P.riders = []; deliver(list, false); }
+  if (W && Math.hypot(W.x - door.x, W.y - door.y) < DROP_R) {
+    const list = comrades.filter(c => c.follow && c.state === "awake" && Math.hypot(c.x - door.x, c.y - door.y) < DROP_R);
+    if (list.length) deliver(list, true);
   }
   sufanCd -= dt;
-  if (sufanCd <= 0 && Math.hypot(P.x - door.x, P.y - door.y) < 60) { say(sufan, SUFAN.lines[(rand() * SUFAN.lines.length) | 0], 2.6); sufanCd = 14; }
+  if (sufanCd <= 0 && Math.hypot(Me.x - door.x, Me.y - door.y) < 60) { say(sufan, SUFAN.lines[(rand() * SUFAN.lines.length) | 0], 2.6); sufanCd = 14; }
 }
 
+function deliver(list, foot) {
+  const n = list.length;
+  const fare = list.reduce((s, c) => s + 20 + Math.round(Math.hypot(c.hx - door.x, c.hy - door.y) / 25), 0);
+  list.forEach((c, k) => {
+    c.state = "done"; c.follow = false; c.slot = delivered.length; delivered.push(c);
+    const s = slotPos(c.slot); c.x = s.x; c.y = s.y; c.person.visible = true; c.person.position.set(s.x, 0, s.y); setFace(c);
+    c.tag.hidden = false; say(c, c.q, 3, k * 1.1);
+  });
+  floaty(door.x, door.y, `+${bn(n)} কমরেড`, C.ink);
+  if (foot) earn("bonus", 5 * n, door.x, door.y, "হেঁটে আসলো"); else earn("fare", fare, door.x, door.y, "ভাড়া");
+  sfx.chime();
+  if (n >= 3) { earn("bonus", 50, door.x, door.y, "হ্যাটট্রিক"); showBanner(n > 3 ? "সুপার হ্যাটট্রিক!" : "হ্যাটট্রিক!", `একসাথে ${bn(n)} জন সভায়!`, 1.8); setTimeout(() => sfx.airhorn(), 250); }
+  if (delivered.length === comrades.length) { state = "ending"; const g = gid; setTimeout(() => g === gid && endGame(true), 1800); }
+}
 function samCrash() {
   state = "ending"; P.v = 0; shakeT = .8; flash = .7;
   sfx.vineBoom(); setTimeout(() => sfx.gameOver(), 600);
@@ -3052,7 +3180,7 @@ function endGame(all, reason) {
   if (reason !== "sam") { // every round ends on the "omaga" sting; a good result gets the fanfare first
     if (all || n >= 8) { sfx.fanfare(); setTimeout(() => g0 === gid && state === "over" && sfx.gameOver(), 1000); } else sfx.gameOver();
   }
-  ["hud", "mini", "horn", "stickZone", "keys", "target"].forEach(id => el(id).hidden = true);
+  ["hud", "mini", "horn", "stickZone", "keys", "target", "doorBtn"].forEach(id => el(id).hidden = true);
   arrow.visible = false;
   const g = gid; setTimeout(() => { if (g === gid && state === "over") el("end").classList.remove("hidden"); }, 400);
 }
@@ -3086,10 +3214,16 @@ function render(t, dt) {
   hemi.intensity = (1.6 - gold * .2) * (1 - rainLevel * .3) * (1 - shedLevel * .85) + flash * 1.5;
   hemi.color.copy(COL.hemiA).lerp(COL.hemiB, gold);
   const car = ride(); cng.g.visible = car === cng; scoot.g.visible = car === scoot; cng.spot.intensity = scoot.spot.intensity = 0;
+  cng.drv.visible = scoot.drv.visible = !W; walker.g.visible = !!W;
+  if (W) { // the driver walking: legs and arms swing with his stride
+    const sw = Math.sin(W.walk) * .65 * clamp(Math.abs(W.v) / WALK_V, 0, 1);
+    walker.g.position.set(W.x, Math.abs(Math.cos(W.walk)) * .05 * clamp(Math.abs(W.v), 0, 1), W.y); walker.g.rotation.y = -W.a;
+    walker.legs[0].rotation.z = sw; walker.legs[1].rotation.z = -sw; walker.arms[0].rotation.z = -sw * .8; walker.arms[1].rotation.z = sw * .8;
+  }
   car.spot.intensity = 60 * Math.max(shedLevel, rainLevel * .3) * (has("up-led") ? 1.8 : 1); car.spot.distance = has("up-led") ? 110 : 70;
   glows.visible = shedLevel > .02; if (glows.visible) for (const s of glows.children) s.material.opacity = shedLevel * (.75 + .25 * Math.sin(t * 9 + s.position.x));
   flies.visible = shedLevel > .02; flies.material.opacity = shedLevel;
-  if (P) flies.position.set(P.x, 2 + Math.sin(t) * .5, P.y);
+  if (P) flies.position.set(me().x, 2 + Math.sin(t) * .5, me().y);
   flash = Math.max(0, flash - dt * 2.5);
 
   if (P) {
@@ -3097,16 +3231,16 @@ function render(t, dt) {
     car.g.position.set(P.x, 0, P.y); car.g.rotation.y = -P.a;
     car.body.position.y = Math.abs(P.v) > .5 ? Math.sin(t * 60) * .025 : Math.sin(t * 38) * .012; car.body.rotation.x = -P.roll * (car === scoot ? 2.2 : 1);
     const sh = shakeT; shakeT = Math.max(0, shakeT - dt);
-    // camera follows behind
-    const cm = CAMS[camMode], fx = Math.cos(P.a), fz = Math.sin(P.a);
-    const vk = car === scoot && camMode < 2 ? .72 : 1; // the scooter is small, so the chase camera sits closer
-    tmp.set(P.x - fx * cm.back * vk, cm.up * vk, P.y - fz * cm.back * vk);
+    // camera follows behind whoever you are: the ride, or the driver on foot (closer and lower)
+    const F = me(), cm = CAMS[camMode], fx = Math.cos(F.a), fz = Math.sin(F.a);
+    const vk = W ? (camMode < 2 ? .62 : .7) : car === scoot && camMode < 2 ? .72 : 1; // the scooter is small, so the chase camera sits closer
+    tmp.set(F.x - fx * cm.back * vk, cm.up * vk, F.y - fz * cm.back * vk);
     camPos.lerp(tmp, Math.min(1, dt * (camMode === 2 ? 3 : 4.5)));
     camera.position.copy(camPos); camera.position.x += (Math.random() - .5) * sh; camera.position.y += (Math.random() - .5) * sh;
-    camLook.set(P.x + fx * cm.look, 1.2, P.y + fz * cm.look); camera.lookAt(camLook);
+    camLook.set(F.x + fx * cm.look * vk, W ? 1.4 : 1.2, F.y + fz * cm.look * vk); camera.lookAt(camLook);
     if (garage) { if (!garage.drag) garage.th += dt * .3; camera.position.set(P.x + Math.cos(garage.th) * 5.4, 2.3, P.y + Math.sin(garage.th) * 5.4); camera.lookAt(P.x, .95, P.y); }
-    if (camHold) { camera.position.set(P.x + camHold[0], camHold[1], P.y + camHold[2]); camera.lookAt(P.x, 1, P.y); }
-    sun.position.set(P.x + SUN_DIR.x * 120, SUN_DIR.y * 120, P.y + SUN_DIR.z * 120); sun.target.position.set(P.x, 0, P.y);
+    if (camHold) { camera.position.set(F.x + camHold[0], camHold[1], F.y + camHold[2]); camera.lookAt(F.x, 1, F.y); }
+    sun.position.set(F.x + SUN_DIR.x * 120, SUN_DIR.y * 120, F.y + SUN_DIR.z * 120); sun.target.position.set(F.x, 0, F.y);
     // riders' badges above the canopy
     riderSprites.forEach((s, i) => {
       const c = P.riders[i]; s.visible = !!c && state !== "menu";
@@ -3117,19 +3251,22 @@ function render(t, dt) {
     });
     // arrow to the next job
     let tgt = null, label = "";
+    const toRide = `${rideIcon()} গাড়িতে ফেরো`, led = W ? comrades.filter(c => c.follow).length : 0;
     if (state === "play") {
-      if (P.riders.length && (P.riders.length >= seatCount() || !comrades.some(c => c.state === "awake" || c.state === "flee" || c.state === "sleep"))) { tgt = door; label = "🏠 পার্টি অফিস"; }
+      if (led) { tgt = dist(door, F) < dist(P, F) ? door : P; label = tgt === door ? "🏠 পার্টি অফিস" : toRide; } // walking with comrades behind: to the ride, or straight in if the office is closer
+      else if (P.riders.length && (P.riders.length >= seatCount() || !comrades.some(c => c.state === "awake" || c.state === "flee" || c.state === "sleep"))) { tgt = W ? P : door; label = W ? toRide : "🏠 পার্টি অফিস"; }
       else {
         let best = 1e9;
-        for (const c of comrades) { if (c.state === "ride" || c.state === "done") continue; const d = dist(c, P) * (c.state === "sleep" ? 1 : .6); if (d < best) { best = d; tgt = c; } }
+        for (const c of comrades) { if (c.state === "ride" || c.state === "done") continue; const d = dist(c, F) * (c.state === "sleep" ? 1 : .6); if (d < best) { best = d; tgt = c; } }
         if (tgt) label = `${tgt.state === "sleep" ? "💤" : "🏃"} ${tgt.n}`;
-        if (P.riders.length && tgt && dist(door, P) < dist(tgt, P) * .5) { tgt = door; label = "🏠 পার্টি অফিস"; }
+        if (P.riders.length && tgt && dist(door, F) < dist(tgt, F) * .5) { tgt = W ? P : door; label = W ? toRide : "🏠 পার্টি অফিস"; }
       }
     }
     arrow.visible = !!tgt; el("target").hidden = !tgt;
     if (tgt) {
-      const d = Math.hypot(tgt.x - P.x, tgt.y - P.y);
-      arrow.position.set(P.x, 4.4 + Math.sin(t * 4) * .15 + (P.riders.length ? .7 : 0), P.y); arrow.rotation.y = -Math.atan2(tgt.y - P.y, tgt.x - P.x);
+      const d = Math.hypot(tgt.x - F.x, tgt.y - F.y);
+      arrow.position.set(F.x, (W ? 3.4 : 4.4) + Math.sin(t * 4) * .15 + (P.riders.length && !W ? .7 : 0), F.y); arrow.rotation.y = -Math.atan2(tgt.y - F.y, tgt.x - F.x);
+      arrow.scale.setScalar(W ? .6 : 1);
       el("target").textContent = `${label} · ${bn(Math.round(d))} মি`;
     }
   }
@@ -3137,7 +3274,7 @@ function render(t, dt) {
   for (let i = rings.length - 1; i >= 0; i--) {
     const r = rings[i]; r.t += dt;
     if (!r.mesh) { r.mesh = new THREE.Mesh(ringGeo, ringMat.clone()); scene.add(r.mesh); }
-    const k = r.t / .6; r.mesh.position.set(r.x, .3, r.y); r.mesh.scale.setScalar(2 + k * (hornRange() - 2)); r.mesh.material.opacity = Math.max(0, 1 - k);
+    const k = r.t / .6; r.mesh.position.set(r.x, .3, r.y); r.mesh.scale.setScalar(2 + k * ((r.r || hornRange()) - 2)); r.mesh.material.opacity = Math.max(0, 1 - k);
     if (k >= 1) { scene.remove(r.mesh); r.mesh.material.dispose(); rings.splice(i, 1); }
   }
   const carrying = P && P.riders && P.riders.length;
@@ -3171,21 +3308,27 @@ function render(t, dt) {
 
   // overlay: tags, bubbles, floaties projected into screen space
   if (state !== "menu") {
-    const near = (x, y, r = 95) => Math.hypot(x - P.x, y - P.y) < r;
+    const Me = me(), near = (x, y, r = 95) => Math.hypot(x - Me.x, y - Me.y) < r;
     for (const c of comrades) { if (c.tag.hidden) continue; if (!near(c.x, c.y)) { c.tag.style.display = "none"; continue; } place(c.tag, project(c.x, c.state === "sleep" ? 2.7 : 3.05, c.y)); }
     for (const m of michils) near(m.x, m.y) ? place(m.tag, project(m.x, 4.3, m.y)) : (m.tag.style.display = "none");
     if (sam) near(sam.x, sam.y) ? place(sam.tag, project(sam.x, 3.6, sam.y)) : (sam.tag.style.display = "none");
     for (const s of stalls) near(s.x, s.y, 70) ? place(s.tag, project(s.x, 3.4, s.y)) : (s.tag.style.display = "none");
     for (const s of SHOPS) {
       if (!s.g) continue;
-      const full = P[s.item] >= 3, close = dist(s, P) < STOP_R;
+      const full = P[s.item] >= 3, close = dist(s, Me) < STOP_R;
       s.g.visible = !full; s.fill.material.opacity = close ? .4 : .22; s.g.rotation.y = t * .4;
-      const txt = `${s.ic} ${close ? (Math.abs(P.v) < 2.5 ? "দিচ্ছে..." : "থামো!") : `থামো · ${s.n} ৳৫`}`;
+      const txt = `${s.ic} ${close ? (W || Math.abs(P.v) < 2.5 ? "দিচ্ছে..." : "থামো!") : `${W ? "আসো" : "থামো"} · ${s.n} ৳৫`}`;
       if (txt !== s.tagKey) { s.tagKey = txt; s.tag.textContent = txt; }
       !full && near(s.x, s.y, 80) ? place(s.tag, project(s.x, 1.2, s.y)) : (s.tag.style.display = "none");
     }
     for (const pl of PLACES) if (pl.tag) near(pl.mx, pl.my, 140) ? place(pl.tag, project(pl.mx, 12, pl.my)) : (pl.tag.style.display = "none");
-    if (drvTag) Math.abs(P.v) < 3 && state === "play" ? place(drvTag, project(P.x, 2.5, P.y)) : (drvTag.style.display = "none");
+    if (drvTag) !W && Math.abs(P.v) < 3 && state === "play" ? place(drvTag, project(P.x, 2.5, P.y)) : (drvTag.style.display = "none");
+    if (carTag) { // the parked ride: where it is, and when you're close enough to get in
+      const d = W ? Math.hypot(W.x - P.x, W.y - P.y) : 0, txt = d <= BOARD_R ? `${rideIcon()} ওঠো${mobile ? "" : " (F)"}` : `${rideIcon()} ${VEH().go} · ${bn(Math.round(d))} মি`;
+      if (W && carTag.textContent !== txt) carTag.textContent = txt;
+      W && state === "play" && d < 140 ? place(carTag, project(P.x, 2.6, P.y)) : (carTag.style.display = "none");
+      doorBtn.classList.toggle("far", !!W && d > BOARD_R);
+    }
     if (officeTag) near(office.cx, office.cy, 170) ? place(officeTag, project(office.cx, office.h + 6.5, office.cy)) : (officeTag.style.display = "none");
     for (const [b, tg] of placeTags) near(b.cx, b.cy, 110) ? place(tg, project(b.cx, b.h + 3, b.cy)) : (tg.style.display = "none");
     if (sufan) near(sufan.x, sufan.y) ? place(sufan.tag, project(sufan.x, 3.05, sufan.y)) : (sufan.tag.style.display = "none");
@@ -3237,7 +3380,8 @@ function drawHud() {
   for (const s of SHOPS) dot(s.x, s.y, P[s.item] >= 3 ? "rgba(138,90,43,.45)" : "#8a5a2b", 2.4);
   for (const c of comrades) if (c.state !== "ride" && c.state !== "done") dot(c.x, c.y, c.state === "sleep" ? C.yellow : c.state === "flee" ? "#e07a1f" : "#2f9a4a", 2.6);
   if (sam) dot(sam.x, sam.y, "#ffd2a6", 2.2);
-  m.save(); m.translate(ox + P.x * k, oy + P.y * k); m.rotate(P.a); m.fillStyle = C.ink; m.beginPath(); m.moveTo(6 * dpr, 0); m.lineTo(-4 * dpr, -4 * dpr); m.lineTo(-4 * dpr, 4 * dpr); m.closePath(); m.fill(); m.restore();
+  if (W) dot(W.x, W.y, "#ffffff", 3); // you on foot, and the parked ride greyed out
+  m.save(); m.translate(ox + P.x * k, oy + P.y * k); m.rotate(P.a); m.fillStyle = W ? "rgba(29,26,23,.5)" : C.ink; m.beginPath(); m.moveTo(6 * dpr, 0); m.lineTo(-4 * dpr, -4 * dpr); m.lineTo(-4 * dpr, 4 * dpr); m.closePath(); m.fill(); m.restore();
 }
 
 /* ================= shop (the garage) ================= */
@@ -3281,10 +3425,11 @@ function openShop(from) {
   loadShop(); shopFrom = from;
   if (!P) P = { x: door.x, y: door.y, a: 0, v: 0, riders: [], roll: 0 };
   P.x = door.x; P.y = door.y; P.v = 0; P.riders = []; P.roll = 0; // roll the CNG to the party office
+  W = null; // and the driver back in it
   garage = { th: P.a + Math.PI * .75, drag: null, preview: null };
   renderShop(); el(from).classList.add("hidden"); el("shop").classList.remove("hidden"); el("shop").scrollTop = 0;
   bannerT = 0; el("banner").innerHTML = ""; for (const b of bubbles) if (b.el) b.el.remove(); bubbles = [];
-  ["hud", "mini", "horn", "stickZone", "keys", "target"].forEach(id => el(id).hidden = true);
+  ["hud", "mini", "horn", "stickZone", "keys", "target", "doorBtn"].forEach(id => el(id).hidden = true);
   applyLook(); setGarageView();
 }
 function closeShop() {
@@ -3388,7 +3533,7 @@ function startGame() {
   } catch (e) {}
   if (garage) { garage = null; camera.clearViewOffset(); resize(); el("shop").classList.add("hidden"); }
   el("start").classList.add("hidden"); el("end").classList.add("hidden");
-  ["hud", "mini", "horn"].forEach(id => el(id).hidden = false);
+  ["hud", "mini", "horn", "doorBtn"].forEach(id => el(id).hidden = false);
   if (mobile) el("stickZone").hidden = false; else el("keys").hidden = false;
   camMode = 0; newGame(); state = "play"; hudKey = ""; last = performance.now();
   startPending = vehId === "cng"; if (startPending && startBuf) sfx.cngStart(); // the CNG's start tune, once per round
@@ -3414,13 +3559,13 @@ requestAnimationFrame(loop);
 // ready once the first frame (and its shaders) are done
 requestAnimationFrame(() => requestAnimationFrame(() => {
   el("play").disabled = false; syncDrivers();
-  el("loading").textContent = mobile ? "◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস-ব্রেক আর হর্ন। (আঙুল টেনেও চালানো যায়)" : "W/↑ চালাও · A D ঘোরাও · Space হর্ন · C ক্যামেরা · Enter শুরু";
+  el("loading").textContent = mobile ? "◀ ▶ দিয়ে ঘোরাও, ডানে গ্যাস-ব্রেক আর হর্ন। (আঙুল টেনেও চালানো যায়)" : "W/↑ চালাও · A D ঘোরাও · Space হর্ন · F নামো/ওঠো · C ক্যামেরা · Enter শুরু";
 }));
 
 // test hook
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
-  get state() { return state; }, get P() { return P; }, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
+  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
