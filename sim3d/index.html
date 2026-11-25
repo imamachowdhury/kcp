@@ -44,7 +44,13 @@
   @keyframes pop { from { transform: scale(1.5) rotate(-3deg); opacity: 0; } to { transform: scale(1) rotate(-3deg); opacity: 1; } }
 
   .hud { position: fixed; left: 10px; right: 10px; top: max(10px, env(safe-area-inset-top)); display: flex; gap: 8px; align-items: flex-start; z-index: 2; pointer-events: none; }
-  .hud[hidden], #mini[hidden], #horn[hidden], #stickZone[hidden], #target[hidden], .keys[hidden] { display: none; }
+  .hud[hidden], #mini[hidden], #horn[hidden], #stickZone[hidden], #target[hidden], #mission[hidden], .keys[hidden] { display: none; }
+  /* side mission card: under the clock on the left */
+  #mission { position: fixed; left: 10px; top: calc(max(10px, env(safe-area-inset-top)) + 60px); max-width: min(300px, 52vw); z-index: 2; pointer-events: none;
+    font: 600 12px/1.3 var(--font-body); }
+  #mission b { display: block; font-size: 14px; } #mission small { display: block; color: var(--ink-soft); font-size: 12px; font-weight: 600; }
+  #mission .mt { display: block; font-weight: 700; margin-top: 2px; } #mission.offer { background: var(--yellow); } #mission.offer small { color: var(--ink); }
+  #mission.late .mt { color: var(--red); }
   .card { background: var(--paper); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); padding: 4px 10px; }
   .clock { font: 700 20px/1.1 var(--font-body); } .clock small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
   .clock.late { background: var(--red); color: var(--paper); } .clock.late small { color: var(--paper); }
@@ -194,7 +200,9 @@
   }
   @media (max-width: 360px) { /* the money card drops under the clock so the buttons stay on screen */
     .hud .money { position: fixed; left: 6px; top: calc(max(10px, env(safe-area-inset-top)) + 44px); }
+    #mission { left: 6px; top: calc(max(10px, env(safe-area-inset-top)) + 90px) !important; }
   }
+  @media (max-width: 420px) { #mission { left: 6px; top: calc(max(10px, env(safe-area-inset-top)) + 50px); font-size: 11px; } #mission b { font-size: 13px; } #mission small { font-size: 11px; } }
   /* phone driving buttons: steer on the left, gas and brake (hold to reverse) on the right, horn above gas.
      Sizes follow the screen width so all four fit on a 320px phone. */
   .pad { display: none; --b: clamp(54px, 17.5vw, 72px); --gap: 10px; --edge: 14px; --low: calc(max(16px, env(safe-area-inset-bottom)) + 4px); }
@@ -249,6 +257,7 @@
 </div>
 <canvas id="mini" hidden></canvas>
 <div class="card" id="target" hidden></div>
+<div class="card" id="mission" hidden></div>
 <div id="stickZone" hidden></div>
 <div id="stick"><i></i></div>
 <div class="talk" id="talk" hidden role="dialog" aria-label="কমরেডের অজুহাত">
@@ -2856,6 +2865,188 @@ const dyn = new THREE.Group(); scene.add(dyn);
 const rings = [];
 let sufan = null, officeTag = null, drvTag = null, carTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
 
+/* ---- side missions: now and then a job turns up. A villager by the road wants a lift, or Sufan wants posters put up
+   or chips fetched from Real Mamur Dukan. Take it, do it before the timer runs out, and it pays a bonus. */
+const MIS_KINDS = ["pax", "poster", "chips"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
+let offer = null, mission = null, offerCd = 20, misDone = 0, misLast = "", misKey = "", misTalkCd = 0;
+const beacon = new THREE.Group(); // a tall see-through yellow column over wherever the job wants you
+{
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 40, 12, 1, true), new THREE.MeshBasicMaterial({ color: C.yellow, transparent: true, opacity: .3, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  col.position.y = 20; beacon.add(col);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2.2, 2.8, 28), new THREE.MeshBasicMaterial({ color: "#f08a24", transparent: true, opacity: .85, depthWrite: false, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = .16; beacon.add(ring);
+  beacon.userData.col = col; beacon.visible = false; scene.add(beacon);
+}
+const chipsShop = () => SHOPS.find(s => s.item === "chips");
+const paxN = () => mission && mission.kind === "pax" ? 1 : 0; // the passenger takes a seat
+function paxDests() {
+  const L = [[school, "স্কুল"], [mamu, "রিয়েল মামুর দোকান"], [palace, "সুফান প্যালেস"], [dukan, "ভাইয়ার দোকান"]].filter(([b]) => b).map(([b, n]) => ({ x: b.cx, y: b.cy, n }));
+  for (const pl of PLACES) L.push({ x: pl.mx ?? pl.x, y: pl.my ?? pl.y, n: pl.mosque });
+  return L.map(d => { const r = nearestRoad(d.x, d.y); return { n: d.n, x: r.x, y: r.y }; });
+}
+// three walls facing a road, 40-170 m from the office and well apart; you stand on the spot in front of each
+function posterSpots(R) {
+  const out = [], skip = new Set([office, palace, mamu, brick, dukan, school]);
+  for (const b of shuffle(buildings.slice(), R)) {
+    if (out.length >= 3) break;
+    if (skip.has(b) || !(b.h > 2.6)) continue;
+    const dd = Math.hypot(b.cx - door.x, b.cy - door.y); if (dd < 40 || dd > 170) continue;
+    const r = nearestRoad(b.cx, b.cy), p = b.p; let best = 1e18, wx = 0, wy = 0;
+    for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const d = segD2(r.x, r.y, p[j][0], p[j][1], p[i][0], p[i][1]); if (d < best) { best = d; wx = NX; wy = NY; } }
+    const gap = Math.sqrt(best); if (gap < 1.5 || gap > 14) continue;
+    const nx = (r.x - wx) / gap, ny = (r.y - wy) / gap, sx = wx + nx * 1.3, sy = wy + ny * 1.3;
+    if (blocked(sx, sy, .5) || !reachable(sx, sy) || out.some(o => Math.hypot(o.x - sx, o.y - sy) < 35)) continue;
+    out.push({ x: sx, y: sy, wx, wy, nx, ny, done: false, hold: 0 });
+  }
+  return out.length === 3 ? out : null;
+}
+function setSufanTag(t) { if (sufan && sufan.tag.textContent !== t) sufan.tag.textContent = t; }
+function makeOffer(force) {
+  const kinds = force ? [force] : shuffle(MIS_KINDS.filter(k => k !== misLast), rand);
+  for (const k of kinds) {
+    if (k === "pax") {
+      const Me = me(); let o = null;
+      for (let i = 0; i < 400 && !o; i++) {
+        const q = roadsidePoint(roadSegs[(rand() * roadSegs.length) | 0], rand(), 1.2); if (!q) continue;
+        const d = Math.hypot(q.x - Me.x, q.y - Me.y);
+        if (d >= 70 && d <= 320 && reachable(q.x, q.y) && Math.hypot(q.x - door.x, q.y - door.y) > 40) o = q;
+      }
+      if (!o) continue;
+      const n = PAX_NAMES[(rand() * PAX_NAMES.length) | 0], mesh = makeMarcher(rand);
+      mesh.position.set(o.x, 0, o.y); mesh.rotation.y = -Math.atan2(o.fy, o.fx); dyn.add(mesh);
+      offer = { kind: k, x: o.x, y: o.y, hy: 2.7, n, mesh, tag: mkEl("tag ask", `🙋 ${n} ❗`), t: 60 };
+    } else {
+      const spots = k === "poster" ? posterSpots(rand) : null;
+      if (k === "poster" && !spots) continue;
+      if (k === "chips" && !chipsShop()) continue;
+      offer = { kind: k, x: sufan.x, y: sufan.y, spots, t: 60 }; setSufanTag("সুফান ❗");
+    }
+    sfx.welcome(); return true;
+  }
+  return false;
+}
+function dropOffer() { if (!offer) return; if (offer.mesh) dyn.remove(offer.mesh); if (offer.tag) offer.tag.remove(); offer = null; setSufanTag("সুফান"); }
+function acceptOffer() {
+  const o = offer; offer = null; if (o.tag) o.tag.remove(); setSufanTag("সুফান");
+  if (o.kind === "pax") {
+    const ds = paxDests().filter(d => Math.hypot(d.x - o.x, d.y - o.y) > 90), dest = ds[(rand() * ds.length) | 0] || paxDests()[0], d = Math.hypot(dest.x - o.x, dest.y - o.y);
+    o.mesh.visible = false;
+    mission = { kind: "pax", n: o.n, pax: { x: o.x, y: o.y, hy: 2.7, mesh: o.mesh }, dest, t: Math.round(d / 7 + 25), reward: Math.round(20 + d / 15) };
+    say(P, `${o.n}: ${dest.n} যাবো মামা, জলদি! 🙏`, 2.6); floaty(o.x, o.y, "উঠলো!", C.ink); sfx.boing();
+  } else if (o.kind === "poster") {
+    mission = { kind: "poster", spots: o.spots, t: 90, reward: 45 };
+    say(sufan, "কমরেড, এই ৩টা পোস্টার দেয়ালে লাগাইয়া আসো! হেঁটে গিয়া লাগাইতে হবে। 📋", 3);
+  } else {
+    const s = chipsShop();
+    mission = { kind: "chips", stage: 0, t: Math.round(2 * dist(s, sufan) / 6 + 25), reward: 30 };
+    say(sufan, "মামুর দোকানের চিপস খাইতে মন চাইছে! এক প্যাকেট আইনা দাও। 🍟", 3); setSufanTag("সুফান 🍟?");
+  }
+  showBanner("মিশন শুরু!", misTitle(mission), 1.6); sfx.pop();
+}
+function misTitle(m) { return m.kind === "pax" ? `🙋 ${m.n}কে নামাও` : m.kind === "poster" ? "📋 ৩টা পোস্টার লাগাও" : "🍟 সুফানের চিপস"; }
+function endMission(ok, why) {
+  const m = mission; mission = null; misLast = m.kind; offerCd = 12; setSufanTag("সুফান");
+  if (ok) {
+    const at = m.kind === "pax" ? m.pax : m.kind === "chips" ? sufan : me();
+    earn("bonus", m.reward, at.x, at.y, "মিশন"); misDone++;
+    showBanner("মিশন শেষ!", `${misTitle(m)} · +৳${bn(m.reward)}`, 2); sfx.chime();
+  } else { showBanner("মিশন ফেল!", why, 1.8); sfx.scratch(); }
+}
+// where the job wants you now: the offer's giver, or the mission's next stop
+function misTarget() {
+  if (offer) return offer;
+  if (!mission) return null;
+  if (mission.kind === "pax") return mission.dest;
+  if (mission.kind === "chips") return mission.stage ? sufan : chipsShop();
+  const Me = me(); let best = null, bd = 1e18;
+  for (const s of mission.spots) if (!s.done) { const d = dist(s, Me); if (d < bd) { bd = d; best = s; } }
+  return best;
+}
+function missionUpdate(dt) {
+  const Me = me(), slow = W || Math.abs(P.v) < 3; misTalkCd -= dt;
+  if (!offer && !mission) {
+    offerCd -= dt;
+    if (offerCd <= 0) { if (GAME_LEN - time < 45 || !makeOffer()) offerCd = 8; }
+    return;
+  }
+  if (offer) {
+    offer.t -= dt;
+    if (offer.t <= 0) { dropOffer(); offerCd = 10; return; }
+    if (offer.kind === "pax") {
+      const d = dist(offer, Me);
+      if (!W && d < 8 && slow) {
+        if (P.riders.length >= seatCount()) { if (misTalkCd <= 0) { misTalkCd = 6; say(offer, "জায়গা নাই? থাক তাইলে, পরের গাড়িতে যাবো।", 2.2); } }
+        else acceptOffer();
+      } else if (W && d < 4 && misTalkCd <= 0) { misTalkCd = 6; say(offer, "গাড়ি নিয়া আসেন মামা! হাঁইটা যাবো না।", 2.2); }
+    } else if (dist(sufan, Me) < (W ? 4 : 10) && slow) acceptOffer();
+    return;
+  }
+  const m = mission; m.t -= dt;
+  if (m.kind === "pax") {
+    if (!W && dist(P, m.dest) < 9 && slow) {
+      const lx = Math.sin(P.a), ly = -Math.cos(P.a), px = m.pax;
+      px.x = P.x + lx * 2.2; px.y = P.y + ly * 2.2; pushOut(px, .5);
+      px.mesh.position.set(px.x, 0, px.y); px.mesh.visible = true;
+      say(px, "ধন্যবাদ মামা! সময়মতো পৌঁছাইলাম। 🙏", 2.4); endMission(true); return;
+    }
+  } else if (m.kind === "poster") {
+    for (const s of m.spots) {
+      if (s.done) continue;
+      if (W && dist(W, s) < 2.2) {
+        if ((s.hold += dt) > .8) {
+          s.done = true; sfx.pop();
+          const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.5), lam({ map: posterTex[m.spots.indexOf(s) % posterTex.length] }));
+          pl.position.set(s.wx + s.nx * .06, 1.7, s.wy + s.ny * .06); pl.rotation.y = Math.atan2(s.nx, s.ny); dyn.add(pl);
+          const left = m.spots.filter(q => !q.done).length;
+          floaty(s.x, s.y, left ? `পোস্টার লাগানো! আর ${bn(left)}টা` : "সব পোস্টার লাগানো!", C.ink);
+        }
+      } else s.hold = 0;
+      if (!W && dist(P, s) < 8 && misTalkCd <= 0) { misTalkCd = 4; floaty(P.x, P.y, "নামো! হেঁটে লাগাও", C.ink); }
+    }
+    if (m.spots.every(s => s.done)) { say(Me, "এমরান ভাইয়ের পোস্টার, দেয়ালে দেয়ালে! 📢", 2.2); endMission(true); return; }
+  } else {
+    const s = chipsShop();
+    if (!m.stage && dist(s, Me) < STOP_R && (W || Math.abs(P.v) < 2.5)) { m.stage = 1; say(s.keeper, "সুফান ভাইয়ের চিপস? নেন, রিয়েল জিনিস!", 2.2); floaty(s.x, s.y, "চিপস নিলাম 🍟", C.ink); sfx.pop(); }
+    if (m.stage && dist(sufan, Me) < (W ? 5 : 10) && slow) { say(sufan, "আহ, রিয়েল মামুর রিয়েল চিপস! 😋", 2.4); endMission(true); return; }
+  }
+  if (m.t <= 0) {
+    if (m.kind === "pax") {
+      const px = m.pax; px.x = P.x + Math.sin(P.a) * 2.2; px.y = P.y - Math.cos(P.a) * 2.2; pushOut(px, .5);
+      px.mesh.position.set(px.x, 0, px.y); px.mesh.visible = true; say(px, "দেরি করলেন মামা, বাকিটা হেঁটেই যাই! 😤", 2.4);
+    }
+    endMission(false, m.kind === "pax" ? "যাত্রী রাগ করে নেমে গেলেন" : m.kind === "poster" ? "পোস্টার লাগানো হলো না" : "সুফানের চিপস খাওয়া হলো না");
+  }
+}
+function missionHud() {
+  const card = el("mission"), m = mission || offer;
+  if (!m || state !== "play") { card.hidden = true; misKey = ""; return; }
+  const tg = misTarget(), Me = me(), d = tg ? Math.round(Math.hypot(tg.x - Me.x, tg.y - Me.y)) : 0, t = Math.max(0, Math.ceil(m.t));
+  let title, desc;
+  if (offer) {
+    title = offer.kind === "pax" ? "❗ যাত্রী পাওয়া গেছে!" : "❗ সুফানের কাজ আছে";
+    desc = offer.kind === "pax" ? `${offer.n} রাস্তার পাশে হাত তুলছেন। গাড়ি নিয়া পাশে থামো।` : "পার্টি অফিসে সুফানের কাছে যাও।";
+  } else {
+    title = misTitle(m);
+    desc = m.kind === "pax" ? `${m.dest.n} পর্যন্ত, গাড়ি থামাইয়া নামাও` : m.kind === "poster" ? `লাগানো: ${bn(m.spots.filter(s => s.done).length)}/৩ · গাড়ি থেকে নেমে দেয়ালের সামনে দাঁড়াও`
+      : m.stage ? "চিপস নিছো, এবার সুফানকে দাও" : "রিয়েল মামুর দোকানে থামো";
+  }
+  const key = `${title}|${desc}|${t}|${d}`;
+  if (key !== misKey) {
+    misKey = key; card.innerHTML = `<b>${title}</b><small>${desc}</small><span class="mt">${offer ? "⏳" : "⏱"} ${bn(t)} সে · ${bn(d)} মি</span>`;
+    card.classList.toggle("offer", !!offer); card.classList.toggle("late", !offer && t <= 10);
+  }
+  card.hidden = false;
+}
+function missionRender(t) {
+  const tg = state === "play" ? misTarget() : null;
+  beacon.visible = !!tg;
+  if (tg) { beacon.position.set(tg.x, 0, tg.y); beacon.userData.col.material.opacity = .22 + .1 * Math.sin(t * 4); beacon.children[1].scale.setScalar(1 + .12 * Math.sin(t * 5)); }
+  if (offer && offer.mesh) { // the waiting villager waves you down
+    offer.mesh.userData.arm.rotation.x = .35 + Math.sin(t * 9) * .35;
+    Math.hypot(offer.x - me().x, offer.y - me().y) < 140 ? place(offer.tag, project(offer.x, 2.9, offer.y)) : (offer.tag.style.display = "none");
+  }
+}
+
 /* ---- on foot: park the ride, walk where it can't go (lanes, yards), whistle comrades awake, lead them back */
 let W = null, walkTip = false; // W: the driver on foot, null while driving
 const me = () => W || P; // whoever the player is right now
@@ -3054,6 +3245,7 @@ function newGame() {
   const sp = sufanPos();
   sufan = { x: sp.x, y: sp.y, hy: 3.4, mesh: makePerson("#2f8a4f", faceTex(SUFAN, RING.done)), tag: mkEl("tag", "সুফান") };
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
+  offer = null; mission = null; offerCd = 20; misDone = 0; misLast = ""; misKey = ""; misTalkCd = 0; beacon.visible = false; el("mission").hidden = true;
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
   drvTag = mkEl("tag drv", ""); drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${rideLabel()}`;
   carTag = mkEl("tag", ""); W = null; walkTip = false; syncRideUi(); // every round starts behind the wheel
@@ -3313,7 +3505,7 @@ function update(dt) {
       }
     }
     if ((c.state === "awake" || c.state === "flee") && dist(c, P) < 7) {
-      if (P.riders.length < seatCount()) {
+      if (P.riders.length + paxN() < seatCount()) {
         const caught = c.state === "flee"; c.state = "ride"; P.riders.push(c); c.person.visible = false; c.tag.hidden = true;
         say(P, caught ? `${c.n}: ধরা খাইলাম! 😅` : `${c.n}: ${c.b}`, 2.8); floaty(c.x, c.y, caught ? "ধরা!" : "উঠলো!", C.ink);
         if (caught) { sfx.vineBoom(); shakeT = .25; earn("bonus", 10, c.x, c.y, "ধরার বোনাস"); } else sfx.boing();
@@ -3328,6 +3520,7 @@ function update(dt) {
   }
   sufanCd -= dt;
   if (sufanCd <= 0 && Math.hypot(Me.x - door.x, Me.y - door.y) < 60) { say(sufan, SUFAN.lines[(rand() * SUFAN.lines.length) | 0], 2.6); sufanCd = 14; }
+  missionUpdate(dt);
 }
 
 function deliver(list, foot) {
@@ -3363,7 +3556,7 @@ function endGame(all, reason) {
   if (state === "over") return;
   if (paused) setPause(false);
   const g0 = gid;
-  state = "over"; stick = null; stickEl.style.display = "none"; closeTalk(); engineUpdate();
+  state = "over"; stick = null; stickEl.style.display = "none"; closeTalk(); engineUpdate(); el("mission").hidden = true; beacon.visible = false;
   const n = delivered.length, N = comrades.length;
   const verdicts = [[N, "ঐতিহাসিক সভা! কোরাম পূর্ণ। কেসিপির ইতিহাসে প্রথমবার সবাই সময়মতো।"], [8, "সভা হলো! কয়েকজন যদিও 'পাঁচ মিনিটে আসছি' বলে এখনো আসছেন।"], [4, "অর্ধেক কমিটি। সভা মুলতবি, কিন্তু চা চলবে।"], [1, "কোরাম নাই। সভায় আছেন তুমি, সুফান, আর চায়ের কাপ।"], [0, "সভা বাতিল। কতোয়ালপুর এখনো দুপুরের ঘুমে।"]];
   el("endKicker").textContent = all ? "সময়ের আগেই সবাই হাজির!" : "বিকাল ৫টা · সভা শুরু";
@@ -3377,7 +3570,7 @@ function endGame(all, reason) {
     total = 0; earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} · <b>সাম ভাইয়ের চিকিৎসা খরচে সব শেষ!</b>`;
   }
   loadShop(); shop.wallet += total; saveShop();
-  el("endEarn").innerHTML = `💰 ${earnText}<br>পকেটে মোট: <b id="endPocket">৳${bn(shop.wallet)}</b>`;
+  el("endEarn").innerHTML = `💰 ${earnText}<br>পকেটে মোট: <b id="endPocket">৳${bn(shop.wallet)}</b>${misDone ? `<br>📋 মিশন শেষ: ${bn(misDone)}টা` : ""}`;
   el("endFaces").innerHTML = comrades.map(c => {
     const ok = c.state === "done", ph = c.emoji ? `<div class="ph">${c.emoji}</div>` : `<div class="ph" style="background-image:url('../assets/people/${c.id}.jpg')"></div>`;
     return `<figure class="${ok ? "" : "miss"}">${ph}${c.n}${ok ? "" : c.state === "sleep" ? " 💤" : c.state === "ride" ? " 🛺" : " 🏃"}</figure>`;
@@ -3462,7 +3655,7 @@ function render(t, dt) {
     const toRide = `${rideIcon()} গাড়িতে ফেরো`, led = W ? comrades.filter(c => c.follow).length : 0;
     if (state === "play") {
       if (led) { tgt = dist(door, F) < dist(P, F) ? door : P; label = tgt === door ? "🏠 পার্টি অফিস" : toRide; } // walking with comrades behind: to the ride, or straight in if the office is closer
-      else if (P.riders.length && (P.riders.length >= seatCount() || !comrades.some(c => c.state === "awake" || c.state === "flee" || c.state === "sleep"))) { tgt = W ? P : door; label = W ? toRide : "🏠 পার্টি অফিস"; }
+      else if (P.riders.length && (P.riders.length + paxN() >= seatCount() || !comrades.some(c => c.state === "awake" || c.state === "flee" || c.state === "sleep"))) { tgt = W ? P : door; label = W ? toRide : "🏠 পার্টি অফিস"; }
       else {
         let best = 1e9;
         for (const c of comrades) { if (c.state === "ride" || c.state === "done") continue; const d = dist(c, F) * (c.state === "sleep" ? 1 : .6); if (d < best) { best = d; tgt = c; } }
@@ -3542,6 +3735,7 @@ function render(t, dt) {
     for (const [b, tg] of placeTags) near(b.cx, b.cy, 110) ? place(tg, project(b.cx, b.h + 3, b.cy)) : (tg.style.display = "none");
     if (sufan) near(sufan.x, sufan.y) ? place(sufan.tag, project(sufan.x, 3.05, sufan.y)) : (sufan.tag.style.display = "none");
   }
+  missionRender(t);
   for (let i = bubbles.length - 1; i >= 0; i--) {
     const b = bubbles[i]; b.t += dt;
     if (b.t < 0) continue;
@@ -3563,14 +3757,15 @@ function render(t, dt) {
 let hudKey = "", miniBase = null;
 function drawHud() {
   const total = 25 + Math.min(35, Math.floor(time / GAME_LEN * 35)), hh = 4 + Math.floor(total / 60), mm = total % 60, late = GAME_LEN - time < 30;
-  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}|${runTotal()}|${P.tea}|${P.chips}`;
+  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}|${runTotal()}|${P.tea}|${P.chips}|${paxN()}`;
   if (key !== hudKey) {
     hudKey = key;
     el("clock").innerHTML = `${bn(hh)}:${bn(String(mm).padStart(2, "0"))}<small>${late ? "জলদি!" : "সভা ৫:০০ টায়"}</small>`; el("clock").classList.toggle("late", late);
     el("count").textContent = `${bn(delivered.length)}/${bn(comrades.length)}`;
-    [...el("seats").children].forEach((s, i) => s.classList.toggle("on", i < P.riders.length));
+    [...el("seats").children].forEach((s, i) => s.classList.toggle("on", i < P.riders.length + paxN()));
     const m = runTotal(); el("money").innerHTML = `${m < 0 ? "−" : ""}৳${bn(Math.abs(m))}<small>আজকের ভাড়া</small><span class="bag">☕ ${bn(P.tea)} · 🍟 ${bn(P.chips)}</span>`; el("money").classList.toggle("minus", m < 0);
   }
+  missionHud();
   const mini = el("mini"), r = mini.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
   if (!r.width || !r.height) return; // minimap hidden
   if (mini.width !== Math.round(r.width * dpr)) { mini.width = Math.round(r.width * dpr); mini.height = Math.round(r.height * dpr); miniBase = null; }
@@ -3589,6 +3784,7 @@ function drawHud() {
   for (const s of SHOPS) dot(s.x, s.y, P[s.item] >= 3 ? "rgba(138,90,43,.45)" : "#8a5a2b", 2.4);
   for (const c of comrades) if (c.state !== "ride" && c.state !== "done") dot(c.x, c.y, c.state === "sleep" ? C.yellow : c.state === "flee" ? "#e07a1f" : "#2f9a4a", 2.6);
   if (sam) dot(sam.x, sam.y, "#ffd2a6", 2.2);
+  const mt = misTarget(); if (mt && state === "play") dot(mt.x, mt.y, offer ? "#6b4fa0" : "#f08a24", 3.4);
   if (W) dot(W.x, W.y, "#ffffff", 3); // you on foot, and the parked ride greyed out
   m.save(); m.translate(ox + P.x * k, oy + P.y * k); m.rotate(P.a); m.fillStyle = W ? "rgba(29,26,23,.5)" : C.ink; m.beginPath(); m.moveTo(6 * dpr, 0); m.lineTo(-4 * dpr, -4 * dpr); m.lineTo(-4 * dpr, 4 * dpr); m.closePath(); m.fill(); m.restore();
 }
@@ -3776,6 +3972,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
   get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
+  get mission() { return mission; }, get offer() { return offer; }, makeOffer: k => { dropOffer(); return makeOffer(k); }, get misDone() { return misDone; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
