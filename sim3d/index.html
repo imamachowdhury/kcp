@@ -110,7 +110,8 @@
   #gmTip { transition: opacity .4s ease; } #gmTip.out { opacity: 0; } #gmTip em { font-style: normal; color: var(--yellow); margin-right: 6px; }
   .gm-load { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; color: #bfb6a6; }
   .gm-load i { width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid #5a5248; border-top-color: var(--yellow); animation: spin 1s linear infinite; }
-  .gm-load.done { visibility: hidden; }
+  .gm-load.done { display: none; }
+  .gm-song { white-space: nowrap; color: var(--yellow); font-weight: 700; } .gm-song[hidden] { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (max-height: 520px) and (min-aspect-ratio: 1/1) { /* phones held sideways */
     .gm-head .kicker, .gm-menu .loading { display: none; } .gm-head h1 { font-size: clamp(40px, 7.5vw, 64px); }
@@ -118,7 +119,7 @@
   }
   @media (max-aspect-ratio: 1/1) { /* portrait */
     .gm-head { top: max(7vh, env(safe-area-inset-top)); } .gm-head h1 { font-size: clamp(50px, 16vw, 92px); }
-    .gm-tip { font-size: 12px; } .gm-load { display: none; } .gm-menu { bottom: calc(58px + env(safe-area-inset-bottom)); }
+    .gm-tip { font-size: 12px; } .gm-load, .gm-song { display: none; } .gm-menu { bottom: calc(58px + env(safe-area-inset-bottom)); }
   }
   @media (prefers-reduced-motion: reduce) { .poster > i { animation: none; } .gm-load i { animation-duration: 3s; } }
   .screen { transition: opacity .35s ease; } .screen.fade { opacity: 0; pointer-events: none; }
@@ -333,7 +334,7 @@
     <div class="gm-links"><button id="heroBtn">চরিত্র বাছাই 👤</button><button id="shopFromStart">দোকান 🛒</button><button id="howBtn">কিভাবে খেলবো?</button><a href="../">KCP তে ফিরে যান</a></div>
     <p class="loading" id="loading">কতোয়ালপুর বানানো হচ্ছে...</p>
   </div>
-  <div class="gm-tip"><span id="gmTip"></span><span class="gm-load" id="gmLoad"><i></i>লোড হচ্ছে</span></div>
+  <div class="gm-tip"><span id="gmTip"></span><span class="gm-song" id="gmSong" hidden>♪ কতোয়ালপুর নাইটস</span><span class="gm-load" id="gmLoad"><i></i>লোড হচ্ছে</span></div>
 </div>
 
 <div class="screen hidden" id="heroScr">
@@ -2875,6 +2876,7 @@ function wobble(t, f1, f2, dur, vol, rate = 16, depth = 160) {
 }
 let hornBuf = null, susBuf = null, overBuf = null, startBuf = null, startPending = false, startEnd = 0, startSrc = null, musicEl = null, musicGain = null;
 function musicLevel() { // full volume, silent when muted, or stepped back until the CNG's start tune (or the game-over sound) ends
+  synLevel();
   if (!ac || !musicGain) return;
   const g = musicGain.gain, now = ac.currentTime; g.cancelScheduledValues(now);
   if (muted) { g.setValueAtTime(0, now); return; }
@@ -2933,10 +2935,80 @@ const sfx = {
   cash() { this.play(t => { tone(1318, t, .07, "square", .045); tone(1760, t + .06, .22, "square", .045); }); },
   welcome() { this.play(t => [784, 988, 1175].forEach((f, i) => tone(f, t + i * .08, .25, "sine", .08))); },
 };
+// start-screen theme "কতোয়ালপুর নাইটস": an original 80s-style synth tune, composed for this game and played live with WebAudio
+// (nothing recorded, nothing borrowed). A minor, 104 bpm: two bars of intro, then an 8-bar verse and an 8-bar chorus on loop.
+// When a round starts it fades out and the user's own song takes over.
+const SYN = { on: false, n: 0, nextT: 0, timer: 0, bus: null, delay: null }, SYN_VOL = .55, SYN_BPM = 104;
+const midiF = m => 440 * Math.pow(2, (m - 69) / 12);
+const SYN_CHORDS = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62], [57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 56, 59], // verse: Am F C G Am F G E
+  [53, 57, 60], [55, 59, 62], [57, 60, 64], [57, 60, 64], [53, 57, 60], [55, 59, 62], [48, 52, 55], [52, 56, 59]];                // chorus: F G Am Am F G C E
+const SYN_LEAD = [ // per bar: [16th step, midi note, length in 16ths]
+  [[4, 76, 2], [6, 74, 2], [8, 72, 4], [12, 69, 4]], [[0, 72, 2], [2, 69, 2], [4, 72, 2], [6, 77, 6], [12, 76, 4]],
+  [[0, 79, 6], [6, 76, 2], [8, 74, 2], [10, 72, 2], [12, 76, 4]], [[0, 74, 8], [8, 71, 4], [12, 67, 4]],
+  [[4, 76, 2], [6, 74, 2], [8, 72, 2], [10, 74, 2], [12, 76, 4]], [[0, 81, 6], [6, 79, 2], [8, 77, 4], [12, 76, 4]],
+  [[0, 74, 4], [4, 76, 2], [6, 77, 2], [8, 79, 8]], [[0, 80, 8], [8, 83, 4], [12, 76, 4]],
+  [[0, 81, 4], [4, 84, 4], [8, 81, 4], [12, 79, 4]], [[0, 79, 6], [6, 77, 2], [8, 76, 4], [12, 74, 4]],
+  [[0, 76, 4], [4, 81, 8], [14, 79, 2]], [[0, 81, 12]],
+  [[0, 84, 4], [4, 81, 4], [8, 77, 4], [12, 81, 4]], [[0, 83, 4], [4, 79, 4], [8, 74, 4], [12, 79, 4]],
+  [[0, 76, 4], [4, 79, 4], [8, 84, 8]], [[0, 83, 8], [8, 80, 4], [12, 76, 4]],
+];
+function synBus() {
+  if (SYN.bus) return;
+  SYN.bus = ac.createGain(); SYN.bus.gain.value = 0; SYN.bus.connect(ac.destination);
+  const d = ac.createDelay(1), fb = ac.createGain(), wet = ac.createGain(), tone2 = ac.createBiquadFilter(); // a dotted-eighth echo, darkened a little each repeat
+  d.delayTime.value = 60 / SYN_BPM * .75; fb.gain.value = .38; wet.gain.value = .32; tone2.type = "lowpass"; tone2.frequency.value = 2600;
+  d.connect(tone2).connect(fb).connect(d); tone2.connect(wet).connect(SYN.bus); SYN.delay = d;
+}
+function synOsc(type, f, t, dur, vol, out, o2 = {}) { // one note: oscillator(s) -> lowpass with its own sweep -> envelope -> out (and the echo)
+  const flt = ac.createBiquadFilter(), g = ac.createGain(), att = o2.att || .008, rel = o2.rel || .08;
+  flt.type = "lowpass"; flt.frequency.setValueAtTime(o2.cut || 2400, t); if (o2.cut2) flt.frequency.exponentialRampToValueAtTime(o2.cut2, t + Math.min(dur, .35));
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + att); g.gain.setValueAtTime(vol, t + Math.max(att, dur - rel)); g.gain.exponentialRampToValueAtTime(.0001, t + dur + rel);
+  flt.connect(g).connect(out); if (o2.send) { const sg = ac.createGain(); sg.gain.value = o2.send; g.connect(sg).connect(SYN.delay); }
+  for (const dt of o2.detune || [0]) {
+    const o = ac.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = dt;
+    if (o2.vib) { const l = ac.createOscillator(), dp = ac.createGain(); l.frequency.value = 5.5; dp.gain.setValueAtTime(0, t); dp.gain.linearRampToValueAtTime(o2.vib, t + .25); l.connect(dp).connect(o.detune); l.start(t); l.stop(t + dur + rel + .05); }
+    o.connect(flt); o.start(t); o.stop(t + dur + rel + .05);
+  }
+}
+function synNoise(t, dur, vol, type, f, out, send = 0) {
+  const src = ac.createBufferSource(), flt = ac.createBiquadFilter(), g = ac.createGain(); src.buffer = noiseBuffer(); flt.type = type; flt.frequency.value = f;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur); src.connect(flt).connect(g).connect(out);
+  if (send) { const sg = ac.createGain(); sg.gain.value = send; g.connect(sg).connect(SYN.delay); }
+  src.start(t, Math.random() * .5); src.stop(t + dur + .05);
+}
+function synStep(n, t) {
+  const out = SYN.bus, sx = 60 / SYN_BPM / 4, intro = n < 32, k = intro ? n : (n - 32) % 256, bar = intro ? (n < 16 ? 0 : 1) : k >> 4, st = k & 15;
+  const ch = intro ? SYN_CHORDS[bar] : SYN_CHORDS[bar], chorus = !intro && bar >= 8;
+  if (st === 0) for (const m of ch) synOsc("sawtooth", midiF(m), t, sx * 15.5, .03, out, { detune: [-9, 9], cut: chorus ? 1900 : 1300, att: .35, rel: .5 }); // pad
+  if (st % 2 === 0) synOsc("sawtooth", midiF(ch[0] - (st % 4 ? 12 : 24)), t, sx * 1.7, .16, out, { cut: 1500, cut2: 380, rel: .04 }); // pumping octave bass
+  if (intro || chorus) synOsc("triangle", midiF(ch[st % 3] + 12 + (st % 6 > 2 ? 12 : 0)), t, sx * .8, intro ? .05 : .035, out, { send: .5, rel: .05 }); // arpeggio
+  if (intro) return;
+  if (st === 0 || st === 8 || (st === 10 && bar % 2)) { const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .16);
+    g.gain.setValueAtTime(.75, t); g.gain.exponentialRampToValueAtTime(.0001, t + .32); o.connect(g).connect(out); o.start(t); o.stop(t + .35); } // kick
+  if (st === 4 || st === 12) { synNoise(t, .26, .32, "highpass", 1100, out, .25); synOsc("triangle", 185, t, .06, .18, out, { rel: .06 }); } // big gated snare
+  if (st % 2 === 0) synNoise(t, st === 14 ? .16 : .035, st === 14 ? .07 : .05, "highpass", 7500, out); // hats, open on the last eighth
+  for (const [s0, m, len] of SYN_LEAD[bar]) if (s0 === st) synOsc("sawtooth", midiF(m), t, sx * len * .92, .075, out, { detune: [-6, 6], cut: 3400, cut2: 1900, vib: 9, send: .45, att: .015, rel: .12 });
+}
+function synTick() {
+  if (!SYN.on || !ac) return;
+  const sx = 60 / SYN_BPM / 4, now = ac.currentTime;
+  if (SYN.nextT < now - .2) SYN.nextT = now + .05; // came back from a hidden tab: carry on from here, don't rush the missed notes
+  while (SYN.nextT < now + .3) { synStep(SYN.n, SYN.nextT); SYN.n++; SYN.nextT += sx; }
+}
+function synLevel() {
+  if (!ac || !SYN.bus) return;
+  const g = SYN.bus.gain, now = ac.currentTime; g.cancelScheduledValues(now); g.setTargetAtTime(SYN.on && !muted && !document.hidden ? SYN_VOL : 0, now, SYN.on ? .15 : .5);
+}
+function synthStart() {
+  if (!ac || SYN.on) return;
+  try { synBus(); SYN.on = true; SYN.n = 0; SYN.nextT = ac.currentTime + .08; synLevel(); clearInterval(SYN.timer); SYN.timer = setInterval(synTick, 40); synTick(); el("gmSong").hidden = false; } catch (e) { console.warn("synth", e); }
+}
+function synthStop() { if (!SYN.on) return; SYN.on = false; clearInterval(SYN.timer); synLevel(); el("gmSong").hidden = true; }
 // background music: the "সভায় আনো!" song, made by the user with Suno (shared with the 2D game)
 const MUSIC_URL = "../sim/bgm.mp3";
-function startMusic() { // streamed, not decoded: a 2½-minute song would be ~55MB in memory
+function startMusic(game) { // streamed, not decoded: a 2½-minute song would be ~55MB in memory
   if (!ac) return;
+  if (!game && state === "menu") { synthStart(); return; } // the start screen has its own tune
   try {
     if (!musicEl) {
       musicEl = new Audio(MUSIC_URL); musicEl.loop = true; musicEl.preload = "auto";
@@ -2960,6 +3032,7 @@ setTimeout(function musicOnEntry() { // after the whole script has run (it reads
 }, 0);
 // quiet while the tab is hidden; back on return (a paused round stays quiet until resumed)
 document.addEventListener("visibilitychange", () => {
+  synLevel();
   if (!musicEl) return;
   if (document.hidden) musicEl.pause();
   else if (!(state === "play" && paused)) musicEl.play().catch(() => {});
@@ -4997,7 +5070,7 @@ function startGame() {
     if (ac && !susBuf) loadBuf("../sim/sus.mp3").then(b => susBuf = b).catch(() => {});
     if (ac && !overBuf) loadBuf("../sim/game-over.mp3").then(b => overBuf = b).catch(() => {});
     if (ac && !startBuf) loadBuf("../sim/cng-start.mp3").then(b => { startBuf = b; if (startPending && state === "play" && !W && P && P.hello) sfx.cngStart(); }).catch(() => {});
-    startMusic();
+    synthStop(); startMusic(true);
   } catch (e) {}
   if (garage) { garage = null; camera.clearViewOffset(); resize(); el("shop").classList.add("hidden"); }
   hideScreen("start"); hideScreen("end"); el("howScr").classList.add("hidden"); el("heroScr").classList.add("hidden");
@@ -5039,7 +5112,7 @@ window.__sim3 = {
   get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get parked() { return parked; }, get fleers() { return fleers; }, rideNear: () => W && rideNear(), enterRide, bike, get cop() { return cop; }, get wanted() { return wanted; }, callPolice, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
   get mission() { return mission; }, get offer() { return offer; }, makeOffer: k => { dropOffer(); return makeOffer(k); }, get misDone() { return misDone; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
-  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; }, get collageReady() { return collageReady; }, buildPoster, setHero, MIS_KINDS, get misWho() { return MIS_WHO; },
+  renderer, scene, camera, project, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; }, get collageReady() { return collageReady; }, SYN, get ac() { return ac; }, buildPoster, setHero, MIS_KINDS, get misWho() { return MIS_WHO; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { if (state === "play") update(dt); if (state === "play" || state === "ending") drawHud(); last = performance.now(); render(last / 1000, dt); } },
 };
 </script>
