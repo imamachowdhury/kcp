@@ -2865,10 +2865,11 @@ const dyn = new THREE.Group(); scene.add(dyn);
 const rings = [];
 let sufan = null, officeTag = null, drvTag = null, carTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
 
-/* ---- side missions: now and then a job turns up. A villager by the road wants a lift, or Sufan wants posters put up
-   or chips fetched from Real Mamur Dukan. Take it, do it before the timer runs out, and it pays a bonus. */
-const MIS_KINDS = ["pax", "poster", "chips"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
-let offer = null, mission = null, offerCd = 20, misDone = 0, misLast = "", misKey = "", misTalkCd = 0;
+/* ---- side missions: now and then a job turns up. A villager by the road wants a lift, or Sufan has a job: posters to
+   put up, chips to fetch from Real Mamur Dukan, a para to announce the meeting in by horn, his runaway goat to catch on
+   foot, or hot tea to bring back without a single bump. Take it, do it before the timer runs out, and it pays a bonus. */
+const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
+let offer = null, mission = null, offerCd = 20, misDone = 0, misRecent = [], misKey = "", misTalkCd = 0;
 const beacon = new THREE.Group(); // a tall see-through yellow column over wherever the job wants you
 {
   const col = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 40, 12, 1, true), new THREE.MeshBasicMaterial({ color: C.yellow, transparent: true, opacity: .3, depthWrite: false, side: THREE.DoubleSide, fog: false }));
@@ -2877,7 +2878,19 @@ const beacon = new THREE.Group(); // a tall see-through yellow column over where
   ring.rotation.x = -Math.PI / 2; ring.position.y = .16; beacon.add(ring);
   beacon.userData.col = col; beacon.visible = false; scene.add(beacon);
 }
-const chipsShop = () => SHOPS.find(s => s.item === "chips");
+const chipsShop = () => SHOPS.find(s => s.item === "chips"), teaShop = () => SHOPS.find(s => s.item === "tea");
+const MIC_LINES = ["ভাইসব! শুক্রবার বিকাল ৫টায় কেসিপির সভা! 📢", "সুফান বিকাশ ঘরে সভা, চা ফ্রি! 📢", "সভায় আসেন, দেশ বাঁচান! 📢", "ভাইসব, ভাইসব! সবাই সভায় আসবেন! 📢"];
+// Sufan Palace's goat: white or brown, horns and all, baked into one mesh
+function makeGoat(R) {
+  const coat = R() < .5 ? "#efe9dc" : "#8a5a36", dark = "#3a2a20";
+  return npcModel(k => {
+    k.box(.95, .45, .42, coat, 0, .7, 0);
+    for (const [x, z] of [[.35, .14], [.35, -.14], [-.35, .14], [-.35, -.14]]) k.box(.09, .5, .09, coat, x, .25, z);
+    k.box(.16, .34, .16, coat, .48, .98, 0, -.4); k.box(.34, .2, .2, coat, .62, 1.12, 0);
+    for (const z of [.06, -.06]) k.box(.04, .2, .04, dark, .56, 1.3, z, .5);
+    k.box(.06, .14, .14, dark, .73, 1.02, 0); k.box(.12, .08, .06, coat, -.5, .9, 0, .6);
+  });
+}
 const paxN = () => mission && mission.kind === "pax" ? 1 : 0; // the passenger takes a seat
 function paxDests() {
   const L = [[school, "স্কুল"], [mamu, "রিয়েল মামুর দোকান"], [palace, "সুফান প্যালেস"], [dukan, "ভাইয়ার দোকান"]].filter(([b]) => b).map(([b, n]) => ({ x: b.cx, y: b.cy, n }));
@@ -2902,7 +2915,7 @@ function posterSpots(R) {
 }
 function setSufanTag(t) { if (sufan && sufan.tag.textContent !== t) sufan.tag.textContent = t; }
 function makeOffer(force) {
-  const kinds = force ? [force] : shuffle(MIS_KINDS.filter(k => k !== misLast), rand);
+  const kinds = force ? [force] : shuffle(MIS_KINDS.filter(k => !misRecent.includes(k)), rand);
   for (const k of kinds) {
     if (k === "pax") {
       const Me = me(); let o = null;
@@ -2919,7 +2932,10 @@ function makeOffer(force) {
       const spots = k === "poster" ? posterSpots(rand) : null;
       if (k === "poster" && !spots) continue;
       if (k === "chips" && !chipsShop()) continue;
-      offer = { kind: k, x: sufan.x, y: sufan.y, spots, t: 60 }; setSufanTag("সুফান ❗");
+      if (k === "tea" && !teaShop()) continue;
+      const goatAt = k === "goat" ? randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - door.x, y - door.y); return d > 60 && d < 220 && reachable(x, y); }) : null;
+      if (k === "goat" && !goatAt) continue;
+      offer = { kind: k, x: sufan.x, y: sufan.y, spots, goatAt, place: PLACES[(rand() * PLACES.length) | 0], t: 60 }; setSufanTag("সুফান ❗");
     }
     sfx.welcome(); return true;
   }
@@ -2936,18 +2952,34 @@ function acceptOffer() {
   } else if (o.kind === "poster") {
     mission = { kind: "poster", spots: o.spots, t: 90, reward: 45 };
     say(sufan, "কমরেড, এই ৩টা পোস্টার দেয়ালে লাগাইয়া আসো! হেঁটে গিয়া লাগাইতে হবে। 📋", 3);
-  } else {
+  } else if (o.kind === "chips") {
     const s = chipsShop();
     mission = { kind: "chips", stage: 0, t: Math.round(2 * dist(s, sufan) / 6 + 25), reward: 30 };
     say(sufan, "মামুর দোকানের চিপস খাইতে মন চাইছে! এক প্যাকেট আইনা দাও। 🍟", 3); setSufanTag("সুফান 🍟?");
+  } else if (o.kind === "mic") {
+    const pl = o.place;
+    mission = { kind: "mic", place: pl, pts: [], t: Math.round(dist(pl, sufan) / 7 + 50), reward: 40 };
+    say(sufan, `${pl.n}য় গিয়া মাইকিং করো! ৫ জায়গায় হর্ন দিয়া জানাও: শুক্রবার সভা! 📢`, 3);
+  } else if (o.kind === "goat") {
+    const a = o.goatAt, g = { x: a.x, y: a.y, a: a.a, hy: 1.7, run: 0, rest: 0, ph: rand() * 6, mv: false, mesh: makeGoat(rand), tag: mkEl("tag warn", "🐐 ছাগল") };
+    g.mesh.position.set(g.x, 0, g.y); dyn.add(g.mesh);
+    mission = { kind: "goat", goat: g, t: 75, reward: 35 };
+    say(sufan, "প্যালেসের ছাগলটা দড়ি ছিঁড়া পালাইছে! গাড়ি থেকে নাইমা দৌড়াইয়া ধরো। 🐐", 3);
+  } else {
+    const s = teaShop(), ds = paxDests().filter(d => d.n !== "ভাইয়ার দোকান" && dist(d, s) > 90), dest = ds[(rand() * ds.length) | 0] || paxDests()[0], d = dist(dest, s);
+    mission = { kind: "tea", stage: 0, dest, t: Math.round(d / 6 + 35), reward: Math.round(30 + d / 20) };
+    say(sufan, `ভাইয়ার দোকান থেকে গরম চা নিয়া ${dest.n} পর্যন্ত দিয়া আসো। সাবধান, ধাক্কা খাইলে চা পড়ে যাবে! ☕`, 3.2);
   }
   showBanner("মিশন শুরু!", misTitle(mission), 1.6); sfx.pop();
 }
-function misTitle(m) { return m.kind === "pax" ? `🙋 ${m.n}কে নামাও` : m.kind === "poster" ? "📋 ৩টা পোস্টার লাগাও" : "🍟 সুফানের চিপস"; }
+function misTitle(m) {
+  return { pax: `🙋 ${m.n}কে নামাও`, poster: "📋 ৩টা পোস্টার লাগাও", chips: "🍟 সুফানের চিপস", mic: `📢 ${m.place ? m.place.n : ""}য় মাইকিং`, goat: "🐐 ছাগল ধরো", tea: "☕ গরম চা পৌঁছাও" }[m.kind];
+}
 function endMission(ok, why) {
-  const m = mission; mission = null; misLast = m.kind; offerCd = 12; setSufanTag("সুফান");
+  const m = mission; mission = null; misRecent = [m.kind, ...misRecent].slice(0, 2); offerCd = 12; setSufanTag("সুফান");
+  if (m.goat) m.goat.tag.remove();
   if (ok) {
-    const at = m.kind === "pax" ? m.pax : m.kind === "chips" ? sufan : me();
+    const at = m.kind === "pax" ? m.pax : m.kind === "chips" ? sufan : m.kind === "tea" ? m.dest : m.kind === "goat" ? m.goat : me();
     earn("bonus", m.reward, at.x, at.y, "মিশন"); misDone++;
     showBanner("মিশন শেষ!", `${misTitle(m)} · +৳${bn(m.reward)}`, 2); sfx.chime();
   } else { showBanner("মিশন ফেল!", why, 1.8); sfx.scratch(); }
@@ -2958,6 +2990,9 @@ function misTarget() {
   if (!mission) return null;
   if (mission.kind === "pax") return mission.dest;
   if (mission.kind === "chips") return mission.stage ? sufan : chipsShop();
+  if (mission.kind === "tea") return mission.stage ? mission.dest : teaShop();
+  if (mission.kind === "goat") return mission.goat;
+  if (mission.kind === "mic") { const pl = mission.place; return Math.hypot(P.x - pl.x, P.y - pl.y) < pl.r ? null : pl; } // inside the para: anywhere will do
   const Me = me(); let best = null, bd = 1e18;
   for (const s of mission.spots) if (!s.done) { const d = dist(s, Me); if (d < bd) { bd = d; best = s; } }
   return best;
@@ -3004,6 +3039,24 @@ function missionUpdate(dt) {
       if (!W && dist(P, s) < 8 && misTalkCd <= 0) { misTalkCd = 4; floaty(P.x, P.y, "নামো! হেঁটে লাগাও", C.ink); }
     }
     if (m.spots.every(s => s.done)) { say(Me, "এমরান ভাইয়ের পোস্টার, দেয়ালে দেয়ালে! 📢", 2.2); endMission(true); return; }
+  } else if (m.kind === "goat") {
+    const g = m.goat, d = dist(g, Me); g.rest -= dt; g.mv = false;
+    if (W && d < 1.7) { g.rest = 99; say(g, "ম্যা-অ-অ! 🐐", 1.6); floaty(g.x, g.y, "ধরা!", C.ink); sfx.vineBoom(); shakeT = .2; say(Me, "পাইছি! এইবার দড়ি শক্ত কইরা বাঁধো সুফান।", 2.4, 1.2); endMission(true); return; }
+    if (d < (W ? 11 : 18) && g.rest <= 0) { // it runs from you, zigzagging, and stops every few seconds to catch its breath
+      if ((g.run += dt) > 3) { g.run = 0; g.rest = .8; say(g, "ম্যা!", .8); }
+      const a = Math.atan2(g.y - Me.y, g.x - Me.x) + Math.sin(time * 3 + g.ph) * .6, ox = g.x, oy = g.y;
+      g.x += Math.cos(a) * 4.8 * dt; g.y += Math.sin(a) * 4.8 * dt; pushOut(g, .45); riverBlock(g, .45);
+      g.x = clamp(g.x, X0 + 4, X1 - 4); g.y = clamp(g.y, Y0 + 4, Y1 - 4);
+      if (Math.hypot(g.x - ox, g.y - oy) > .01) { g.a = Math.atan2(g.y - oy, g.x - ox); g.mv = true; }
+    }
+    if (!W && d < 7 && misTalkCd <= 0) { misTalkCd = 4; floaty(P.x, P.y, "নামো! হেঁটে ধরো", C.ink); }
+  } else if (m.kind === "mic") {
+    // the horn does the work (misHorn); nothing to check here but the clock
+  } else if (m.kind === "tea") {
+    const s = teaShop();
+    if (!m.stage && dist(s, Me) < STOP_R && (W || Math.abs(P.v) < 2.5)) { m.stage = 1; m.fine0 = run.fine; say(s.keeper, "পার্টির চা? গরম গরম নেন, ফালাইয়েন না!", 2.2); floaty(s.x, s.y, "চা নিলাম ☕", C.ink); sfx.pop(); }
+    if (m.stage && run.fine > m.fine0) { say(Me, "হায় হায়, চা পড়ে গেল! ☕💦", 2.2); endMission(false, "ধাক্কা লেগে চা পড়ে গেল"); return; }
+    if (m.stage && dist(m.dest, Me) < 9 && slow) { say(Me, "গরম চা হাজির! সুফান পাঠাইছে, সভায় আসবেন কিন্তু। ☕", 2.4); endMission(true); return; }
   } else {
     const s = chipsShop();
     if (!m.stage && dist(s, Me) < STOP_R && (W || Math.abs(P.v) < 2.5)) { m.stage = 1; say(s.keeper, "সুফান ভাইয়ের চিপস? নেন, রিয়েল জিনিস!", 2.2); floaty(s.x, s.y, "চিপস নিলাম 🍟", C.ink); sfx.pop(); }
@@ -3014,8 +3067,19 @@ function missionUpdate(dt) {
       const px = m.pax; px.x = P.x + Math.sin(P.a) * 2.2; px.y = P.y - Math.cos(P.a) * 2.2; pushOut(px, .5);
       px.mesh.position.set(px.x, 0, px.y); px.mesh.visible = true; say(px, "দেরি করলেন মামা, বাকিটা হেঁটেই যাই! 😤", 2.4);
     }
-    endMission(false, m.kind === "pax" ? "যাত্রী রাগ করে নেমে গেলেন" : m.kind === "poster" ? "পোস্টার লাগানো হলো না" : "সুফানের চিপস খাওয়া হলো না");
+    if (m.kind === "goat") say(m.goat, "ম্যা-হা-হা! 🐐", 1.6);
+    endMission(false, { pax: "যাত্রী রাগ করে নেমে গেলেন", poster: "পোস্টার লাগানো হলো না", chips: "সুফানের চিপস খাওয়া হলো না", mic: "মাইকিং শেষ হলো না", goat: "ছাগল পালাইয়া গেল", tea: "চা ঠান্ডা হয়ে গেল" }[m.kind]);
   }
+}
+function misHorn(foot) {
+  const m = mission; if (!m || m.kind !== "mic") return;
+  const pl = m.place, src = me();
+  if (Math.hypot(src.x - pl.x, src.y - pl.y) >= pl.r) { if (misTalkCd <= 0) { misTalkCd = 3; floaty(src.x, src.y, `আগে ${pl.n}য় যাও`, C.ink); } return; }
+  if (foot) { if (misTalkCd <= 0) { misTalkCd = 3; floaty(src.x, src.y, "শিসে হবে না, গাড়ির হর্ন লাগবে!", C.ink); } return; }
+  if (m.pts.some(q => Math.hypot(q.x - P.x, q.y - P.y) < 30)) { if (misTalkCd <= 0) { misTalkCd = 2; floaty(P.x, P.y, "এইখানে বলা শেষ, সামনে যাও", C.ink); } return; }
+  m.pts.push({ x: P.x, y: P.y }); sfx.megaphone(); floaty(P.x, P.y, `📢 ${bn(m.pts.length)}/৫`, C.ink);
+  say(P, MIC_LINES[(rand() * MIC_LINES.length) | 0], 2);
+  if (m.pts.length >= 5) endMission(true);
 }
 function missionHud() {
   const card = el("mission"), m = mission || offer;
@@ -3028,11 +3092,14 @@ function missionHud() {
   } else {
     title = misTitle(m);
     desc = m.kind === "pax" ? `${m.dest.n} পর্যন্ত, গাড়ি থামাইয়া নামাও` : m.kind === "poster" ? `লাগানো: ${bn(m.spots.filter(s => s.done).length)}/৩ · গাড়ি থেকে নেমে দেয়ালের সামনে দাঁড়াও`
-      : m.stage ? "চিপস নিছো, এবার সুফানকে দাও" : "রিয়েল মামুর দোকানে থামো";
+      : m.kind === "chips" ? (m.stage ? "চিপস নিছো, এবার সুফানকে দাও" : "রিয়েল মামুর দোকানে থামো")
+      : m.kind === "tea" ? (m.stage ? `চা হাতে! ধাক্কা খাইও না · ${m.dest.n} পর্যন্ত` : "ভাইয়ার দোকানে থামো, চা নাও")
+      : m.kind === "goat" ? "গাড়ি থেকে নেমে দৌড়াইয়া ধরো"
+      : `হর্ন: ${bn(m.pts.length)}/৫ · ${tg ? `${m.place.n}য় যাও` : "আলাদা আলাদা জায়গায় হর্ন দাও"}`;
   }
   const key = `${title}|${desc}|${t}|${d}`;
   if (key !== misKey) {
-    misKey = key; card.innerHTML = `<b>${title}</b><small>${desc}</small><span class="mt">${offer ? "⏳" : "⏱"} ${bn(t)} সে · ${bn(d)} মি</span>`;
+    misKey = key; card.innerHTML = `<b>${title}</b><small>${desc}</small><span class="mt">${offer ? "⏳" : "⏱"} ${bn(t)} সে · ${tg ? `${bn(d)} মি` : "এলাকায় আছো"}</span>`;
     card.classList.toggle("offer", !!offer); card.classList.toggle("late", !offer && t <= 10);
   }
   card.hidden = false;
@@ -3041,6 +3108,10 @@ function missionRender(t) {
   const tg = state === "play" ? misTarget() : null;
   beacon.visible = !!tg;
   if (tg) { beacon.position.set(tg.x, 0, tg.y); beacon.userData.col.material.opacity = .22 + .1 * Math.sin(t * 4); beacon.children[1].scale.setScalar(1 + .12 * Math.sin(t * 5)); }
+  if (mission && mission.goat) { // the goat: bobs as it runs, its tag over it
+    const g = mission.goat; g.mesh.position.set(g.x, g.mv ? Math.abs(Math.sin(t * 16)) * .12 : 0, g.y); g.mesh.rotation.y = -g.a;
+    Math.hypot(g.x - me().x, g.y - me().y) < 90 ? place(g.tag, project(g.x, 2, g.y)) : (g.tag.style.display = "none");
+  }
   if (offer && offer.mesh) { // the waiting villager waves you down
     offer.mesh.userData.arm.rotation.x = .35 + Math.sin(t * 9) * .35;
     Math.hypot(offer.x - me().x, offer.y - me().y) < 140 ? place(offer.tag, project(offer.x, 2.9, offer.y)) : (offer.tag.style.display = "none");
@@ -3245,7 +3316,7 @@ function newGame() {
   const sp = sufanPos();
   sufan = { x: sp.x, y: sp.y, hy: 3.4, mesh: makePerson("#2f8a4f", faceTex(SUFAN, RING.done)), tag: mkEl("tag", "সুফান") };
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
-  offer = null; mission = null; offerCd = 20; misDone = 0; misLast = ""; misKey = ""; misTalkCd = 0; beacon.visible = false; el("mission").hidden = true;
+  offer = null; mission = null; offerCd = 20; misDone = 0; misRecent = []; misKey = ""; misTalkCd = 0; beacon.visible = false; el("mission").hidden = true;
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
   drvTag = mkEl("tag drv", ""); drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${rideLabel()}`;
   carTag = mkEl("tag", ""); W = null; walkTip = false; syncRideUi(); // every round starts behind the wheel
@@ -3287,6 +3358,7 @@ function horn() { // on foot it's a whistle: shorter reach, no use on cows or pr
   const src = me(), foot = !!W, range = foot ? WHISTLE_R : hornRange();
   P.hornCd = .32; if (foot) sfx.whistle(); else sfx.horn();
   rings.push({ x: src.x, y: src.y, t: 0, mesh: null, r: range });
+  misHorn(foot);
   if (sam && dist(sam, src) < (foot ? WHISTLE_R : 40) && sam.scare <= 0) {
     if (foot) { if (sam.talkCd <= 2) { sam.talkCd = 4; say(sam, "শিস দিয়া ডাকো? বেয়াদব! 😤", 1.6); } }
     else { sam.scare = 2.5; sam.dir = -sam.dir; say(sam, "হর্ন শুনছি, সরলাম!", 1.6); }
