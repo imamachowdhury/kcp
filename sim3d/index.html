@@ -2843,7 +2843,7 @@ let sufan = null, officeTag = null, drvTag = null, carTag = null, placeTags = []
    along with, a journalist to show round, a farmer's cow to drive home, a phone thief to run down, his hiding nephew
    to find by "hot or cold", a cut kite to catch before it lands, a CNG stuck in the mud to push out. And sometimes a
    tyre just bursts and you limp to the nearest mechanic. Take it, do it before the timer runs out, and it pays a bonus. */
-const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea", "leaf", "follow", "flat", "tour", "herd", "thief", "hide", "kite", "push", "ckpt", "tail", "dawat"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
+const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea", "leaf", "follow", "flat", "tour", "herd", "thief", "hide", "kite", "push", "ckpt", "tail", "dawat", "lunch"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
 let offer = null, mission = null, offerCd = 4, misDone = 0, misRecent = [], misKey = "", misTalkCd = 0;
 const beacon = new THREE.Group(); // a tall see-through yellow column over wherever the job wants you
 {
@@ -2873,7 +2873,22 @@ function makeGoat(R) {
     k.box(.06, .14, .14, dark, .73, 1.02, 0); k.box(.12, .08, .06, coat, -.5, .9, 0, .6);
   });
 }
-const paxN = () => mission && (mission.kind === "pax" || mission.kind === "tour") ? 1 : 0; // the passenger (or the journalist) takes a seat
+const paxN = () => mission && (mission.kind === "pax" || mission.kind === "tour" || (mission.kind === "lunch" && (mission.stage === 0 || mission.stage === 3))) ? 1 : 0; // the passenger (or the journalist, or Jihan) takes a seat
+// Comrade Jihan's "heavy lunch": pick him up, feed him at a roadside hotel, then carry him back to the office, gently
+const JIHAN = COMRADES.find(c => c.id === "jihan");
+const LUNCH_EAT = ["🍛 খাইতেছে...", "🍗 আরেক পিস!", "🍚 ভাত আরেকটু!", "🥤 বোরহানি!", "🍛 ডাল দেন মামা!"];
+const LUNCH_BUMP = ["আস্তে মামা! পেট ফাইটা যাইবো! 🤢", "ধাক্কা দিও না, বিরিয়ানি উল্টাইবো!", "মামা, ভাত এখনো গলায়! আস্তে!", "এইটা গাড়ি না নৌকা? 🤢"];
+function makeHotel(o) { // a little roadside rice hotel: a shed, a sign, a table out front with a plate on it
+  const g = new THREE.Group();
+  g.add(box(3.2, 2.3, 2, "#d9c08a", 0, 1.15, -.4));
+  const roof = box(3.8, .12, 2.8, "#2f6a4a", 0, 2.45, -.1); roof.rotation.x = .1; g.add(roof);
+  g.add(box(1.6, .08, .8, "#8a5a32", 0, .8, 1.1));
+  for (const x of [-.7, .7]) for (const z of [.8, 1.4]) g.add(box(.07, .8, .07, "#6b5232", x, .4, z));
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(.22, .18, .05, 14), lam({ color: "#f6efe1" })); plate.position.set(-.3, .87, 1.1); g.add(plate);
+  const rice = new THREE.Mesh(new THREE.SphereGeometry(.15, 10, 6), lam({ color: "#fffbe8" })); rice.scale.y = .5; rice.position.set(-.3, .92, 1.1); g.add(rice);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, .7), lam({ map: textTex("হেভ্বি লাঞ্চ হোটেল", C.yellow, C.ink, 512, 120, 54) })); sign.position.set(0, 2.05, .62); g.add(sign);
+  g.position.set(o.x, 0, o.y); g.rotation.y = Math.atan2(o.fx, o.fy); return g;
+}
 // a hiding place for Sufan's nephew: by the wall on the far side of a house from the road
 function hideSpot(R) {
   const skip = new Set([office, palace, mamu, brick, dukan, school]);
@@ -2958,6 +2973,24 @@ function makeOffer(force) {
       offer = { kind: k, x: dx, y: dy, hy: 2.7, n, mesh: man, carMesh: car, mudMesh: mud, car: { x: o.x, y: o.y, a, moved: 0, mesh: car }, tag: mkEl("tag ask", `🛺 ${n} ❗`), t: 60 };
       sfx.welcome(); return true;
     }
+    if (k === "lunch") { // Jihan waves from the roadside; the hotel is somewhere else, not too close
+      const Me = me(); let o = null, h = null;
+      for (let i = 0; i < 400 && !o; i++) {
+        const q = roadsidePoint(roadSegs[(rand() * roadSegs.length) | 0], rand(), 1.2); if (!q) continue;
+        const d = Math.hypot(q.x - Me.x, q.y - Me.y);
+        if (d >= 60 && d <= 300 && reachable(q.x, q.y) && Math.hypot(q.x - door.x, q.y - door.y) > 40) o = q;
+      }
+      for (let i = 0; i < 600 && o && !h; i++) {
+        const q = roadsidePoint(roadSegs[(rand() * roadSegs.length) | 0], rand(), 2.5); if (!q) continue;
+        const d = Math.hypot(q.x - o.x, q.y - o.y);
+        if (d >= 150 && d <= 420 && Math.hypot(q.x - door.x, q.y - door.y) > 120 && reachable(q.x, q.y) && !stalls.some(t => Math.hypot(t.x - q.x, t.y - q.y) < 30)) h = q;
+      }
+      if (!o || !h) continue;
+      const mesh = makePerson("#3b6fb0", faceTex(JIHAN, RING.talk)); mesh.userData.arm = new THREE.Object3D();
+      mesh.position.set(o.x, 0, o.y); mesh.rotation.y = -Math.atan2(o.fy, o.fx); dyn.add(mesh);
+      offer = { kind: k, x: o.x, y: o.y, hy: 3.4, n: JIHAN.n, mesh, hotelAt: h, tag: mkEl("tag ask", "🍛 কমরেড জিহান ❗"), t: 60 };
+      sfx.welcome(); return true;
+    }
     if (k === "pax" || k === "herd" || k === "ckpt") {
       const Me = me(); let o = null;
       for (let i = 0; i < 400 && !o; i++) {
@@ -3005,6 +3038,12 @@ function acceptOffer() {
     o.mesh.visible = false;
     mission = { kind: "pax", n: o.n, pax: { x: o.x, y: o.y, hy: 2.7, mesh: o.mesh }, dest, t: Math.round(d / 7 + 25), reward: Math.round(20 + d / 15) };
     say(P, `${o.n}: ${dest.n} যাবো মামা, জলদি! 🙏`, 2.6); floaty(o.x, o.y, "উঠলো!", C.ink); sfx.boing();
+  } else if (o.kind === "lunch") {
+    const h = o.hotelAt, hotel = { x: h.x, y: h.y, fx: h.fx, fy: h.fy, hy: 3, g: makeHotel(h), tag: mkEl("tag", "🍛 হেভ্বি লাঞ্চ হোটেল") }; dyn.add(hotel.g);
+    o.mesh.visible = false;
+    const jihan = { x: o.x, y: o.y, hy: 3.4, mesh: o.mesh, tag: mkEl("tag", "🍛 জিহান") }; jihan.tag.style.display = "none";
+    mission = { kind: "lunch", stage: 0, jihan, hotel, eat: 0, eatCd: 0, bumps: 0, hit: false, t: Math.round(dist(o, hotel) / 7 + 30), reward: 70, meshes: [hotel.g, o.mesh], tags: [hotel.tag, jihan.tag] };
+    say(P, "জিহান: মামা হেভ্বি লাঞ্চ অইবো! হোটেলে চলো, খিদায় মরতেছি। 🍛", 3); floaty(o.x, o.y, "উঠলো!", C.ink); sfx.boing();
   } else if (o.kind === "poster") {
     mission = { kind: "poster", spots: o.spots, t: 90, reward: 45 };
     say(sufan, "কমরেড, এই ৩টা পোস্টার দেয়ালে লাগাইয়া আসো! হেঁটে গিয়া লাগাইতে হবে। 📋", 3);
@@ -3118,6 +3157,7 @@ function startFlat() {
   return true;
 }
 function misTitle(m) {
+  if (m.kind === "lunch") return "🍛 জিহানের হেভ্বি লাঞ্চ";
   if (m.kind === "hide") return "🙈 লুকোচুরি"; if (m.kind === "kite") return "🪁 ঘুড়ি ধরো"; if (m.kind === "push") return "💪 ধাক্কা দাও";
   if (m.kind === "ckpt") return "🏁 চেকপয়েন্ট রেস"; if (m.kind === "tail") return "🕵️ পিছু নাও"; if (m.kind === "dawat") return "💌 বিয়ের দাওয়াত";
   if (m.kind === "tour") return "📸 সাংবাদিককে ঘুরাও"; if (m.kind === "herd") return "🐄 গরু ফেরাও"; if (m.kind === "thief") return "🏃 মোবাইল চোর ধরো";
@@ -3145,6 +3185,7 @@ function misTarget() {
   if (offer) return offer;
   if (!mission) return null;
   if (mission.kind === "pax") return mission.dest;
+  if (mission.kind === "lunch") return mission.stage === 3 ? door : mission.stage === 0 ? mission.hotel : mission.jihan;
   if (mission.kind === "chips") return mission.stage ? sufan : chipsShop();
   if (mission.kind === "tea") return mission.stage ? mission.dest : teaShop();
   if (mission.kind === "goat") return mission.goat;
@@ -3184,6 +3225,12 @@ function missionUpdate(dt) {
         if (P.riders.length >= seatCount()) { if (misTalkCd <= 0) { misTalkCd = 6; say(offer, "জায়গা নাই? থাক তাইলে, পরের গাড়িতে যাবো।", 2.2); } }
         else acceptOffer();
       } else if (W && d < 4 && misTalkCd <= 0) { misTalkCd = 6; say(offer, "গাড়ি নিয়া আসেন মামা! হাঁইটা যাবো না।", 2.2); }
+    } else if (offer.kind === "lunch") {
+      const d = dist(offer, Me);
+      if (!W && d < 8 && slow) {
+        if (P.riders.length >= seatCount()) { if (misTalkCd <= 0) { misTalkCd = 6; say(offer, "সিট খালি নাই? খিদা তো খালি আছে মামা!", 2.2); } }
+        else acceptOffer();
+      } else if (W && d < 4 && misTalkCd <= 0) { misTalkCd = 6; say(offer, "মামা গাড়ি নিয়া আসো! হেভ্বি লাঞ্চে হাঁইটা যাওয়া যায় না।", 2.4); }
     } else if (offer.kind === "ckpt") {
       const d = dist(offer, Me);
       if (!W && d < 9 && slow) acceptOffer();
@@ -3323,6 +3370,33 @@ function missionUpdate(dt) {
     if (!W && dist(P, m.shop) < 9 && Math.abs(P.v) < 3) { endMission(true); return; }
     if (!W && P.v > 2) P.a = wrapAng(P.a + Math.sin(time * 7) * .5 * dt); // a flat pulls the steering about
     if (W && dist(W, m.shop) < 4 && misTalkCd <= 0) { misTalkCd = 5; say(m.shop, "গাড়ি না আনলে চাকা সারাবো কেমনে মামা?", 2.2); }
+  } else if (m.kind === "lunch") {
+    const j = m.jihan, h = m.hotel;
+    if (m.stage === 0 && !W && dist(P, h) < 10 && slow) { // at the hotel: Jihan sits down at the table out front
+      m.stage = 1; m.eat = 6; m.eatCd = .6;
+      j.x = h.x + h.fx * 1.9; j.y = h.y + h.fy * 1.9; j.mesh.position.set(j.x, 0, j.y); j.mesh.visible = true;
+      say(j, "মামা হেভ্বি লাঞ্চ অইবো! 🍛 ভাত, মাংস, ডাল... সব দেন!", 2.8); sfx.pop();
+    } else if (m.stage === 1) {
+      m.eat -= dt; m.eatCd -= dt;
+      if (m.eatCd <= 0) { m.eatCd = 1.4; floaty(j.x, j.y, LUNCH_EAT[(rand() * LUNCH_EAT.length) | 0], C.ink); sfx.pop(); }
+      if (m.eat <= 0) {
+        m.stage = 2; earn("spend", 20, h.x, h.y, "জিহানের বিল");
+        say(j, "আহ, পেট ফুল! বিলটা তুমি দিয়া দিলা, পরে দিমু। এখন অফিসে নিয়া চলো, আস্তে! 😮‍💨", 3.4);
+        m.t = Math.max(m.t, Math.round(dist(h, door) / 6 + 35));
+      }
+    } else if (m.stage === 2) {
+      if (!W && dist(P, j) < 8 && slow) { m.stage = 3; j.mesh.visible = false; sfx.boing(); say(P, "জিহান: ওফ... আস্তে মামা, এক একটা গর্তে পেট কাঁপে।", 2.6); }
+      else if (W && dist(W, j) < 4 && misTalkCd <= 0) { misTalkCd = 6; say(j, "গাড়ি আনো মামা, এই পেট নিয়া হাঁটতে পারুম না!", 2.4); }
+    } else if (m.stage === 3) { // every knock on the way back costs ৳5 of the reward
+      const hit = P.stun > 0;
+      if (hit && !m.hit) { m.bumps++; m.reward = Math.max(25, m.reward - 5); say(P, `জিহান: ${LUNCH_BUMP[(rand() * LUNCH_BUMP.length) | 0]}`, 2.2); }
+      m.hit = hit;
+      if (!W && dist(P, door) < 12 && slow) {
+        j.x = P.x + Math.sin(P.a) * 2.2; j.y = P.y - Math.cos(P.a) * 2.2; pushOut(j, .5);
+        say(j, m.bumps ? "পৌঁছাইলাম... পেট এখনো ঘুরতেছে। একটু ঘুমাই। 😴" : "আহ, মাখনের মতো চালাইলা! এখন একটা ঘুম দিমু। 😴", 2.6);
+        endMission(true); return;
+      }
+    }
   } else if (m.kind === "tea") {
     const s = teaShop();
     if (!m.stage && dist(s, Me) < STOP_R && (W || Math.abs(P.v) < 2.5)) { m.stage = 1; m.fine0 = run.fine; say(s.keeper, "পার্টির চা? গরম গরম নেন, ফালাইয়েন না!", 2.2); floaty(s.x, s.y, "চা নিলাম ☕", C.ink); sfx.pop(); }
@@ -3339,7 +3413,8 @@ function missionUpdate(dt) {
       px.mesh.position.set(px.x, 0, px.y); px.mesh.visible = true; say(px, "দেরি করলেন মামা, বাকিটা হেঁটেই যাই! 😤", 2.4);
     }
     if (m.kind === "goat") say(m.goat, "ম্যা-হা-হা! 🐐", 1.6);
-    endMission(false, { ckpt: `সময় শেষ, ${m.n} জিতে গেল`, tail: "লোকটা বাড়ি পৌঁছাই গেল, কিছু বোঝা গেল না", dawat: "সব বাড়িতে দাওয়াত দেওয়া হলো না", pax: "যাত্রী রাগ করে নেমে গেলেন", poster: "পোস্টার লাগানো হলো না", chips: "সুফানের চিপস খাওয়া হলো না", mic: "মাইকিং শেষ হলো না", goat: "ছাগল পালাইয়া গেল", tea: "চা ঠান্ডা হয়ে গেল", leaf: "লিফলেট বাতাসে হারাইয়া গেল", follow: "মিছিল চলে গেল", flat: "", tour: "সাংবাদিক বিরক্ত হয়ে চলে গেলেন", hide: "ভাগ্নে নিজেই বাইর হইয়া হাসতেছে", kite: "ঘুড়ি মাটিতে পড়ে গেল", push: "অন্য লোকজন আইসা ধাক্কা দিল", herd: "গরু মাঠে হারাইয়া গেল", thief: m.stage ? "মোবাইল দিতে দেরি হইল" : "চোর পালাইয়া গেল" }[m.kind]);
+    if (m.kind === "lunch") { const j = m.jihan; if (!m.stage || m.stage === 3) { j.x = P.x + Math.sin(P.a) * 2.2; j.y = P.y - Math.cos(P.a) * 2.2; } say(j, m.stage >= 2 ? "থাক, রিকশা নিয়া যামু! 😤" : "খিদায় মরলাম, হোটেল আর আসলো না! 😤", 2.4); }
+    endMission(false, { lunch: m.stage >= 2 ? "জিহান রাগ করে রিকশায় চলে গেল" : "জিহানের লাঞ্চ মিস হয়ে গেল", ckpt: `সময় শেষ, ${m.n} জিতে গেল`, tail: "লোকটা বাড়ি পৌঁছাই গেল, কিছু বোঝা গেল না", dawat: "সব বাড়িতে দাওয়াত দেওয়া হলো না", pax: "যাত্রী রাগ করে নেমে গেলেন", poster: "পোস্টার লাগানো হলো না", chips: "সুফানের চিপস খাওয়া হলো না", mic: "মাইকিং শেষ হলো না", goat: "ছাগল পালাইয়া গেল", tea: "চা ঠান্ডা হয়ে গেল", leaf: "লিফলেট বাতাসে হারাইয়া গেল", follow: "মিছিল চলে গেল", flat: "", tour: "সাংবাদিক বিরক্ত হয়ে চলে গেলেন", hide: "ভাগ্নে নিজেই বাইর হইয়া হাসতেছে", kite: "ঘুড়ি মাটিতে পড়ে গেল", push: "অন্য লোকজন আইসা ধাক্কা দিল", herd: "গরু মাঠে হারাইয়া গেল", thief: m.stage ? "মোবাইল দিতে দেরি হইল" : "চোর পালাইয়া গেল" }[m.kind]);
   }
 }
 function misHorn(foot) {
@@ -3371,12 +3446,13 @@ function missionHud() {
   const tg = misTarget(), Me = me(), d = tg ? Math.round(Math.hypot(tg.x - Me.x, tg.y - Me.y)) : 0, t = Math.max(0, Math.ceil(m.t));
   let title, desc;
   if (offer) {
-    title = offer.kind === "ckpt" ? "❗ রেসের চ্যালেঞ্জ!" : offer.kind === "pax" ? "❗ যাত্রী পাওয়া গেছে!" : offer.kind === "herd" ? "❗ কৃষক ডাকতেছেন" : offer.kind === "push" ? "❗ সিএনজি আটকাইছে" : "❗ সুফানের কাজ আছে";
-    desc = offer.kind === "ckpt" ? `${offer.n} রেস দিতে চায়। গাড়ি নিয়া পাশে থামো।` : offer.kind === "pax" ? `${offer.n} রাস্তার পাশে হাত তুলছেন। গাড়ি নিয়া পাশে থামো।` : offer.kind === "herd" ? `${offer.n} কিছু বলতে চান, উনার কাছে যাও।`
+    title = offer.kind === "lunch" ? "❗ কমরেড জিহান ডাকতেছে" : offer.kind === "ckpt" ? "❗ রেসের চ্যালেঞ্জ!" : offer.kind === "pax" ? "❗ যাত্রী পাওয়া গেছে!" : offer.kind === "herd" ? "❗ কৃষক ডাকতেছেন" : offer.kind === "push" ? "❗ সিএনজি আটকাইছে" : "❗ সুফানের কাজ আছে";
+    desc = offer.kind === "lunch" ? "জিহানের হেভ্বি খিদা লাগছে! গাড়ি নিয়া উনার পাশে থামো।" : offer.kind === "ckpt" ? `${offer.n} রেস দিতে চায়। গাড়ি নিয়া পাশে থামো।` : offer.kind === "pax" ? `${offer.n} রাস্তার পাশে হাত তুলছেন। গাড়ি নিয়া পাশে থামো।` : offer.kind === "herd" ? `${offer.n} কিছু বলতে চান, উনার কাছে যাও।`
       : offer.kind === "push" ? `${offer.n}র সিএনজি কাদায় আটকাইছে, উনার কাছে যাও।` : "পার্টি অফিসে সুফানের কাছে যাও।";
   } else {
     title = misTitle(m);
-    desc = m.kind === "pax" ? `${m.dest.n} পর্যন্ত, গাড়ি থামাইয়া নামাও` : m.kind === "poster" ? `লাগানো: ${bn(m.spots.filter(s => s.done).length)}/৩ · গাড়ি থেকে নেমে দেয়ালের সামনে দাঁড়াও`
+    desc = m.kind === "lunch" ? ["হেভ্বি লাঞ্চ হোটেলে নিয়া যাও, পাশে থামো", `জিহান খাইতেছে... ${bn(Math.max(0, Math.ceil(m.eat)))} সে`, "পেট ফুল! জিহানকে আবার গাড়িতে তোলো", `পার্টি অফিসে নামাও · আস্তে! ধাক্কা: ${bn(m.bumps)} (৳৫ কাটা)`][m.stage]
+      : m.kind === "pax" ? `${m.dest.n} পর্যন্ত, গাড়ি থামাইয়া নামাও` : m.kind === "poster" ? `লাগানো: ${bn(m.spots.filter(s => s.done).length)}/৩ · গাড়ি থেকে নেমে দেয়ালের সামনে দাঁড়াও`
       : m.kind === "chips" ? (m.stage ? "চিপস নিছো, এবার সুফানকে দাও" : "রিয়েল মামুর দোকানে থামো")
       : m.kind === "tea" ? (m.stage ? `চা হাতে! ধাক্কা খাইও না · ${m.dest.n} পর্যন্ত` : "ভাইয়ার দোকানে থামো, চা নাও")
       : m.kind === "goat" ? "গাড়ি থেকে নেমে দৌড়াইয়া ধরো"
@@ -3444,6 +3520,12 @@ function missionRender(t) {
   if (mission && mission.goat) { // the goat: bobs as it runs, its tag over it
     const g = mission.goat; g.mesh.position.set(g.x, g.mv ? Math.abs(Math.sin(t * 16)) * .12 : 0, g.y); g.mesh.rotation.y = -g.a;
     Math.hypot(g.x - me().x, g.y - me().y) < 90 ? place(g.tag, project(g.x, 2, g.y)) : (g.tag.style.display = "none");
+  }
+  if (mission && mission.kind === "lunch") {
+    const h = mission.hotel, j = mission.jihan, nr = (x, y, r) => Math.hypot(x - me().x, y - me().y) < r;
+    nr(h.x, h.y, 220) ? place(h.tag, project(h.x, 3.5, h.y)) : (h.tag.style.display = "none");
+    if (j.mesh.visible) { j.mesh.position.y = mission.stage === 1 ? Math.abs(Math.sin(t * 8)) * .06 : 0; nr(j.x, j.y, 140) ? place(j.tag, project(j.x, 2.9, j.y)) : (j.tag.style.display = "none"); }
+    else j.tag.style.display = "none";
   }
   if (offer && offer.mesh) { // the waiting villager waves you down
     offer.mesh.userData.arm.rotation.x = .35 + Math.sin(t * 9) * .35;
