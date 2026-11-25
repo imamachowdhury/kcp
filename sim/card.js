@@ -1,4 +1,4 @@
-// Result card for "সভায় আনো!" (2D and 3D): draws a 1080x1440 picture of the round
+// Result card for the 3D game ("কতোয়ালপুর সিটি", once "সভায় আনো!"): draws a 1080x1440 picture of the round
 // and opens a preview with share / save buttons. Used as window.KCPCard.open(data).
 (() => {
   const W = 1080, H = 1440;
@@ -24,13 +24,13 @@
   .kcard-btns button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 ${C.ink}; }
   .kcard-btns button:disabled { opacity: .55; cursor: wait; }`;
 
-  let root, img, note, bShare, bSave, bClose, file = null, blobUrl = null, shareText = "", shareUrl = "";
+  let root, img, note, bShare, bSave, bClose, file = null, blobUrl = null, shareText = "", shareUrl = "", shareTitle = "";
   function build() {
     const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
     root = document.createElement("div"); root.className = "kcard"; root.hidden = true;
     root.innerHTML = `<div class="kcard-box" role="dialog" aria-label="ফলাফলের ছবি">
       <img alt="এই খেলার ফলাফলের ছবি">
-      <p>ছবিটা বন্ধুদের পাঠাও, দেখি কে বেশি কমরেড আনতে পারে!</p>
+      <p></p>
       <div class="kcard-btns">
         <button class="go" type="button">শেয়ার করো</button>
         <button class="save" type="button">ছবি সেভ করো</button>
@@ -49,17 +49,17 @@
   async function share() {
     try {
       if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "সভায় আনো! · KCP", text: `${shareText} ${shareUrl}` });
+        await navigator.share({ files: [file], title: shareTitle, text: `${shareText} ${shareUrl}` });
         return;
       }
-      if (navigator.share) { await navigator.share({ title: "সভায় আনো! · KCP", text: shareText, url: shareUrl }); return; }
+      if (navigator.share) { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); return; }
       await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
       flash(bShare, "লিংক কপি হয়েছে!");
     } catch (e) { /* the person closed the share sheet */ }
   }
   function save() {
     if (!blobUrl) return;
-    const a = document.createElement("a"); a.href = blobUrl; a.download = "sobhay-ano-kcp.png";
+    const a = document.createElement("a"); a.href = blobUrl; a.download = "kotalpur-city-kcp.png";
     document.body.appendChild(a); a.click(); a.remove();
     flash(bSave, "সেভ হয়েছে!");
   }
@@ -117,17 +117,17 @@
     c.fillStyle = C.redDark; c.fillRect(0, 202, W, 8);
     c.textAlign = "left"; c.fillStyle = C.yellow; c.font = `400 104px ${DISPLAY}`;
     c.lineWidth = 10; c.strokeStyle = C.ink; c.lineJoin = "round";
-    c.strokeText("সভায় আনো!", 60, 128); c.fillText("সভায় আনো!", 60, 128);
+    const brand = d.brand || "সভায় আনো!"; c.strokeText(brand, 60, 128); c.fillText(brand, 60, 128);
     c.fillStyle = C.paper; c.font = `600 30px ${BODY}`;
-    c.fillText(`কতোয়াল পুর কমিউনিস্ট পার্টি · শুক্রবারের সভা${d.mode ? ` · ${d.mode}` : ""}`, 64, 180);
+    c.fillText(`কতোয়াল পুর কমিউনিস্ট পার্টি · ${d.tagline || "শুক্রবারের সভা"}${d.mode ? ` · ${d.mode}` : ""}`, 64, 180);
     if (seal) { c.save(); c.beginPath(); c.arc(W - 125, 105, 80, 0, Math.PI * 2); c.fillStyle = C.paper; c.fill(); c.clip(); c.drawImage(seal, W - 205, 25, 160, 160); c.restore(); c.beginPath(); c.arc(W - 125, 105, 80, 0, Math.PI * 2); c.lineWidth = 6; c.strokeStyle = C.ink; c.stroke(); }
 
     // headline and score
     c.textAlign = "center";
     c.fillStyle = C.soft; fitFont(c, d.kicker, 700, BODY, 36, W - 140); c.fillText(d.kicker, W / 2, 282);
     c.fillStyle = d.sam ? C.ink : C.red; fitFont(c, d.title, 400, DISPLAY, 104, W - 120); c.fillText(d.title, W / 2, 392);
-    c.fillStyle = C.ink; c.font = `700 170px ${BODY}`; c.fillText(`${bn(d.n)}/${bn(d.N)}`, W / 2, 548);
-    c.font = `700 42px ${BODY}`; c.fillStyle = C.soft; c.fillText("জন কমরেড সভায় এনেছি", W / 2, 602);
+    c.fillStyle = C.ink; c.font = `700 170px ${BODY}`; c.fillText(d.score || `${bn(d.n)}/${bn(d.N)}`, W / 2, 548);
+    c.font = `700 42px ${BODY}`; c.fillStyle = C.soft; c.fillText(d.scoreSub || "জন কমরেড সভায় এনেছি", W / 2, 602);
 
     // driver + vehicle pill, and the money pill
     const pillY = 638, pillH = 92;
@@ -182,7 +182,7 @@
 
   async function open(d) {
     if (!root) build();
-    shareText = d.text; shareUrl = d.url;
+    shareTitle = `${d.brand || "সভায় আনো!"} · KCP`; shareText = d.text; shareUrl = d.url;
     file = null; if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
     img.removeAttribute("src"); bShare.disabled = bSave.disabled = true; note.textContent = "ছবি বানানো হচ্ছে...";
     root.hidden = false;
@@ -190,10 +190,10 @@
       const cv = await draw(d);
       const blob = await new Promise((r) => cv.toBlob(r, "image/png"));
       blobUrl = URL.createObjectURL(blob); img.src = blobUrl;
-      file = new File([blob], "sobhay-ano-kcp.png", { type: "image/png" });
+      file = new File([blob], "kotalpur-city-kcp.png", { type: "image/png" });
       const canFile = !!(navigator.canShare && navigator.canShare({ files: [file] }));
       bShare.textContent = canFile ? "শেয়ার করো" : navigator.share ? "লিংক শেয়ার করো" : "লিংক কপি করো";
-      note.textContent = canFile ? "ছবিটা বন্ধুদের পাঠাও, দেখি কে বেশি কমরেড আনতে পারে!" : "ছবিটা সেভ করে বন্ধুদের পাঠাও, দেখি কে বেশি কমরেড আনতে পারে!";
+      const dare = d.dare || "দেখি কে বেশি কমরেড আনতে পারে!"; note.textContent = canFile ? `ছবিটা বন্ধুদের পাঠাও, ${dare}` : `ছবিটা সেভ করে বন্ধুদের পাঠাও, ${dare}`;
     } catch (e) {
       note.textContent = "ছবি বানানো গেল না, তবে লিংক শেয়ার করা যাবে।";
     }

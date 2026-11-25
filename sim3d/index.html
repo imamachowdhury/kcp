@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>সভায় আনো! ৩ডি · কতোয়াল পুর কমিউনিস্ট পার্টি</title>
-<meta name="description" content="পংকি ভাইয়ের সিএনজি এবার ৩ডিতে! কতোয়ালপুরের আসল রাস্তায় ঘুমন্ত কমরেডদের শুক্রবারের সভায় আনো। KCP-এর খেলা।">
+<title>কতোয়ালপুর সিটি · কতোয়াল পুর কমিউনিস্ট পার্টি</title>
+<meta name="description" content="কতোয়ালপুর সিটি: পংকি ভাইয়ের সিএনজি নিয়ে কতোয়ালপুরের আসল রাস্তায় খোলা দুনিয়া। ঘোরো, মিশন করো, টাকা কামাও। KCP-এর খেলা।">
 <meta name="theme-color" content="#c8102e">
-<meta property="og:title" content="সভায় আনো! ৩ডি · KCP">
-<meta property="og:description" content="বিকাল ৫টার সভা। কমরেডরা ঘুমাচ্ছে। পংকি ভাইয়ের সিএনজি এবার ৩ডিতে।">
+<meta property="og:title" content="কতোয়ালপুর সিটি · KCP">
+<meta property="og:description" content="ঘড়ি নেই, তাড়া নেই। পংকি ভাইয়ের সিএনজি নিয়ে কতোয়ালপুর ঘোরো, মিশন করো, টাকা জমাও।">
 <meta property="og:image" content="https://joinkcp.com/assets/og-card.jpg">
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -52,14 +52,17 @@
   #mission .mt { display: block; font-weight: 700; margin-top: 2px; } #mission.offer { background: var(--yellow); } #mission.offer small { color: var(--ink); }
   #mission.late .mt { color: var(--red); }
   .card { background: var(--paper); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); padding: 4px 10px; }
-  .clock { font: 700 20px/1.1 var(--font-body); } .clock small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
-  .clock.late { background: var(--red); color: var(--paper); } .clock.late small { color: var(--paper); }
-  .count { font: 700 18px/1.1 var(--font-body); } .count small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
-  .seats { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
-  .seats i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper-2); }
-  .seats i.on { background: #2f9a4a; }
-  .money { font: 700 18px/1.1 var(--font-body); background: #dff3e4; } .money small { display: block; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
-  .money.minus { background: #ffd2c8; }
+  /* open-world HUD: clock and money as outlined text on the top right, no boxes */
+  .hud-btns { display: flex; gap: 6px; }
+  .stats { position: relative; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+  .hud-txt { font: 700 20px/1.08 var(--font-body); color: #fff; white-space: nowrap;
+    text-shadow: -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink), 0 -2px 0 var(--ink), 0 2px 0 var(--ink), -2px 0 0 var(--ink), 2px 0 0 var(--ink), 2px 4px 0 rgba(29,26,23,.45); }
+  .clock small { font-size: 14px; margin-right: 6px; color: #ffe9a8; }
+  .money { font-size: 34px; color: #92e27e; letter-spacing: .5px; }
+  .bag { font-size: 13px; margin-top: 1px; } .bag:empty { display: none; }
+  .delta { position: absolute; right: 0; top: 100%; margin-top: 2px; font-size: 20px; color: #92e27e; opacity: 0; } .delta.minus { color: #ff8f7d; }
+  .delta.go { animation: dpop 1.8s ease-out; }
+  @keyframes dpop { 0% { opacity: 0; transform: translateY(8px); } 12% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
   .steps { list-style: none; display: flex; gap: 6px; padding: 0; margin: 10px 0 14px; }
   .steps li { flex: 1; font-size: 12px; font-weight: 700; color: var(--ink-soft); border-top: 5px solid var(--paper-2); padding-top: 4px; }
   .steps li.done { border-color: var(--ink-soft); }
@@ -80,7 +83,6 @@
   .driver.on { background: #fff3c2; box-shadow: 0 0 0 3px var(--red), 3px 3px 0 var(--ink); }
   .driver.on b::after { content: " ✓"; color: var(--red); }
   @media (max-width: 400px) { .drivers { grid-template-columns: 1fr; } }
-  .money .bag { display: block; font-size: 12.5px; font-weight: 700; margin-top: 2px; white-space: nowrap; }
   .tag.ask { background: var(--yellow); }
   .spacer { flex: 1; }
   .talk {
@@ -109,8 +111,10 @@
   @media (max-width: 420px) { .talk-btns { grid-template-columns: 1fr; } .talk-btns button { text-align: left; padding: 8px 10px; } }
   .icon-btn { pointer-events: auto; width: 42px; height: 42px; border-radius: 12px; border: 2.5px solid var(--ink); background: var(--paper);
     box-shadow: 3px 3px 0 var(--ink); font-size: 19px; cursor: pointer; display: grid; place-items: center; text-decoration: none; color: var(--ink); padding: 0; }
-  #mini { position: fixed; right: 10px; top: calc(max(10px, env(safe-area-inset-top)) + 52px); width: 160px; height: 140px; z-index: 2;
-    border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); background: #b9cb87; pointer-events: none; }
+  /* round radar, heading up: bottom left on a computer, top right under the money on a phone */
+  #mini { position: fixed; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); width: 170px; height: 170px; z-index: 2;
+    border-radius: 50%; border: 3px solid var(--ink); box-shadow: 0 0 0 3px rgba(246,239,225,.9), 2px 4px 0 4px rgba(29,26,23,.35); background: #56653f; pointer-events: none; }
+  @media (pointer: coarse) { #mini { left: auto; bottom: auto; right: 12px; top: calc(max(10px, env(safe-area-inset-top)) + 96px); width: 112px; height: 112px; } }
   #target { position: fixed; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 4px); transform: translateX(-50%); z-index: 2;
     font: 700 14px var(--font-body); pointer-events: none; white-space: nowrap; }
   #horn { position: fixed; right: 16px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 6px); width: 96px; height: 96px; border-radius: 50%; z-index: 2;
@@ -130,7 +134,7 @@
   #stick { position: fixed; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; border: 3px solid rgba(29,26,23,.6);
     background: rgba(246,239,225,.35); z-index: 2; pointer-events: none; display: none; }
   #stick i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: var(--yellow); border: 3px solid var(--ink); }
-  .keys { position: fixed; left: 12px; bottom: 12px; z-index: 2; font: 600 12px var(--font-body); background: rgba(246,239,225,.85); border: 2px solid var(--ink);
+  .keys { position: fixed; left: max(16px, env(safe-area-inset-left)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 186px); z-index: 2; font: 600 12px var(--font-body); background: rgba(246,239,225,.85); border: 2px solid var(--ink);
     border-radius: 10px; padding: 4px 8px; pointer-events: none; }
   @media (pointer: coarse) { .keys { display: none; } }
 
@@ -185,23 +189,17 @@
     #shop h2 { font-size: 30px; margin: 0 0 4px; }
   }
   @media (max-width: 560px) {
-    #mini { width: 112px; height: 98px; }
-    .clock, .count, .money { font-size: 16px; }
-    .count small, .money small, .clock small { display: none; }
-    .count { white-space: nowrap; } .seats { margin-left: 4px; }
+    #mini { width: 112px; height: 112px; }
+    .money { font-size: 28px; } .clock { font-size: 17px; } .clock small { font-size: 12px; }
     #horn { width: 84px; height: 84px; font-size: 17px; }
     #doorBtn { right: 24px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 6px + 84px + 12px); width: 64px; height: 64px; font-size: 14px; }
   }
   @media (max-width: 420px) {
     .hud { gap: 5px; left: 6px; right: 6px; }
-    .card { padding: 3px 7px; } .clock, .count, .money { font-size: 15px; }
-    .seats { gap: 2px; margin-left: 3px; } .seats i { width: 8px; height: 8px; border-width: 1.5px; }
+    .card { padding: 3px 7px; } .money { font-size: 26px; }
     .icon-btn { width: 34px; height: 34px; font-size: 15px; }
   }
-  @media (max-width: 360px) { /* the money card drops under the clock so the buttons stay on screen */
-    .hud .money { position: fixed; left: 6px; top: calc(max(10px, env(safe-area-inset-top)) + 44px); }
-    #mission { left: 6px; top: calc(max(10px, env(safe-area-inset-top)) + 90px) !important; }
-  }
+  @media (max-width: 360px) { .money { font-size: 24px; } .clock { font-size: 15px; } }
   @media (max-width: 420px) { #mission { left: 6px; top: calc(max(10px, env(safe-area-inset-top)) + 50px); font-size: 11px; } #mission b { font-size: 13px; } #mission small { font-size: 11px; } }
   /* phone driving buttons: steer on the left, gas and brake (hold to reverse) on the right, horn above gas.
      Sizes follow the screen width so all four fit on a 320px phone. */
@@ -247,13 +245,13 @@
 <div class="banner" id="banner"></div>
 
 <div class="hud" id="hud" hidden>
-  <div class="card clock" id="clock">৪:২৫<small>সভা ৫:০০ টায়</small></div>
-  <div class="card count"><span id="count">০/১১</span><span class="seats" id="seats"></span><small>কমরেড সভায় · সিট</small></div>
-  <div class="card money" id="money">৳০<small>আজকের ভাড়া</small></div>
+  <div class="hud-btns">
+    <button class="icon-btn" id="pauseBtn" title="খেলা থামাও (P)" aria-label="খেলা থামাও">⏸</button>
+    <button class="icon-btn" id="camBtn" title="ক্যামেরা বদলাও (C)">🎥</button>
+    <button class="icon-btn" id="mute" title="শব্দ (M)">🔊</button>
+  </div>
   <div class="spacer"></div>
-  <button class="icon-btn" id="camBtn" title="ক্যামেরা বদলাও (C)">🎥</button>
-  <button class="icon-btn" id="mute" title="শব্দ (M)">🔊</button>
-  <button class="icon-btn" id="pauseBtn" title="খেলা থামাও (P)" aria-label="খেলা থামাও">⏸</button>
+  <div class="stats"><div class="hud-txt clock" id="clock"></div><div class="hud-txt money" id="money">৳০</div><div class="hud-txt bag" id="bag"></div><div class="hud-txt delta" id="moneyDelta"></div></div>
 </div>
 <canvas id="mini" hidden></canvas>
 <div class="card" id="target" hidden></div>
@@ -276,20 +274,20 @@
 
 <div class="screen" id="start">
   <div class="panel">
-    <p class="kicker">কেসিপির খেলা · শুক্রবার, বিকাল ৪:২৫</p>
-    <h1>সভায় আনো!<span class="three">৩ডি</span></h1>
+    <p class="kicker">কেসিপির খেলা · খোলা দুনিয়া</p>
+    <h1>কতোয়ালপুর সিটি</h1>
     <ol class="steps" aria-label="ধাপ"><li>নিয়ম</li><li>গাড়ি</li><li>চালক</li></ol>
 
     <section class="step" data-step="1" hidden>
-      <p class="lead">পংকি ভাইয়ের সিএনজি এবার ৩ডিতে। কতোয়ালপুরের আসল রাস্তায় ঘুরে ঘুমন্ত কমরেডদের ৫টার আগে সুফান বিকাশ ঘরে আনো।</p>
+      <p class="lead">পংকি ভাইয়ের সিএনজি নিয়ে কতোয়ালপুরের আসল রাস্তায় খোলা দুনিয়া। ঘোরো, কাজ ধরো, টাকা কামাও।</p>
       <ul class="rules">
-      <li><span>📯</span><span>ঘুমন্ত কমরেডের কাছে গিয়ে <b>হর্ন</b> দাও। কেউ কেউ ঘুম ভেঙে পালায়, ধাওয়া করে ধরো!</span></li>
-      <li><span>🛺</span><span>সিএনজিতে ৫টা সিট, তানিমের পংকি রাজে ১টা। ভরে গেলে পার্টি অফিসে নামিয়ে দাও। মাথার উপরের হলুদ তীর পথ দেখাবে।</span></li>
-      <li><span>🚶</span><span>গলিতে গাড়ি ঢুকে না? <b>নামো</b> (F) আর হেঁটে যাও। শিস দিয়ে ডাকো, জাগলে কমরেড পিছে পিছে আসবে। গাড়ির কাছে ফিরে <b>ওঠো</b>।</span></li>
-      <li><span>🗣️</span><span>কেউ কেউ ঘুম ভেঙে <b>অজুহাত</b> দেবে। শুনে ঠিক জবাব বাছো: চা, চিপস, নাকি "এমরান ভাই আসতেছেন!" ভুল হলে পালাবে।</span></li>
+      <li><span>🌆</span><span>কতোয়ালপুর এখন তোমার। <b>ঘড়ি নেই, তাড়া নেই</b>: যেদিকে খুশি চালাও। দিন গড়িয়ে রাত নামে, মাঝে মাঝে বৃষ্টি আর লোডশেডিং।</span></li>
+      <li><span>📋</span><span><b>সুফান ভাই</b> আর গ্রামের লোকজনের মাথায় ❗ দেখলে কাছে যাও, কাজ দেবে। একটা শেষ হলেই আরেকটা আসবে।</span></li>
+      <li><span>🧭</span><span>গোল <b>রাডারে</b> কমলা ফোঁটা আর মাথার উপরের হলুদ তীর পরের গন্তব্য দেখায়। লাল ফোঁটা পার্টি অফিস।</span></li>
+      <li><span>🚶</span><span>গলিতে গাড়ি ঢুকে না? <b>নামো</b> (F) আর হেঁটে যাও। গাড়ির কাছে ফিরে <b>ওঠো</b>।</span></li>
       <li><span>☕</span><span><b>ভাইয়ার দোকানে</b> থামলে চা, তিন রাস্তার মোড়ে <b>রিয়েল মামুর দোকানে</b> থামলে চিপস (৳৫ করে, ৩টা পর্যন্ত)।</span></li>
-      <li><span>🐄</span><span>রাস্তায় গরু আর মিছিল। ধাক্কা খেলে জরিমানা। আর <b>সাম ভাইয়ের</b> গায়ে গাড়ি তুললেই গেম ওভার!</span></li>
-      <li><span>💰</span><span>প্রতি কমরেডের ভাড়া পাবে। জমানো টাকায় <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।</span></li>
+      <li><span>🐄</span><span>রাস্তায় গরু আর মিছিল, ধাক্কা খেলে জরিমানা। <b>সাম ভাইয়ের</b> গায়ে গাড়ি তুললে সোজা হাসপাতাল, ৳৫০ গচ্চা!</span></li>
+      <li><span>💰</span><span>যা কামাবে সাথে সাথে <b>পকেটে</b> জমবে। জমানো টাকায় <b>দোকান</b> থেকে নতুন হর্ন, রং আর আপগ্রেড কেনো।</span></li>
     </ul>
       <div class="btns"><a class="btn ghost" href="../">KCP তে ফিরে যান</a><button class="btn" data-go="2">বুঝছি, গাড়ি বাছি →</button></div>
     </section>
@@ -324,9 +322,10 @@
   <div class="panel">
     <p class="kicker">খেলা থামানো আছে</p>
     <h2>চা বিরতি ☕</h2>
-    <p class="verdict" id="pauseVerdict">সিএনজি সাইড করে রাখা হলো, ঘড়িও থেমে আছে। কমরেডরা আরেকটু ঘুমাক।</p>
+    <p class="verdict" id="pauseVerdict">সিএনজি সাইড করে রাখা হলো, ঘড়িও থেমে আছে। কতোয়ালপুর একটু জিরিয়ে নিক।</p>
     <div class="btns">
       <button class="btn" id="resume">আবার চালাও ▶</button>
+      <button class="btn alt" id="quit">আজকের মতো শেষ 🏁</button>
       <button class="btn ghost" id="restart">নতুন করে শুরু</button>
       <a class="btn ghost" href="../">KCP তে ফিরে যান</a>
     </div>
@@ -336,9 +335,9 @@
 
 <div class="screen hidden" id="end">
   <div class="panel">
-    <p class="kicker" id="endKicker">বিকাল ৫টা · সভা শুরু</p>
-    <h2 id="endTitle">সভা হলো!</h2>
-    <div class="score" id="endScore">০/১১</div>
+    <p class="kicker" id="endKicker">আজকের হিসাব</p>
+    <h2 id="endTitle">আজকের মতো শেষ!</h2>
+    <div class="score" id="endScore">৳০</div>
     <p class="verdict" id="endVerdict"></p>
     <div class="faces" id="endFaces"></div>
     <p class="earn" id="endEarn"></p>
@@ -439,7 +438,7 @@ const DRIVERS = {
   ponki: { id: "ponki", n: "পংকি ভাই", label: "পংকি ভাইয়ের সিএনজি", shirt: "#e3d24a", speed: 1.18, turn: 1.15, crashy: true,
     hello: "পংকি ভাই স্টিয়ারিংয়ে! শক্ত করে ধরেন, আজকে উড়াইয়া নিমু। প্যাঁ-পোঁ!" },
   muhon: { id: "muhon", n: "মুহন ভাই", label: "নেতা মুহন ভাই চালাচ্ছেন", shirt: "#a3122a", speed: 1, turn: 1, rally: true,
-    hello: "মুহন ভাই স্টিয়ারিংয়ে। ধীরে চলি, নিরাপদে চলি। চলো কমরেডদের ঘুম ভাঙাই!" },
+    hello: "মুহন ভাই স্টিয়ারিংয়ে। ধীরে চলি, নিরাপদে চলি। চলো কতোয়ালপুর ঘুরি!" },
 };
 let driverId = "ponki";
 try { const d = localStorage.getItem("kcp-sim-driver"); if (DRIVERS[d]) driverId = d; } catch (e) {}
@@ -463,7 +462,8 @@ const PLACES = [
   { n: "মাইজপাড়া", x: 258, y: 110, r: 150, mosque: "কেন্দ্রীয় জামে মসজিদ", real: true }, // real: the mosque is modelled
   { n: "পশ্চিমপাড়া", x: -354, y: 15, r: 160, mosque: "পশ্চিমপাড়া জামে মসজিদ" },
 ];
-const GAME_LEN = 210; // real seconds = 35 game minutes (4:25 → 5:00), same as the 2D game
+const DAY_START = 15 * 60; // the game clock (minutes) starts at 3 pm; 2 game minutes a second by day, 5 at night, so a whole day is about 8½ real minutes
+const RADAR_PPM = .55; // radar scale on a computer, CSS pixels per metre
 
 /* ================= shared wallet & shop (same save as the 2D game) ================= */
 let shop = { wallet: 0, owned: ["horn-papo", "paint-green"], horn: "horn-papo", paint: "paint-green" };
@@ -477,7 +477,7 @@ const SHOP = [
   { id: "horn-papo", cat: "horn", ic: "📯", n: "প্যাঁ-পোঁ হর্ন", d: "আসল সিএনজির হর্ন। আওয়াজ যায় ৪২ মিটার।", price: 0 },
   { id: "horn-bashi", cat: "horn", ic: "🎶", n: "বাঁশি হর্ন", d: "ফুরুৎ! আওয়াজ যায় ৫২ মিটার।", price: 150 },
   { id: "horn-bus", cat: "horn", ic: "🚌", n: "বাস হর্ন", d: "পুরো পাড়া কাঁপে। ৬০ মিটার, গরুও দূর থেকে সরে।", price: 350 },
-  { id: "horn-gaan", cat: "horn", ic: "🎵", n: "গানের হর্ন", d: "এক হর্নে দুইবারের ঘুম ভাঙে। ৫৫ মিটার।", price: 600 },
+  { id: "horn-gaan", cat: "horn", ic: "🎵", n: "গানের হর্ন", d: "হর্নে বাজে গান! আওয়াজ যায় ৫৫ মিটার।", price: 600 },
   { id: "paint-green", cat: "paint", ic: "🟩", n: "সবুজ (আসল)", d: "সব সিএনজি যেমন।", price: 0, col: "#2f8a4f" },
   { id: "paint-red", cat: "paint", ic: "🟥", n: "কেসিপি লাল", d: "পার্টির রঙে সিএনজি।", price: 200, col: "#c8102e" },
   { id: "paint-sticker", cat: "paint", ic: "🗳️", n: "ভোটের স্টিকার", d: "গায়ে পোস্টার মারা। ভোটের মৌসুম তো!", price: 250, col: "#2f8a4f" },
@@ -486,7 +486,6 @@ const SHOP = [
   { id: "up-led", cat: "up", ic: "🔦", n: "LED হেডলাইট", d: "লোডশেডিংয়ে অনেক দূর পর্যন্ত দেখা যায়।", price: 150 },
   { id: "up-bumper", cat: "up", ic: "🐄", n: "গরু-বাম্পার", d: "গরুর ধাক্কায় প্রায় থামবে না, জরিমানা অর্ধেক।", price: 250 },
   { id: "up-engine", cat: "up", ic: "⚙️", n: "নতুন ইঞ্জিন", d: "টপ স্পিড ১২% বেশি।", price: 400 },
-  { id: "up-seat4", cat: "up", ic: "💺", n: "ষষ্ঠ সিট", d: "সিএনজিতে একসাথে ৬ জন কমরেড তোলা যাবে।", price: 500 },
 ];
 const PAINT = Object.fromEntries(SHOP.filter(i => i.cat === "paint").map(i => [i.id, i.col]));
 let run = { fare: 0, bonus: 0, fine: 0, spend: 0 };
@@ -2860,7 +2859,7 @@ el("camBtn").addEventListener("click", () => { if (state === "play") nextCam(); 
 
 /* ================= game state ================= */
 let state = "menu", rand = Math.random, P = null, comrades = [], cows = [], michils = [], stalls = [], delivered = [], sam = null;
-let time = 0, lastTick = -1, sufanCd = 0, events = {}, shedLevel = 0, rainLevel = 0, flash = 0, area = null, chatCd = 0, warned30 = false, samWarnCd = 0, shakeT = 0, gid = 0;
+let clock = DAY_START, dayN = 0, dayGold = 0, time = 0, lastTick = -1, sufanCd = 0, events = {}, shedLevel = 0, rainLevel = 0, flash = 0, area = null, chatCd = 0, warned30 = false, samWarnCd = 0, shakeT = 0, gid = 0;
 const dyn = new THREE.Group(); scene.add(dyn);
 const rings = [];
 let sufan = null, officeTag = null, drvTag = null, carTag = null, placeTags = [], camHold = null; // camHold: test-only fixed camera offset
@@ -2868,10 +2867,11 @@ let sufan = null, officeTag = null, drvTag = null, carTag = null, placeTags = []
 /* ---- side missions: now and then a job turns up. A villager by the road wants a lift, or Sufan has a job: posters to
    put up, chips to fetch from Real Mamur Dukan, a para to announce the meeting in by horn, his runaway goat to catch on
    foot, hot tea to carry without a single bump, leaflets blown about by the wind to pick up, or a procession to walk
-   along with, a journalist to show round, a farmer's cow to drive home, a phone thief to run down. And sometimes a
+   along with, a journalist to show round, a farmer's cow to drive home, a phone thief to run down, his hiding nephew
+   to find by "hot or cold", a cut kite to catch before it lands, a CNG stuck in the mud to push out. And sometimes a
    tyre just bursts and you limp to the nearest mechanic. Take it, do it before the timer runs out, and it pays a bonus. */
-const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea", "leaf", "follow", "flat", "tour", "herd", "thief"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
-let offer = null, mission = null, offerCd = 20, misDone = 0, misRecent = [], misKey = "", misTalkCd = 0;
+const MIS_KINDS = ["pax", "poster", "chips", "mic", "goat", "tea", "leaf", "follow", "flat", "tour", "herd", "thief", "hide", "kite", "push"], PAX_NAMES = ["রহিম চাচা", "জমির মিয়া", "হালিম চাচা", "নূর ভাই", "কুদ্দুস চাচা", "বাবুল ভাই"];
+let offer = null, mission = null, offerCd = 4, misDone = 0, misRecent = [], misKey = "", misTalkCd = 0;
 const beacon = new THREE.Group(); // a tall see-through yellow column over wherever the job wants you
 {
   const col = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 40, 12, 1, true), new THREE.MeshBasicMaterial({ color: C.yellow, transparent: true, opacity: .3, depthWrite: false, side: THREE.DoubleSide, fog: false }));
@@ -2901,6 +2901,31 @@ function makeGoat(R) {
   });
 }
 const paxN = () => mission && (mission.kind === "pax" || mission.kind === "tour") ? 1 : 0; // the passenger (or the journalist) takes a seat
+// a hiding place for Sufan's nephew: by the wall on the far side of a house from the road
+function hideSpot(R) {
+  const skip = new Set([office, palace, mamu, brick, dukan, school]);
+  for (const b of shuffle(buildings.slice(), R)) {
+    if (skip.has(b)) continue;
+    const dd = Math.hypot(b.cx - door.x, b.cy - door.y); if (dd < 40 || dd > 160) continue;
+    const r = nearestRoad(b.cx, b.cy), L = Math.hypot(b.cx - r.x, b.cy - r.y) || 1, fx = b.cx + (b.cx - r.x) / L * 30, fy = b.cy + (b.cy - r.y) / L * 30, p = b.p;
+    let best = 1e18, wx = 0, wy = 0;
+    for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const d = segD2(fx, fy, p[j][0], p[j][1], p[i][0], p[i][1]); if (d < best) { best = d; wx = NX; wy = NY; } }
+    const ox = wx - b.cx, oy = wy - b.cy, ol = Math.hypot(ox, oy) || 1, x = wx + ox / ol * 1.1, y = wy + oy / ol * 1.1;
+    if (blocked(x, y, .45) || !reachable(x, y) || onRoad(x, y)) continue;
+    return { x, y, a: Math.atan2(oy, ox) };
+  }
+  return null;
+}
+// a CNG stuck in the mud a few metres off the road, nose to the road, its driver beside it
+function stuckSpot() {
+  for (let i = 0; i < 500; i++) {
+    const o = roadsidePoint(roadSegs[(rand() * roadSegs.length) | 0], rand(), 4.5); if (!o) continue;
+    const d = Math.hypot(o.x - me().x, o.y - me().y); if (d < 70 || d > 300 || !reachable(o.x, o.y)) continue;
+    if (blocked(o.x, o.y, 1.5) || blocked(o.x - o.fx * 2.2, o.y - o.fy * 2.2, .6) || blocked(o.x - o.fy * 2, o.y + o.fx * 2, .5)) continue;
+    return o;
+  }
+  return null;
+}
 const THIEF_LINES = ["ধরতে পারবা না! 😜", "মোবাইল আমার! 🏃", "সিএনজি দিয়া চোর ধরা যায়? হা হা!"];
 function paxDests() {
   const L = [[school, "স্কুল"], [mamu, "রিয়েল মামুর দোকান"], [palace, "সুফান প্যালেস"], [dukan, "ভাইয়ার দোকান"]].filter(([b]) => b).map(([b, n]) => ({ x: b.cx, y: b.cy, n }));
@@ -2927,6 +2952,16 @@ function setSufanTag(t) { if (sufan && sufan.tag.textContent !== t) sufan.tag.te
 function makeOffer(force) {
   const kinds = force ? [force] : shuffle(MIS_KINDS.filter(k => !misRecent.includes(k)), rand);
   for (const k of kinds) {
+    if (k === "push") {
+      const o = stuckSpot(); if (!o) continue;
+      const car = npcModel(q => NPC_KINDS.cng.build(q, rand)), a = Math.atan2(o.fy, o.fx);
+      car.position.set(o.x, 0, o.y); car.rotation.y = -a; car.rotation.z = .05; dyn.add(car);
+      const mud = new THREE.Mesh(new THREE.CircleGeometry(2.6, 20), new THREE.MeshLambertMaterial({ color: "#5a4128" })); mud.rotation.x = -Math.PI / 2; mud.position.set(o.x, .06, o.y); dyn.add(mud);
+      const dx = o.x - o.fy * 2, dy = o.y + o.fx * 2, man = makeMarcher(rand); man.position.set(dx, 0, dy); man.rotation.y = -a; dyn.add(man);
+      const n = PAX_NAMES[(rand() * PAX_NAMES.length) | 0];
+      offer = { kind: k, x: dx, y: dy, hy: 2.7, n, mesh: man, carMesh: car, mudMesh: mud, car: { x: o.x, y: o.y, a, moved: 0, mesh: car }, tag: mkEl("tag ask", `🛺 ${n} ❗`), t: 60 };
+      sfx.welcome(); return true;
+    }
     if (k === "pax" || k === "herd") {
       const Me = me(); let o = null;
       for (let i = 0; i < 400 && !o; i++) {
@@ -2954,13 +2989,15 @@ function makeOffer(force) {
       if (k === "leaf" && !leafAt) continue;
       const thiefAt = k === "thief" ? randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - sufan.x, y - sufan.y); return d > 35 && d < 80 && reachable(x, y); }) : null;
       if (k === "thief" && !thiefAt) continue;
-      offer = { kind: k, x: sufan.x, y: sufan.y, spots, goatAt, mich, leafAt, thiefAt, place: PLACES[(rand() * PLACES.length) | 0], t: 60 }; setSufanTag("সুফান ❗");
+      const hideAt = k === "hide" ? hideSpot(rand) : null;
+      if (k === "hide" && !hideAt) continue;
+      offer = { kind: k, x: sufan.x, y: sufan.y, spots, goatAt, mich, leafAt, thiefAt, hideAt, place: PLACES[(rand() * PLACES.length) | 0], t: 60 }; setSufanTag("সুফান ❗");
     }
     sfx.welcome(); return true;
   }
   return false;
 }
-function dropOffer() { if (!offer) return; if (offer.mesh) dyn.remove(offer.mesh); if (offer.tag) offer.tag.remove(); offer = null; setSufanTag("সুফান"); }
+function dropOffer() { if (!offer) return; for (const k of ["mesh", "carMesh", "mudMesh"]) if (offer[k]) dyn.remove(offer[k]); if (offer.tag) offer.tag.remove(); offer = null; setSufanTag("সুফান"); }
 function acceptOffer() {
   const o = offer; offer = null; if (o.tag) o.tag.remove(); setSufanTag("সুফান");
   if (o.kind === "pax") {
@@ -3001,6 +3038,26 @@ function acceptOffer() {
     th.mesh.position.set(th.x, 0, th.y); dyn.add(th.mesh);
     mission = { kind: "thief", thief: th, stage: 0, t: 60, reward: 45 };
     say(sufan, "চোর! চোর! আমার মোবাইল নিয়া দৌড় দিছে! গাড়ি নিয়া ধরো! 📱", 3); setSufanTag("সুফান 📱?");
+  } else if (o.kind === "hide") {
+    const h = o.hideAt, kid = { x: h.x, y: h.y, hy: 1.8, cd: 4, mesh: makeMarcher(rand) };
+    kid.mesh.scale.setScalar(.62); kid.mesh.position.set(h.x, 0, h.y); kid.mesh.rotation.y = -h.a; dyn.add(kid.mesh);
+    mission = { kind: "hide", kid, t: 70, reward: 35 };
+    say(sufan, "আমার ভাগ্নেটা লুকাইছে, খুঁইজা বের করো! কোনদিকে, বলবো না। খালি বলবো গরম না ঠান্ডা। 🙈", 3.2);
+  } else if (o.kind === "kite") { // falls for T seconds, drifting on the wind, onto open ground you can reach
+    const T = 24, wa = rand() * Math.PI * 2, ws = 1.6 + rand() * .8, vx = Math.cos(wa) * ws, vy = Math.sin(wa) * ws;
+    const land = randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - sufan.x, y - sufan.y); return d > 70 && d < 160 && reachable(x, y); }) || { x: sufan.x + 80, y: sufan.y };
+    const g = new THREE.Group();
+    const sail = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), lam({ color: "#e0402a", side: THREE.DoubleSide })); sail.rotation.z = Math.PI / 4; g.add(sail);
+    const band = new THREE.Mesh(new THREE.PlaneGeometry(.35, 1.84), lam({ color: C.yellow, side: THREE.DoubleSide })); band.position.z = .01; g.add(band);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(.04, 2.6, .04), lam({ color: "#f6efe1" })); tail.position.y = -2.2; g.add(tail);
+    const shadow = new THREE.Mesh(new THREE.CircleGeometry(1.3, 20), new THREE.MeshBasicMaterial({ color: "#1d1a17", transparent: true, opacity: .25, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; dyn.add(shadow);
+    dyn.add(g);
+    mission = { kind: "kite", kite: { x: land.x - vx * T, y: land.y - vy * T, h: 38, vx, vy, fall: 38 / T, mesh: g, shadow }, t: T + 1, reward: 35 };
+    say(sufan, "পিচ্চিদের ঘুড়ি কাইটা গেছে! মাটিতে পড়ার আগে নিচে গিয়া ধরো, ছায়া দেইখা যাও! 🪁", 3);
+  } else if (o.kind === "push") {
+    const car = o.car, driver = { x: o.x, y: o.y, hy: 2.7, n: o.n, mesh: o.mesh, tag: mkEl("tag ask", `🛺 ${o.n}`), cd: 0 };
+    mission = { kind: "push", car, driver, t: 60, reward: 35 };
+    say(driver, "ভাই, সিএনজি কাদায় আটকাইছে! নাইমা পিছন থেকে একটু ধাক্কা দেন। 🙏", 3);
   } else if (o.kind === "leaf") {
     const c = o.leafAt, leaves = [];
     for (let i = 0; i < 300 && leaves.length < 6; i++) {
@@ -3037,12 +3094,13 @@ function startFlat() {
   return true;
 }
 function misTitle(m) {
+  if (m.kind === "hide") return "🙈 লুকোচুরি"; if (m.kind === "kite") return "🪁 ঘুড়ি ধরো"; if (m.kind === "push") return "💪 ধাক্কা দাও";
   if (m.kind === "tour") return "📸 সাংবাদিককে ঘুরাও"; if (m.kind === "herd") return "🐄 গরু ফেরাও"; if (m.kind === "thief") return "🏃 মোবাইল চোর ধরো";
   return { pax: `🙋 ${m.n}কে নামাও`, poster: "📋 ৩টা পোস্টার লাগাও", chips: "🍟 সুফানের চিপস", mic: `📢 ${m.place ? m.place.n : ""}য় মাইকিং`, goat: "🐐 ছাগল ধরো", tea: "☕ গরম চা পৌঁছাও", leaf: "📄 লিফলেট কুড়াও", follow: "✊ মিছিলের পিছে পিছে", flat: "🔧 চাকা পাংচার!" }[m.kind];
 }
 function endMission(ok, why) {
-  const m = mission; mission = null; misRecent = [m.kind, ...misRecent].slice(0, 2); offerCd = 12; setSufanTag("সুফান");
-  for (const o of [m.goat, m.cow, m.farmer, m.thief]) if (o && o.tag) o.tag.remove();
+  const m = mission; mission = null; misRecent = [m.kind, ...misRecent].slice(0, 2); offerCd = 6; setSufanTag("সুফান");
+  for (const o of [m.goat, m.cow, m.farmer, m.thief, m.driver]) if (o && o.tag) o.tag.remove();
   if (m.kind === "flat") {
     m.shop.tag.remove(); sfx.boost();
     if (ok) { earn("spend", 10, P.x, P.y, "চাকা সারাই"); showBanner("চাকা ঠিক!", "মিস্ত্রি ৳১০ নিল, এবার টানো", 1.8); say(m.shop, "নেন মামা, নতুন টিউব লাগাই দিলাম! 🔧", 2.2); }
@@ -3050,7 +3108,7 @@ function endMission(ok, why) {
     return;
   }
   if (ok) {
-    const at = m.kind === "pax" ? m.pax : m.kind === "chips" || m.kind === "thief" ? sufan : m.kind === "herd" ? m.farmer : m.kind === "tea" ? m.dest : m.kind === "goat" ? m.goat : me();
+    const at = m.kind === "pax" ? m.pax : m.kind === "chips" || m.kind === "thief" ? sufan : m.kind === "herd" ? m.farmer : m.kind === "push" ? m.driver : m.kind === "hide" ? m.kid : m.kind === "kite" ? m.kite : m.kind === "tea" ? m.dest : m.kind === "goat" ? m.goat : me();
     earn("bonus", m.reward, at.x, at.y, "মিশন"); misDone++;
     showBanner("মিশন শেষ!", `${misTitle(m)} · +৳${bn(m.reward)}`, 2); sfx.chime();
   } else { showBanner("মিশন ফেল!", why, 1.8); sfx.scratch(); }
@@ -3065,6 +3123,9 @@ function misTarget() {
   if (mission.kind === "goat") return mission.goat;
   if (mission.kind === "flat") return mission.shop;
   if (mission.kind === "tour") return mission.stops[mission.k];
+  if (mission.kind === "hide") return null; // no beacon: you go by "hot or cold"
+  if (mission.kind === "kite") return mission.kite;
+  if (mission.kind === "push") return mission.car;
   if (mission.kind === "herd") return mission.cow;
   if (mission.kind === "thief") return mission.stage ? sufan : mission.thief;
   if (mission.kind === "follow") return mission.mich;
@@ -3081,19 +3142,19 @@ function missionUpdate(dt) {
   const Me = me(), slow = W || Math.abs(P.v) < 3; misTalkCd -= dt;
   if (!offer && !mission) {
     offerCd -= dt;
-    if (offerCd <= 0) { if (GAME_LEN - time < 45 || !makeOffer()) offerCd = 8; }
+    if (offerCd <= 0 && !makeOffer()) offerCd = 3;
     return;
   }
   if (offer) {
     offer.t -= dt;
-    if (offer.t <= 0) { dropOffer(); offerCd = 10; return; }
+    if (offer.t <= 0) { dropOffer(); offerCd = 6; return; }
     if (offer.kind === "pax") {
       const d = dist(offer, Me);
       if (!W && d < 8 && slow) {
         if (P.riders.length >= seatCount()) { if (misTalkCd <= 0) { misTalkCd = 6; say(offer, "জায়গা নাই? থাক তাইলে, পরের গাড়িতে যাবো।", 2.2); } }
         else acceptOffer();
       } else if (W && d < 4 && misTalkCd <= 0) { misTalkCd = 6; say(offer, "গাড়ি নিয়া আসেন মামা! হাঁইটা যাবো না।", 2.2); }
-    } else if (offer.kind === "herd") { if (dist(offer, Me) < (W ? 4 : 9) && slow) acceptOffer(); }
+    } else if (offer.kind === "herd" || offer.kind === "push") { if (dist(offer, Me) < (W ? 4 : 9) && slow) acceptOffer(); }
     else if (dist(sufan, Me) < (W ? 4 : 10) && slow) {
       if (offer.kind === "tour" && W) { if (misTalkCd <= 0) { misTalkCd = 6; say(sufan, "গাড়ি নিয়া আসো! সাংবাদিক সাহেব হাঁটবেন না।", 2.2); } }
       else if (offer.kind === "tour" && P.riders.length >= seatCount()) { if (misTalkCd <= 0) { misTalkCd = 6; say(sufan, "আগে সিট খালি করো, সাংবাদিক বসবেন কই?", 2.2); } }
@@ -3151,6 +3212,29 @@ function missionUpdate(dt) {
     if (d >= 6 && d <= 22) { const was = Math.floor(m.got / 5); m.got += dt; if (Math.floor(m.got / 5) > was && m.got < 25) floaty(Me.x, Me.y, `✊ ${bn(Math.floor(m.got))}/২৫ সে`, C.ink); }
     else if (misTalkCd <= 0) { misTalkCd = 3; floaty(Me.x, Me.y, d < 6 ? "একটু পিছাও!" : "মিছিল তো চলে গেল, কাছে যাও!", C.ink); }
     if (m.got >= 25) { say(m.mich, "জিন্দাবাদ! ড্রাইভার ভাইও মিছিলে! ✊", 2.4); endMission(true); return; }
+  } else if (m.kind === "hide") {
+    const kid = m.kid, d = dist(kid, Me); kid.cd -= dt;
+    if (kid.cd <= 0 && d < 28) { kid.cd = 5 + rand() * 3; say(kid, ["হি হি 🤭", "খুঁইজা পাইবা না!", "শশশ..."][(rand() * 3) | 0], 1.2); }
+    if (d < 3.5) { say(kid, "ধুর! পাইয়া গেলা! 😆", 2); sfx.boing(); endMission(true); return; }
+  } else if (m.kind === "kite") {
+    const k = m.kite; k.x += k.vx * dt; k.y += k.vy * dt; k.h -= k.fall * dt;
+    if (k.h < 4.5 && Math.hypot(k.x - Me.x, k.y - Me.y) < 4.5) { k.mesh.visible = false; k.shadow.visible = false; say(Me, "ধরছি ঘুড়ি! 🪁 পিচ্চিরা খুশি।", 2.2); endMission(true); return; }
+    if (k.h <= 0) { k.h = 0; say(Me, "পাশের বাড়ির পিচ্চি ঘুড়ি নিয়া দৌড় দিল! 😩", 2.2); endMission(false, "ঘুড়ি মাটিতে পড়ে গেল"); return; }
+  } else if (m.kind === "push") { // walk into its back, facing it, and it rolls forward toward the road
+    const c = m.car, fx = Math.cos(c.a), fy = Math.sin(c.a), drv = m.driver; drv.cd -= dt;
+    for (const o of W ? [W] : [P]) for (const s of [-.8, .8]) { // the stuck CNG is solid
+      const cx = c.x + fx * s, cy = c.y + fy * s, r = W ? 1.05 : 2, dx = o.x - cx, dy = o.y - cy, L = Math.hypot(dx, dy);
+      if (L < r) { o.x = cx + dx / (L || 1) * r; o.y = cy + dy / (L || 1) * r; }
+    }
+    const rx = c.x - fx * 1.9, ry = c.y - fy * 1.9;
+    if (W && Math.hypot(W.x - rx, W.y - ry) < 1.6 && Math.abs(W.v) > 1 && Math.cos(W.a - c.a) > .5) {
+      const step = .8 * dt, was = Math.floor(c.moved * .67); c.x += fx * step; c.y += fy * step; c.moved += step;
+      c.mesh.position.set(c.x, 0, c.y); c.mesh.rotation.z = .05 * Math.max(0, 1 - c.moved / 5);
+      if (Math.floor(c.moved * .67) > was) { floaty(c.x, c.y, "হেইও! 💪", C.ink); sfx.bonk(); }
+      if (drv.cd <= 0) { drv.cd = 3; say(drv, ["হেইও! আরেকটু!", "জোরে ভাই, জোরে!", "আসতেছে, আসতেছে!"][(rand() * 3) | 0], 1.4); }
+    }
+    if (!W && dist(P, c) < 9 && misTalkCd <= 0) { misTalkCd = 4; floaty(P.x, P.y, "নামো! পিছন থেকে ধাক্কা দাও", C.ink); }
+    if (c.moved >= 5) { say(drv, "উঠছে! ধন্যবাদ ভাই, আপনার মতো মানুষ হয় না। সভায় আসবো! 🙏", 2.8); endMission(true); return; }
   } else if (m.kind === "tour") {
     const st = m.stops[m.k];
     if (!W && dist(P, st) < 14) {
@@ -3200,7 +3284,7 @@ function missionUpdate(dt) {
       px.mesh.position.set(px.x, 0, px.y); px.mesh.visible = true; say(px, "দেরি করলেন মামা, বাকিটা হেঁটেই যাই! 😤", 2.4);
     }
     if (m.kind === "goat") say(m.goat, "ম্যা-হা-হা! 🐐", 1.6);
-    endMission(false, { pax: "যাত্রী রাগ করে নেমে গেলেন", poster: "পোস্টার লাগানো হলো না", chips: "সুফানের চিপস খাওয়া হলো না", mic: "মাইকিং শেষ হলো না", goat: "ছাগল পালাইয়া গেল", tea: "চা ঠান্ডা হয়ে গেল", leaf: "লিফলেট বাতাসে হারাইয়া গেল", follow: "মিছিল চলে গেল", flat: "", tour: "সাংবাদিক বিরক্ত হয়ে চলে গেলেন", herd: "গরু মাঠে হারাইয়া গেল", thief: m.stage ? "মোবাইল দিতে দেরি হইল" : "চোর পালাইয়া গেল" }[m.kind]);
+    endMission(false, { pax: "যাত্রী রাগ করে নেমে গেলেন", poster: "পোস্টার লাগানো হলো না", chips: "সুফানের চিপস খাওয়া হলো না", mic: "মাইকিং শেষ হলো না", goat: "ছাগল পালাইয়া গেল", tea: "চা ঠান্ডা হয়ে গেল", leaf: "লিফলেট বাতাসে হারাইয়া গেল", follow: "মিছিল চলে গেল", flat: "", tour: "সাংবাদিক বিরক্ত হয়ে চলে গেলেন", hide: "ভাগ্নে নিজেই বাইর হইয়া হাসতেছে", kite: "ঘুড়ি মাটিতে পড়ে গেল", push: "অন্য লোকজন আইসা ধাক্কা দিল", herd: "গরু মাঠে হারাইয়া গেল", thief: m.stage ? "মোবাইল দিতে দেরি হইল" : "চোর পালাইয়া গেল" }[m.kind]);
   }
 }
 function misHorn(foot) {
@@ -3215,14 +3299,16 @@ function misHorn(foot) {
   say(P, MIC_LINES[(rand() * MIC_LINES.length) | 0], 2);
   if (m.pts.length >= 5) endMission(true);
 }
+const heat = d => d < 12 ? "🔥🔥 খুব গরম!" : d < 30 ? "🔥 গরম" : d < 60 ? "🌤 হালকা গরম" : "❄️ ঠান্ডা";
 function missionHud() {
   const card = el("mission"), m = mission || offer;
   if (!m || state !== "play") { card.hidden = true; misKey = ""; return; }
   const tg = misTarget(), Me = me(), d = tg ? Math.round(Math.hypot(tg.x - Me.x, tg.y - Me.y)) : 0, t = Math.max(0, Math.ceil(m.t));
   let title, desc;
   if (offer) {
-    title = offer.kind === "pax" ? "❗ যাত্রী পাওয়া গেছে!" : offer.kind === "herd" ? "❗ কৃষক ডাকতেছেন" : "❗ সুফানের কাজ আছে";
-    desc = offer.kind === "pax" ? `${offer.n} রাস্তার পাশে হাত তুলছেন। গাড়ি নিয়া পাশে থামো।` : offer.kind === "herd" ? `${offer.n} কিছু বলতে চান, উনার কাছে যাও।` : "পার্টি অফিসে সুফানের কাছে যাও।";
+    title = offer.kind === "pax" ? "❗ যাত্রী পাওয়া গেছে!" : offer.kind === "herd" ? "❗ কৃষক ডাকতেছেন" : offer.kind === "push" ? "❗ সিএনজি আটকাইছে" : "❗ সুফানের কাজ আছে";
+    desc = offer.kind === "pax" ? `${offer.n} রাস্তার পাশে হাত তুলছেন। গাড়ি নিয়া পাশে থামো।` : offer.kind === "herd" ? `${offer.n} কিছু বলতে চান, উনার কাছে যাও।`
+      : offer.kind === "push" ? `${offer.n}র সিএনজি কাদায় আটকাইছে, উনার কাছে যাও।` : "পার্টি অফিসে সুফানের কাছে যাও।";
   } else {
     title = misTitle(m);
     desc = m.kind === "pax" ? `${m.dest.n} পর্যন্ত, গাড়ি থামাইয়া নামাও` : m.kind === "poster" ? `লাগানো: ${bn(m.spots.filter(s => s.done).length)}/৩ · গাড়ি থেকে নেমে দেয়ালের সামনে দাঁড়াও`
@@ -3235,11 +3321,14 @@ function missionHud() {
       : m.kind === "tour" ? `ছবি: ${bn(m.k)}/৩ · পরের: ${m.stops[m.k].n} · আস্তে পার হও`
       : m.kind === "herd" ? `গরুর পিছনে যাও, ${m.farmer.n}${m.farmer.n.endsWith("ই") ? "য়ের" : "র"} দিকে তাড়াও · হর্নে দৌড়ায়`
       : m.kind === "thief" ? (m.stage ? "মোবাইল পাইছো! সুফানকে ফেরত দাও" : "গাড়ি নিয়া চোরের কাছে যাও")
+      : m.kind === "hide" ? `অফিসের আশেপাশে কোনো বাড়ির পিছনে · ${heat(dist(m.kid, Me))}`
+      : m.kind === "kite" ? `উচ্চতা ${bn(Math.max(0, Math.round(m.kite.h)))} মি · মাটিতে ছায়ার নিচে যাও`
+      : m.kind === "push" ? `নেমে পিছনে গিয়া সিএনজির দিকে হাঁটো · ${bn(Math.min(5, Math.floor(m.car.moved)))}/৫ মি`
       : `হর্ন: ${bn(m.pts.length)}/৫ · ${tg ? `${m.place.n}য় যাও` : "আলাদা আলাদা জায়গায় হর্ন দাও"}`;
   }
   const key = `${title}|${desc}|${t}|${d}`;
   if (key !== misKey) {
-    misKey = key; card.innerHTML = `<b>${title}</b><small>${desc}</small><span class="mt">${offer ? "⏳" : "⏱"} ${bn(t)} সে · ${tg ? `${bn(d)} মি` : "এলাকায় আছো"}</span>`;
+    misKey = key; card.innerHTML = `<b>${title}</b><small>${desc}</small><span class="mt">${offer ? "⏳" : "⏱"} ${bn(t)} সে${m.kind === "hide" ? "" : ` · ${tg ? `${bn(d)} মি` : "এলাকায় আছো"}`}</span>`;
     card.classList.toggle("offer", !!offer); card.classList.toggle("late", !offer && t <= 10);
   }
   card.hidden = false;
@@ -3257,6 +3346,14 @@ function missionRender(t) {
     const nr = (x, y, r) => Math.hypot(x - me().x, y - me().y) < r;
     nr(c.x, c.y, 100) ? place(c.tag, project(c.x, 2.6, c.y)) : (c.tag.style.display = "none");
     nr(f.x, f.y, 140) ? place(f.tag, project(f.x, 2.9, f.y)) : (f.tag.style.display = "none");
+  }
+  if (mission && mission.kind === "kite") { // the kite dips and swings as it comes down; its shadow shows where
+    const k = mission.kite; k.mesh.position.set(k.x, k.h + 1.5, k.y); k.mesh.rotation.set(Math.sin(t * 2.3) * .4, t * .8, Math.sin(t * 3.1) * .5);
+    k.shadow.position.set(k.x, .07, k.y); k.shadow.material.opacity = .15 + .3 * (1 - k.h / 38);
+  }
+  if (mission && mission.kind === "push") {
+    const dr = mission.driver; dr.mesh.userData.arm.rotation.x = .35 + Math.sin(t * 7) * .3;
+    Math.hypot(dr.x - me().x, dr.y - me().y) < 140 ? place(dr.tag, project(dr.x, 2.9, dr.y)) : (dr.tag.style.display = "none");
   }
   if (mission && mission.kind === "thief") {
     const th = mission.thief; th.mesh.position.set(th.x, th.caught ? 0 : Math.abs(Math.sin(t * 14)) * .15, th.y); th.mesh.rotation.y = -th.a;
@@ -3293,7 +3390,7 @@ function exitRide() {
   P.v = 0; P.risk = 0;
   W = { x: at.x, y: at.y, a: P.a, v: 0, walk: 0, hy: 3.3 };
   sfx.door(); syncRideUi();
-  if (!walkTip) { walkTip = true; showBanner("পায়ে হেঁটে!", "গলিতে ঢুকে শিস দাও, কমরেডরা পিছে পিছে আসবে", 2.6); } // the first time, the tip says it
+  if (!walkTip) { walkTip = true; showBanner("পায়ে হেঁটে!", "গলিতে ঢুকে যাও, কাজ শেষে গাড়িতে ফিরে এসো", 2.6); } // the first time, the tip says it
   else say(W, vehId === "cng" ? "সিএনজি এখানে থাক, হাইটা যাই!" : "পংকি রাজ এখানে থাক, হাইটা যাই!", 2);
 }
 function enterRide() {
@@ -3308,7 +3405,7 @@ function syncRideUi() {
   doorBtn.classList.toggle("walk", walk);
   doorBtn.innerHTML = walk ? `ওঠো ${rideIcon()}<small>${tip}</small>` : `নামো 🚶<small>${tip}</small>`;
   doorBtn.setAttribute("aria-label", walk ? "গাড়িতে ওঠো" : "গাড়ি থেকে নামো");
-  hornBtn.innerHTML = walk ? `ডাক দাও!<small>${mobile ? "শিস" : "Space"}</small>` : `প্যাঁ-পোঁ!<small>${mobile ? "হর্ন" : "Space"}</small>`;
+  hornBtn.innerHTML = walk ? `শিস দাও!<small>${mobile ? "শিস" : "Space"}</small>` : `প্যাঁ-পোঁ!<small>${mobile ? "হর্ন" : "Space"}</small>`;
   padBtn("pad-gas").innerHTML = walk ? "<small>▲</small>হাঁটো" : "<small>▲</small>গ্যাস";
   padBtn("pad-brake").innerHTML = walk ? "পিছে<small>▼</small>" : "ব্রেক<small>পিছে ▼</small>";
 }
@@ -3419,25 +3516,7 @@ function newGame() {
   clearDyn(); gid++;
   loadShop(); bannerT = 0; el("banner").innerHTML = "";
   rand = rng32((Math.random() * 2 ** 31) | 0);
-  const sh = shuffle(spots.slice(), rand), picks = [];
-  for (const sep of [110, 80, 55, 35, 0]) {
-    for (const s of sh) {
-      if (picks.length >= COMRADES.length) break;
-      const d = Math.hypot(s.x - door.x, s.y - door.y);
-      if (d < 110 || d > 600 || picks.includes(s)) continue;
-      if (picks.every(p => Math.hypot(p.x - s.x, p.y - s.y) >= sep)) picks.push(s);
-    }
-    if (picks.length >= COMRADES.length) break;
-  }
-  comrades = COMRADES.map((d, i) => {
-    const s = picks[i % picks.length], need = 1 + ((rand() * 3) | 0);
-    const c = { ...d, x: s.x, y: s.y, hx: s.x, hy: s.y, state: "sleep", need, fled: false, phase: rand() * 6, cd: 0, shake: 0, ang: Math.atan2(s.fy, s.fx) };
-    c.person = makePerson(SHIRTS[i % SHIRTS.length], faceTex(c, RING.awake)); c.person.visible = false; dyn.add(c.person);
-    c.khat = makeKhat(); c.khat.position.set(s.x, 0, s.y); c.khat.rotation.y = -c.ang; dyn.add(c.khat);
-    c.sleepFace = new THREE.Sprite(new THREE.SpriteMaterial({ map: faceTex(c, RING.sleep) })); c.sleepFace.scale.set(1.5, 1.5, 1); dyn.add(c.sleepFace);
-    c.tag = mkEl("tag sleep", `${c.n} 💤`);
-    return c;
-  });
+  comrades = []; // the open world has no comrades to round up
   cows = [];
   for (let k = 0; k < 9; k++) {
     const w = randomRoadPoint(rand, (x, y) => Math.hypot(x - door.x, y - door.y) > 70 && reachable(x, y) && !cows.some(c => Math.hypot(c.x - x, c.y - y) < 90));
@@ -3472,7 +3551,7 @@ function newGame() {
   const sp = sufanPos();
   sufan = { x: sp.x, y: sp.y, hy: 3.4, mesh: makePerson("#2f8a4f", faceTex(SUFAN, RING.done)), tag: mkEl("tag", "সুফান") };
   sufan.mesh.position.set(sp.x, 0, sp.y); sufan.mesh.rotation.y = -Math.atan2(-officeU.y, -officeU.x); dyn.add(sufan.mesh);
-  offer = null; mission = null; offerCd = 20; misDone = 0; misRecent = []; misKey = ""; misTalkCd = 0; beacon.visible = false; el("mission").hidden = true;
+  offer = null; mission = null; offerCd = 4; misDone = 0; misRecent = []; misKey = ""; misTalkCd = 0; beacon.visible = false; el("mission").hidden = true;
   officeTag = mkEl("tag office", "সুফান বিকাশ ঘর · পার্টি অফিস");
   drvTag = mkEl("tag drv", ""); drvTag.innerHTML = `<i style="background-image:url('../assets/people/${DRV().id}.jpg')"></i>${rideLabel()}`;
   carTag = mkEl("tag", ""); W = null; walkTip = false; syncRideUi(); // every round starts behind the wheel
@@ -3488,24 +3567,39 @@ function newGame() {
   for (const pl of PLACES) pl.tag = mkEl("tag place", `🕌 ${pl.mosque}`);
   for (const b of billboards) b.seen = false;
 
-  const s0 = roadSegs.reduce((b, s) => { const d = segD2(door.x, door.y, s.ax, s.ay, s.bx, s.by); return d < b.d ? { d, s } : b; }, { d: 1e18 }).s;
-  const a0 = Math.atan2(s0.by - s0.ay, s0.bx - s0.ax);
-  P = { x: door.x + Math.cos(a0) * 22, y: door.y + Math.sin(a0) * 22, a: a0, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0, roll: 0, tea: 0, chips: 0, rally: null, risk: 0, warned: false };
-  if (!onRoad(P.x, P.y)) { P.x = door.x; P.y = door.y; }
+  const sp0 = spawnAt();
+  P = { x: sp0.x, y: sp0.y, a: sp0.a, v: 0, stun: 0, boost: 0, riders: [], hornCd: 0, scrape: 0, roll: 0, tea: 0, chips: 0, rally: null, risk: 0, warned: false };
   delivered = []; time = 0; lastTick = -1; sufanCd = 3; run = { fare: 0, bonus: 0, fine: 0, spend: 0 };
-  const shedAt = 50 + rand() * 55;
-  events = { shed: { at: shedAt, dur: 9 }, rain: { at: Math.min(GAME_LEN - 40, shedAt + 40 + rand() * 30), dur: 16 } };
+  events = { shed: { at: 70 + rand() * 50, dur: 9 }, rain: { at: 40 + rand() * 60, dur: 16 } }; // both come back again and again
+  clock = DAY_START; dayLook();
   shedLevel = 0; rainLevel = 0; flash = 0; area = null; chatCd = 8; warned30 = false; samWarnCd = 0; shakeT = 0;
   applyLook();
-  el("seats").innerHTML = "<i></i>".repeat(seatCount());
   camPos.set(P.x - Math.cos(P.a) * 10, 6, P.y - Math.sin(P.a) * 10);
   say(P, DRV().hello, 3.2);
   if (VEH().hello) { const me = P; setTimeout(() => { if (P === me && state === "play") say(P, VEH().hello, 3); }, 3400); }
 }
 
-function earn(kind, amt, x, y, label) { // fare/bonus add, fine/spend (tea, chips, singara) take away
+function spawnAt() { // just outside the party office, facing along the road
+  const s0 = roadSegs.reduce((b, s) => { const d = segD2(door.x, door.y, s.ax, s.ay, s.bx, s.by); return d < b.d ? { d, s } : b; }, { d: 1e18 }).s;
+  const a = Math.atan2(s0.by - s0.ay, s0.bx - s0.ax), p = { x: door.x + Math.cos(a) * 22, y: door.y + Math.sin(a) * 22, a };
+  if (!onRoad(p.x, p.y)) { p.x = door.x; p.y = door.y; }
+  return p;
+}
+function dayLook() { // how dark (dayN) and how golden (dayGold) the sky is at this hour of the game clock
+  const h = clock / 60;
+  dayN = h < 4.5 || h >= 20 ? 1 : h < 6.5 ? 1 - (h - 4.5) / 2 : h < 17.5 ? 0 : (h - 17.5) / 2.5;
+  dayGold = Math.max(clamp(1 - Math.abs(h - 17.8) / 2.6, 0, 1), clamp(1 - Math.abs(h - 6) / 1.5, 0, 1) * .7);
+}
+function clockText() {
+  const hh = Math.floor(clock / 60), mm = Math.floor(clock % 60);
+  const part = hh < 4 ? "রাত" : hh < 6 ? "ভোর" : hh < 12 ? "সকাল" : hh < 15 ? "দুপুর" : hh < 18 ? "বিকাল" : hh < 20 ? "সন্ধ্যা" : "রাত";
+  return [part, `${bn(hh % 12 || 12)}:${bn(String(mm).padStart(2, "0"))}`];
+}
+function earn(kind, amt, x, y, label) { // fare/bonus add, fine/spend (tea, chips, singara) take away; it all goes straight into the wallet
   run[kind] += amt;
   const minus = kind === "fine" || kind === "spend";
+  shop.wallet = Math.max(0, shop.wallet + (minus ? -amt : amt)); saveShop();
+  const dl = el("moneyDelta"); dl.textContent = `${minus ? "−" : "+"}৳${bn(amt)}`; dl.classList.toggle("minus", minus); dl.classList.remove("go"); void dl.offsetWidth; dl.classList.add("go");
   floaty(x, y, `${minus ? "−" : "+"}৳${bn(amt)}${label ? " " + label : ""}`, kind === "fine" ? C.red : kind === "spend" ? "#8a5a2b" : "#2f8a4f");
   if (!minus || kind === "spend") sfx.cash();
 }
@@ -3603,15 +3697,14 @@ function setFace(c) {
 /* ================= update ================= */
 function update(dt) {
   time += dt;
-  if (time >= GAME_LEN) { endGame(false); return; }
   if (time > 12 && !el("keys").hidden) el("keys").hidden = true;
-  const left = GAME_LEN - time;
-  if (left < 30 && Math.floor(left) !== lastTick) { lastTick = Math.floor(left); sfx.tick(); }
-  if (left < 30 && !warned30) { warned30 = true; sfx.dunDun(); showBanner("শেষ ৩০ সেকেন্ড!", "জলদি করো, সভা শুরু হয়ে যাচ্ছে", 1.8); }
+  const wasNight = dayN > .5;
+  clock = (clock + dt * (wasNight ? 5 : 2)) % 1440; dayLook();
+  if ((dayN > .5) !== wasNight) { if (dayN > .5) showBanner("রাত নামলো 🌙", "হেডলাইট জ্বলছে, সাবধানে চালাও", 2); else showBanner("ভোর হলো! 🌅", "কতোয়ালপুর জেগে উঠছে", 1.8); }
   for (const k in events) {
     const e = events[k], on = time >= e.at && time < e.at + e.dur;
     if (on && !e.on) { e.on = true; if (k === "shed") { showBanner("লোডশেডিং!", "কারেন্ট গেছে! হেডলাইট ভরসা", 2.4); sfx.powerDown(); say(P, "আবার কারেন্ট গেল! 🕯️", 2.2); } else { showBanner("ঝুম বৃষ্টি!", "রাস্তা পিছলা, সাবধানে চালাও", 2.4); flash = 1; sfx.thunder(); say(P, has("up-umbrella") ? "ভাগ্যিস ছাতাটা কিনছিলাম! ☂️" : "ছাতা আনি নাই মামা! ☔", 2.2); } }
-    if (!on && e.on) { e.on = false; if (k === "shed") { showBanner("কারেন্ট আইছে!", "", 1.4); sfx.powerUp(); } else say(P, "যাক, বৃষ্টি থামলো। 🌤️", 1.8); }
+    if (!on && e.on) { e.on = false; e.at = time + (k === "shed" ? 70 : 90) + rand() * 70; if (k === "shed") { showBanner("কারেন্ট আইছে!", "", 1.4); sfx.powerUp(); } else say(P, "যাক, বৃষ্টি থামলো। 🌤️", 1.8); }
   }
   const fade = (lv, on) => clamp(lv + (on ? dt / 1.2 : -dt / 1.5), 0, 1);
   shedLevel = fade(shedLevel, events.shed.on); rainLevel = fade(rainLevel, events.rain.on);
@@ -3630,7 +3723,7 @@ function update(dt) {
   else if (P.rally) { // Muhon Vai has stopped to chant with the procession
     P.rally.t -= dt; P.rally.cd -= dt; P.v *= Math.pow(.01, dt);
     if (P.rally.cd <= 0) { P.rally.cd = 1.5; say(P, `মুহন ভাই: ${CHANTS[(rand() * CHANTS.length) | 0]} ✊`, 1.5); sfx.megaphone(); }
-    if (P.rally.t <= 0) { P.rally = null; say(P, "মুহন ভাই: আচ্ছা আচ্ছা, সভা আছে। চলো!", 1.8); }
+    if (P.rally.t <= 0) { P.rally = null; say(P, "মুহন ভাই: আচ্ছা আচ্ছা, কাজ আছে। চলো!", 1.8); }
   }
   else if (P.stun > 0) { P.stun -= dt; P.v *= Math.pow(.02, dt); }
   else {
@@ -3765,50 +3858,50 @@ function deliver(list, foot) {
   if (n >= 3) { earn("bonus", 50, door.x, door.y, "হ্যাটট্রিক"); showBanner(n > 3 ? "সুপার হ্যাটট্রিক!" : "হ্যাটট্রিক!", `একসাথে ${bn(n)} জন সভায়!`, 1.8); setTimeout(() => sfx.airhorn(), 250); }
   if (delivered.length === comrades.length) { state = "ending"; const g = gid; setTimeout(() => g === gid && endGame(true), 1800); }
 }
-function samCrash() {
+function samCrash() { // no game over in the open world: a trip to the hospital, a bill, and you start again at the office
   state = "ending"; P.v = 0; shakeT = .8; flash = .7;
-  sfx.vineBoom(); setTimeout(() => sfx.gameOver(), 600);
-  showBanner("গেম ওভার!", "সাম ভাইয়ের উপর সিএনজি!", 3); say(sam, `আহ্‌! ${DRV().n.split(" ")[0]}!! 😵`, 2);
+  sfx.vineBoom();
+  showBanner("হাসপাতাল!", "সাম ভাইয়ের উপর গাড়ি! চিকিৎসা খরচ ৳৫০", 2.6); say(sam, `আহ্‌! ${DRV().n.split(" ")[0]}!! 😵`, 2);
   sam.mesh.rotation.z = Math.PI / 2; sam.mesh.position.y = .4;
-  const g = gid; setTimeout(() => g === gid && endGame(false, "sam"), 1800);
+  const g = gid; setTimeout(() => g === gid && state === "ending" && respawn(), 2400);
+}
+function respawn() {
+  if (offer) dropOffer();
+  if (mission) endMission(false, "হাসপাতালে যেতে হলো");
+  earn("fine", 50, door.x, door.y, "হাসপাতাল");
+  const s = spawnAt(); Object.assign(P, { x: s.x, y: s.y, a: s.a, v: 0, stun: 0, boost: 0, scrape: 0, roll: 0 });
+  camPos.set(P.x - Math.cos(P.a) * 10, 6, P.y - Math.sin(P.a) * 10);
+  const n = randomRoadPoint(rand, (x, y) => { const d = Math.hypot(x - door.x, y - door.y); return d > 140 && d < 420 && reachable(x, y); });
+  if (n) Object.assign(sam, n);
+  sam.scare = 0; sam.mesh.rotation.z = 0; sam.mesh.position.y = 0;
+  state = "play"; say(P, "জীবনে আর না... 🤕", 2.4);
 }
 let lastCard = null;
 el("share").addEventListener("click", () => {
   if (!lastCard) return;
-  const text = `"সভায় আনো! ৩ডি" খেলায় আমি ${bn(lastCard.n)}/${bn(lastCard.N)} জন কমরেডকে শুক্রবারের সভায় এনেছি (${rideLabel()})। তুমি পারবে? ✊☕`;
+  const text = `"কতোয়ালপুর সিটি" খেলায় আজ ${bn(misDone)}টা মিশন করে ${lastCard.score} কামাইছি (${rideLabel()})। তুমি পারবে? 🛺`;
   const url = "https://joinkcp.com/sim3d/";
   if (window.KCPCard) KCPCard.open({ ...lastCard, text, url });
-  else if (navigator.share) navigator.share({ title: "সভায় আনো! · KCP", text, url }).catch(() => {});
+  else if (navigator.share) navigator.share({ title: "কতোয়ালপুর সিটি · KCP", text, url }).catch(() => {});
 });
-function endGame(all, reason) {
+function endGame() { // "call it a day" from the pause menu: the day's account (the money is already in the wallet)
   if (state === "over") return;
   if (paused) setPause(false);
-  const g0 = gid;
   state = "over"; stick = null; stickEl.style.display = "none"; closeTalk(); engineUpdate(); el("mission").hidden = true; beacon.visible = false;
-  const n = delivered.length, N = comrades.length;
-  const verdicts = [[N, "ঐতিহাসিক সভা! কোরাম পূর্ণ। কেসিপির ইতিহাসে প্রথমবার সবাই সময়মতো।"], [8, "সভা হলো! কয়েকজন যদিও 'পাঁচ মিনিটে আসছি' বলে এখনো আসছেন।"], [4, "অর্ধেক কমিটি। সভা মুলতবি, কিন্তু চা চলবে।"], [1, "কোরাম নাই। সভায় আছেন তুমি, সুফান, আর চায়ের কাপ।"], [0, "সভা বাতিল। কতোয়ালপুর এখনো দুপুরের ঘুমে।"]];
-  el("endKicker").textContent = all ? "সময়ের আগেই সবাই হাজির!" : "বিকাল ৫টা · সভা শুরু";
-  el("endTitle").textContent = all ? "সবাই এসেছে!" : n >= 8 ? "সভা হলো!" : n >= 1 ? "সভা... মোটামুটি" : "সভা বাতিল!";
-  el("endScore").textContent = `${bn(n)}/${bn(N)} কমরেড`;
-  el("endVerdict").textContent = verdicts.find(([m]) => n >= m)[1];
-  let total = Math.max(0, runTotal()), earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} − জরিমানা ৳${bn(run.fine)}${run.spend ? ` − চা-নাস্তা ৳${bn(run.spend)}` : ""} = <b>৳${bn(total)}</b>`;
-  if (reason === "sam") {
-    el("endKicker").textContent = "দুর্ঘটনা! · গেম ওভার"; el("endTitle").textContent = "গেম ওভার!";
-    el("endVerdict").textContent = "আপনি একজন জনপ্রতিনিধির উপর গাড়ি তুলে দিয়েছেন! আপনাকে হাশরের দিনের হিসাব দিতে হবে।";
-    total = 0; earnText = `ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} · <b>সাম ভাইয়ের চিকিৎসা খরচে সব শেষ!</b>`;
-  }
-  loadShop(); shop.wallet += total; saveShop();
-  el("endEarn").innerHTML = `💰 ${earnText}<br>পকেটে মোট: <b id="endPocket">৳${bn(shop.wallet)}</b>${misDone ? `<br>📋 মিশন শেষ: ${bn(misDone)}টা` : ""}`;
-  el("endFaces").innerHTML = comrades.map(c => {
-    const ok = c.state === "done", ph = c.emoji ? `<div class="ph">${c.emoji}</div>` : `<div class="ph" style="background-image:url('../assets/people/${c.id}.jpg')"></div>`;
-    return `<figure class="${ok ? "" : "miss"}">${ph}${c.n}${ok ? "" : c.state === "sleep" ? " 💤" : c.state === "ride" ? " 🛺" : " 🏃"}</figure>`;
-  }).join("");
-  lastCard = { mode: "৩ডি", path: "sim3d", kicker: el("endKicker").textContent, title: el("endTitle").textContent, n, N, verdict: el("endVerdict").textContent,
-    driver: { id: driverId, n: DRV().n }, vehicle: VEH().n, earn: total, sam: reason === "sam", awards: [],
-    faces: comrades.map(c => ({ id: c.id, n: c.n, emoji: c.emoji, ok: c.state === "done" })) };
-  if (reason !== "sam") { // every round ends on the "omaga" sting; a good result gets the fanfare first
-    if (all || n >= 8) { sfx.fanfare(); setTimeout(() => g0 === gid && state === "over" && sfx.gameOver(), 1000); } else sfx.gameOver();
-  }
+  if (offer) dropOffer();
+  const total = runTotal(), [part, hm] = clockText();
+  const verdicts = [[8, "কতোয়ালপুরের কিংবদন্তি! পুরো গ্রাম এখন তোমার নাম জানে।"], [4, "দারুণ দিন! সুফান ভাই খুশি, পকেটও ভারী।"], [1, "মোটামুটি দিন। কাল আরেকটু বেশি ঘুরো।"], [0, "ঘুরলা ফিরলা, কাজ করলা না। তবু কতোয়ালপুর মনে রাখবে।"]];
+  el("endKicker").textContent = `কতোয়ালপুর সিটি · ${part} ${hm}`;
+  el("endTitle").textContent = "আজকের মতো শেষ!";
+  el("endScore").textContent = `${total < 0 ? "−" : ""}৳${bn(Math.abs(total))}`;
+  el("endVerdict").textContent = verdicts.find(([m]) => misDone >= m)[1];
+  el("endEarn").innerHTML = `📋 মিশন শেষ: <b>${bn(misDone)}টা</b><br>💰 ভাড়া ৳${bn(run.fare)} + বোনাস ৳${bn(run.bonus)} − জরিমানা ৳${bn(run.fine)}${run.spend ? ` − চা-নাস্তা ৳${bn(run.spend)}` : ""}<br>পকেটে মোট: <b id="endPocket">৳${bn(shop.wallet)}</b>`;
+  el("endFaces").innerHTML = "";
+  lastCard = { mode: "৩ডি", path: "sim3d", brand: "কতোয়ালপুর সিটি", tagline: "খোলা দুনিয়া", kicker: el("endKicker").textContent, title: el("endTitle").textContent,
+    n: misDone, N: misDone, score: el("endScore").textContent, scoreSub: `আজ ${bn(misDone)}টা মিশনে কামাই`, dare: "দেখি কে বেশি কামাতে পারে!", verdict: el("endVerdict").textContent,
+    driver: { id: driverId, n: DRV().n }, vehicle: VEH().n, earn: Math.max(0, total), sam: false, awards: [], faces: [] };
+  const g0 = gid;
+  if (misDone >= 4) { sfx.fanfare(); setTimeout(() => g0 === gid && state === "over" && sfx.gameOver(), 1000); } else sfx.gameOver();
   ["hud", "mini", "horn", "stickZone", "keys", "target", "doorBtn"].forEach(id => el(id).hidden = true);
   arrow.visible = false;
   const g = gid; setTimeout(() => { if (g === gid && state === "over") el("end").classList.remove("hidden"); }, 400);
@@ -3833,14 +3926,14 @@ flies.visible = false; scene.add(flies);
 const COL = { skyA: new THREE.Color("#a9d4ea"), skyB: new THREE.Color("#f3c58f"), rain: new THREE.Color("#7d8b99"), night: new THREE.Color("#101527"), sunA: new THREE.Color("#fff0d2"), sunB: new THREE.Color("#ffb26b"), hemiA: new THREE.Color("#dff1ff"), hemiB: new THREE.Color("#ffe2bd") };
 const skyNow = new THREE.Color();
 function render(t, dt) {
-  const gold = state === "menu" ? .25 : Math.min(1, time / GAME_LEN);
+  const gold = state === "menu" ? .25 : dayGold, night = state === "menu" ? 0 : dayN, lit = Math.max(shedLevel, night * .8); // lit: house lights and fireflies
   // sky and light: blue afternoon to golden five o'clock, grey in rain, near-dark in load-shedding
-  skyNow.copy(COL.skyA).lerp(COL.skyB, gold).lerp(COL.rain, rainLevel * .8).lerp(COL.night, shedLevel * .92);
+  skyNow.copy(COL.skyA).lerp(COL.skyB, gold).lerp(COL.rain, rainLevel * .8).lerp(COL.night, Math.max(shedLevel * .92, night * .88));
   scene.background.copy(skyNow); scene.fog.color.copy(skyNow);
-  scene.fog.near = 110 - rainLevel * 70 - shedLevel * 80; scene.fog.far = 330 - rainLevel * 170 - shedLevel * 220;
+  const dim = Math.max(shedLevel, night * .55); scene.fog.near = 110 - rainLevel * 70 - dim * 80; scene.fog.far = 330 - rainLevel * 170 - dim * 220;
   sun.color.copy(COL.sunA).lerp(COL.sunB, gold);
-  sun.intensity = (2.4 - gold * .4) * (1 - rainLevel * .75) * (1 - shedLevel * .97) + flash * 2;
-  hemi.intensity = (1.6 - gold * .2) * (1 - rainLevel * .3) * (1 - shedLevel * .85) + flash * 1.5;
+  sun.intensity = (2.4 - gold * .4) * (1 - rainLevel * .75) * (1 - Math.max(shedLevel * .97, night * .9)) + flash * 2;
+  hemi.intensity = (1.6 - gold * .2) * (1 - rainLevel * .3) * (1 - Math.max(shedLevel * .85, night * .76)) + flash * 1.5;
   hemi.color.copy(COL.hemiA).lerp(COL.hemiB, gold);
   const car = ride(); cng.g.visible = car === cng; scoot.g.visible = car === scoot; cng.spot.intensity = scoot.spot.intensity = 0;
   cng.drv.visible = scoot.drv.visible = !W; walker.g.visible = !!W;
@@ -3849,9 +3942,9 @@ function render(t, dt) {
     walker.g.position.set(W.x, Math.abs(Math.cos(W.walk)) * .05 * clamp(Math.abs(W.v), 0, 1), W.y); walker.g.rotation.y = -W.a;
     walker.legs[0].rotation.z = sw; walker.legs[1].rotation.z = -sw; walker.arms[0].rotation.z = -sw * .8; walker.arms[1].rotation.z = sw * .8;
   }
-  car.spot.intensity = 60 * Math.max(shedLevel, rainLevel * .3) * (has("up-led") ? 1.8 : 1); car.spot.distance = has("up-led") ? 110 : 70;
-  glows.visible = shedLevel > .02; if (glows.visible) for (const s of glows.children) s.material.opacity = shedLevel * (.75 + .25 * Math.sin(t * 9 + s.position.x));
-  flies.visible = shedLevel > .02; flies.material.opacity = shedLevel;
+  car.spot.intensity = 60 * Math.max(shedLevel, rainLevel * .3, night) * (has("up-led") ? 1.8 : 1); car.spot.distance = has("up-led") ? 110 : 70;
+  glows.visible = lit > .02; if (glows.visible) for (const s of glows.children) s.material.opacity = lit * (.75 + .25 * Math.sin(t * 9 + s.position.x));
+  flies.visible = lit > .02; flies.material.opacity = lit;
   if (P) flies.position.set(me().x, 2 + Math.sin(t) * .5, me().y);
   flash = Math.max(0, flash - dt * 2.5);
 
@@ -3880,16 +3973,9 @@ function render(t, dt) {
     });
     // arrow to the next job
     let tgt = null, label = "";
-    const toRide = `${rideIcon()} গাড়িতে ফেরো`, led = W ? comrades.filter(c => c.follow).length : 0;
     if (state === "play") {
-      if (led) { tgt = dist(door, F) < dist(P, F) ? door : P; label = tgt === door ? "🏠 পার্টি অফিস" : toRide; } // walking with comrades behind: to the ride, or straight in if the office is closer
-      else if (P.riders.length && (P.riders.length + paxN() >= seatCount() || !comrades.some(c => c.state === "awake" || c.state === "flee" || c.state === "sleep"))) { tgt = W ? P : door; label = W ? toRide : "🏠 পার্টি অফিস"; }
-      else {
-        let best = 1e9;
-        for (const c of comrades) { if (c.state === "ride" || c.state === "done") continue; const d = dist(c, F) * (c.state === "sleep" ? 1 : .6); if (d < best) { best = d; tgt = c; } }
-        if (tgt) label = `${tgt.state === "sleep" ? "💤" : "🏃"} ${tgt.n}`;
-        if (P.riders.length && tgt && dist(door, F) < dist(tgt, F) * .5) { tgt = W ? P : door; label = W ? toRide : "🏠 পার্টি অফিস"; }
-      }
+      tgt = misTarget(); if (tgt) label = offer ? `❗ ${offer.n || "সুফান"}` : misTitle(mission);
+      if (!tgt && W && dist(P, F) > 25) { tgt = P; label = `${rideIcon()} গাড়িতে ফেরো`; }
     }
     arrow.visible = !!tgt; el("target").hidden = !tgt;
     if (tgt) {
@@ -3984,37 +4070,45 @@ function render(t, dt) {
 /* ================= HUD & minimap ================= */
 let hudKey = "", miniBase = null;
 function drawHud() {
-  const total = 25 + Math.min(35, Math.floor(time / GAME_LEN * 35)), hh = 4 + Math.floor(total / 60), mm = total % 60, late = GAME_LEN - time < 30;
-  const key = `${hh}:${mm}|${delivered.length}|${P.riders.length}|${late}|${runTotal()}|${P.tea}|${P.chips}|${paxN()}`;
+  const [part, hm] = clockText(), key = `${hm}|${shop.wallet}|${P.tea}|${P.chips}`;
   if (key !== hudKey) {
     hudKey = key;
-    el("clock").innerHTML = `${bn(hh)}:${bn(String(mm).padStart(2, "0"))}<small>${late ? "জলদি!" : "সভা ৫:০০ টায়"}</small>`; el("clock").classList.toggle("late", late);
-    el("count").textContent = `${bn(delivered.length)}/${bn(comrades.length)}`;
-    [...el("seats").children].forEach((s, i) => s.classList.toggle("on", i < P.riders.length + paxN()));
-    const m = runTotal(); el("money").innerHTML = `${m < 0 ? "−" : ""}৳${bn(Math.abs(m))}<small>আজকের ভাড়া</small><span class="bag">☕ ${bn(P.tea)} · 🍟 ${bn(P.chips)}</span>`; el("money").classList.toggle("minus", m < 0);
+    el("clock").innerHTML = `<small>${part}</small>${hm}`;
+    el("money").textContent = `৳${bn(shop.wallet)}`;
+    el("bag").textContent = P.tea || P.chips ? `☕ ${bn(P.tea)} · 🍟 ${bn(P.chips)}` : "";
   }
   missionHud();
   const mini = el("mini"), r = mini.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
-  if (!r.width || !r.height) return; // minimap hidden
-  if (mini.width !== Math.round(r.width * dpr)) { mini.width = Math.round(r.width * dpr); mini.height = Math.round(r.height * dpr); miniBase = null; }
-  const w = mini.width, h = mini.height, k = Math.min(w / (X1 - X0), h / (Y1 - Y0)), ox = (w - (X1 - X0) * k) / 2 - X0 * k, oy = (h - (Y1 - Y0) * k) / 2 - Y0 * k;
-  if (!miniBase) {
-    miniBase = document.createElement("canvas"); miniBase.width = w; miniBase.height = h; const m = miniBase.getContext("2d");
-    m.fillStyle = "#b9cb87"; m.fillRect(0, 0, w, h); m.lineCap = m.lineJoin = "round";
-    const path = pts => { m.beginPath(); pts.forEach(([x, y], i) => i ? m.lineTo(ox + x * k, oy + y * k) : m.moveTo(ox + x * k, oy + y * k)); };
-    m.strokeStyle = "#7fb6d8"; for (const rv of rivers) { m.lineWidth = Math.max(rv.hw * 2 * k, 2); path(rv.p); m.stroke(); }
-    m.fillStyle = "rgba(29,26,23,.35)"; for (const b of buildings) { path(b.p); m.fill(); }
-    m.strokeStyle = "#efe4cc"; m.lineWidth = Math.max(1.5, 7 * k); for (const rd of roads) { path(rd.p); m.stroke(); }
+  if (!r.width || !r.height) return; // radar hidden
+  if (mini.width !== Math.round(r.width * dpr)) { mini.width = mini.height = Math.round(r.width * dpr); }
+  const k = Math.max(.42, RADAR_PPM * r.width / 170) * dpr; // a smaller radar on a phone still shows about 130 m around you
+  if (!miniBase || miniBase.k !== k) { // the whole town drawn once at radar scale
+    miniBase = document.createElement("canvas"); miniBase.k = k; miniBase.width = Math.ceil((X1 - X0) * k); miniBase.height = Math.ceil((Y1 - Y0) * k);
+    const m = miniBase.getContext("2d"); m.fillStyle = "#56653f"; m.fillRect(0, 0, miniBase.width, miniBase.height); m.lineCap = m.lineJoin = "round";
+    const path = pts => { m.beginPath(); pts.forEach(([x, y], i) => i ? m.lineTo((x - X0) * k, (y - Y0) * k) : m.moveTo((x - X0) * k, (y - Y0) * k)); };
+    m.strokeStyle = "#5f97c0"; for (const rv of rivers) { m.lineWidth = Math.max(rv.hw * 2 * k, 2); path(rv.p); m.stroke(); }
+    m.fillStyle = "rgba(20,18,15,.4)"; for (const b of buildings) { path(b.p); m.fill(); }
+    m.strokeStyle = "#e6dfcf"; m.lineWidth = Math.max(2, 7 * k); for (const rd of roads) { path(rd.p); m.stroke(); }
   }
-  const m = mini.getContext("2d"); m.drawImage(miniBase, 0, 0);
-  const dot = (x, y, col, rr) => { m.beginPath(); m.arc(ox + x * k, oy + y * k, rr * dpr, 0, Math.PI * 2); m.fillStyle = col; m.fill(); m.lineWidth = dpr; m.strokeStyle = C.ink; m.stroke(); };
-  dot(door.x, door.y, C.red, 4);
-  for (const s of SHOPS) dot(s.x, s.y, P[s.item] >= 3 ? "rgba(138,90,43,.45)" : "#8a5a2b", 2.4);
-  for (const c of comrades) if (c.state !== "ride" && c.state !== "done") dot(c.x, c.y, c.state === "sleep" ? C.yellow : c.state === "flee" ? "#e07a1f" : "#2f9a4a", 2.6);
-  if (sam) dot(sam.x, sam.y, "#ffd2a6", 2.2);
-  const mt = misTarget(); if (mt && state === "play") dot(mt.x, mt.y, offer ? "#6b4fa0" : "#f08a24", 3.4);
-  if (W) dot(W.x, W.y, "#ffffff", 3); // you on foot, and the parked ride greyed out
-  m.save(); m.translate(ox + P.x * k, oy + P.y * k); m.rotate(P.a); m.fillStyle = W ? "rgba(29,26,23,.5)" : C.ink; m.beginPath(); m.moveTo(6 * dpr, 0); m.lineTo(-4 * dpr, -4 * dpr); m.lineTo(-4 * dpr, 4 * dpr); m.closePath(); m.fill(); m.restore();
+  const F = me(), w = mini.width, R = w / 2, rot = -F.a - Math.PI / 2, cs = Math.cos(rot), sn = Math.sin(rot); // heading up
+  const m = mini.getContext("2d"); m.clearRect(0, 0, w, w);
+  m.save(); m.beginPath(); m.arc(R, R, R, 0, Math.PI * 2); m.clip();
+  m.translate(R, R); m.rotate(rot); m.drawImage(miniBase, -(F.x - X0) * k, -(F.y - Y0) * k); m.restore();
+  const dot = (x, y, col, rr, edge) => { // a blip; with edge set it sticks to the rim when it is off the radar
+    const dx = (x - F.x) * k, dy = (y - F.y) * k; let px = dx * cs - dy * sn, py = dx * sn + dy * cs; const d = Math.hypot(px, py), lim = R - (rr + 3) * dpr;
+    if (d > lim) { if (!edge) return; px *= lim / d; py *= lim / d; }
+    m.beginPath(); m.arc(R + px, R + py, rr * dpr, 0, Math.PI * 2); m.fillStyle = col; m.fill(); m.lineWidth = 1.5 * dpr; m.strokeStyle = C.ink; m.stroke();
+  };
+  for (const s of SHOPS) dot(s.x, s.y, P[s.item] >= 3 ? "rgba(138,90,43,.45)" : "#c98a4b", 3.2);
+  if (sam) dot(sam.x, sam.y, "#ffd2a6", 2.8);
+  dot(door.x, door.y, C.red, 4.6, true); // the party office is always on the radar
+  if (W) dot(P.x, P.y, "#f6efe1", 3.6, true); // the parked ride
+  const mt = misTarget(); if (mt && state === "play") dot(mt.x, mt.y, offer ? "#c9a2ff" : "#f5a623", 5.2, true);
+  const nr = R - 10 * dpr; // north marker on the rim
+  m.beginPath(); m.arc(R + sn * nr, R - cs * nr, 8 * dpr, 0, Math.PI * 2); m.fillStyle = C.ink; m.fill();
+  m.fillStyle = "#fff"; m.font = `700 ${10 * dpr}px "Hind Siliguri", sans-serif`; m.textAlign = "center"; m.textBaseline = "middle"; m.fillText("উ", R + sn * nr, R - cs * nr + dpr);
+  m.beginPath(); m.moveTo(R, R - 8 * dpr); m.lineTo(R + 6 * dpr, R + 6 * dpr); m.lineTo(R, R + 3 * dpr); m.lineTo(R - 6 * dpr, R + 6 * dpr); m.closePath(); // you, pointing up
+  m.fillStyle = W ? "#ffe08a" : "#ffffff"; m.fill(); m.lineWidth = 2 * dpr; m.strokeStyle = C.ink; m.stroke();
 }
 
 /* ================= shop (the garage) ================= */
@@ -4181,13 +4275,14 @@ function setPause(on) {
   paused = on; keys.clear(); last = performance.now();
   stick = null; stickEl.style.display = "none";
   el("pauseScr").classList.toggle("hidden", !on);
-  el("pauseVerdict").textContent = `${VEH().go} সাইড করে রাখা হলো, ঘড়িও থেমে আছে। কমরেডরা আরেকটু ঘুমাক।`;
+  el("pauseVerdict").textContent = `${VEH().go} সাইড করে রাখা হলো, ঘড়িও থেমে আছে। কতোয়ালপুর একটু জিরিয়ে নিক।`;
   try { if (ac) { if (on) ac.suspend(); else ac.resume(); } if (musicEl) { if (on) musicEl.pause(); else musicEl.play().catch(() => {}); } } catch (e) {}
   if (!on) engineUpdate();
 }
 el("pauseBtn").addEventListener("click", () => setPause(true));
 el("resume").addEventListener("click", () => setPause(false));
 el("restart").addEventListener("click", () => { setPause(false); startGame(); });
+el("quit").addEventListener("click", () => { setPause(false); endGame(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) setPause(true); });
 requestAnimationFrame(loop);
 // ready once the first frame (and its shaders) are done
@@ -4199,7 +4294,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 // test hook
 window.__sim3 = {
   get driver() { return driverId; }, get vehicle() { return vehId; }, get michils() { return michils; }, get talk() { return talk; }, answerTalk, openTalk: c => openTalk(c), shops: SHOPS,
-  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; },
+  get state() { return state; }, get P() { return P; }, get W() { return W; }, toggleRide, walker, traffic, get comrades() { return comrades; }, get time() { return time; }, set time(v) { time = v; }, get clock() { return clock; }, set clock(v) { clock = v; dayLook(); },
   get mission() { return mission; }, get offer() { return offer; }, makeOffer: k => { dropOffer(); return makeOffer(k); }, get misDone() { return misDone; },
   get events() { return events; }, get door() { return door; }, get sam() { return sam; }, get cows() { return cows; }, get run() { return run; }, get shop() { return shop; }, office, officeU, officeV, dukan, palace, school, walled, pinkHouse, kiosk, bannerHouse, brickShed, siteRoom, brick, mamu, mamuHouse, mamuBack, get placeTags() { return placeTags; }, openShop, closeShop,
   renderer, scene, camera, horn, endGame, nextCam, keys, start: startGame, view(o) { camHold = o; },
